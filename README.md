@@ -4,20 +4,20 @@
 
 Welcome to the official repository for **Bristol-Pink's Bakery Sales Prediction Dashboard** — a standalone AI-powered system designed to help reduce food waste and optimize daily inventory across five bakery cafés.
 
-## 📌 Project Overview
+## Project Overview
 
 Bristol-Pink is a growing bakery chain serving families near school academies and nearby office workers. To minimize food waste and improve operational efficiency, this system uses machine learning algorithms to forecast daily sales of key products.
 
 The dashboard provides interactive visualizations of historical sales data and predictive analytics to guide purchasing decisions for the next four weeks.
 
-## 🎯 Objectives
+## Objectives
 
 - Analyze historical sales data of top-selling items.
 - Predict future sales using AI/ML models.
 - Minimize food waste and financial loss.
 - Provide flexible, user-driven data exploration.
 
-## 📊 Features
+## Features
 
 - **CSV Data Ingestion**: Upload and process sales data in CSV format.
 - **Top Sellers Analysis**:
@@ -35,14 +35,14 @@ The dashboard provides interactive visualizations of historical sales data and p
 - **Model Evaluation**:
   - Optional dashboard view to assess algorithm performance and accuracy.
 
-## 🧠 Technologies Used
+## Technologies Used
 
 - Python (Pandas, NumPy, Scikit-learn, TensorFlow/PyTorch)
 - Dash or Streamlit for interactive dashboard
 - Matplotlib / Plotly for visualizations
 - CSV file handling and preprocessing
 
-## 📁 Folder Structure
+## Folder Structure
 
 ```
 ├── data/                  # Sample and user-uploaded CSV files
@@ -52,7 +52,7 @@ The dashboard provides interactive visualizations of historical sales data and p
 ├── README.md              # Project documentation
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 1. Clone the repository:
    ```bash
@@ -72,18 +72,18 @@ The dashboard provides interactive visualizations of historical sales data and p
 
 4. Upload your CSV file and start exploring!
 
-## 📈 Sample Visuals
+## Sample Visuals
 
-- 📉 Historical sales trends
-- 🔮 Predicted sales per item
-- 📊 Accuracy comparison across models
-- 🔍 Zoomed-in views for selected date ranges
+-  Historical sales trends
+-  Predicted sales per item
+-  Accuracy comparison across models
+-  Zoomed-in views for selected date ranges
 
-## 🧪 Model Evaluation
+## Model Evaluation
 
 The dashboard includes an optional tab to compare the performance of different algorithms (e.g., Linear Regression, Random Forest, LSTM). Metrics such as MAE, RMSE, and R² are displayed to help users choose the most reliable model.
 
-## 🛠️ Future Enhancements
+## Future Enhancements
 
 - Real-time data integration
 - Automated retraining pipeline
@@ -91,5 +91,3 @@ The dashboard includes an optional tab to compare the performance of different a
 - Mobile-friendly dashboard
 
 ---
-
-Let me know if you'd like a logo, sample CSV, or code snippets added to this README!
