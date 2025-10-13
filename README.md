@@ -1,5 +1,3 @@
----
-
 # 🥐 SDGP – Bakery Sales Prediction System
 
 Welcome to the official repository for **Bristol-Pink's Bakery Sales Prediction Dashboard** — a standalone AI-powered system designed to help reduce food waste and optimize daily inventory across five bakery cafés.
@@ -90,4 +88,10 @@ The dashboard includes an optional tab to compare the performance of different a
 - Inventory optimization recommendations
 - Mobile-friendly dashboard
 
----
+## Troubleshooting
+
+- **Dockerfile not found in CI**  
+  Ensure the file is named exactly `Dockerfile` at the repository root, or update the workflow to point to its path.
+
+- **Accidentally pasted YAML into Dockerfile**  
+  The Dockerfile must start with Docker instructions like `FROM`, `COPY`, `RUN`. Move GitHub Actions YAML to:
