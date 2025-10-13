@@ -1,0 +1,65 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 1) Build the test stage (this runs `npm run build` inside Docker)
+      - name: Build test stage (runs React build in Docker)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: test
+          tags: bakery-ui:test
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 2) Build the final runtime image
+      - name: Build final image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: bakery-ui:runtime
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 3) Smoke-test the container starts and serves HTTP
+      - name: Run container
+        run: docker run -d --name bakery-ui -p 8080:80 bakery-ui:runtime
+
+      - name: Smoke check (HTTP)
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8080 >/dev/null; then
+              echo "UI responded OK"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "UI did not respond in time"
+          echo "Container logs:"
+          docker logs bakery-ui || true
+          exit 1
+
+      - name: Show logs (always)
+        if: always()
+        run: docker logs bakery-ui || true
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f bakery-ui || true
