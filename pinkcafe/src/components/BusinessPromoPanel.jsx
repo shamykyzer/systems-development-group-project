@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 function BusinessPromoPanel() {
-  // Example images, replace with your own coffee shop photos in public folder
+  // Images for carousel
   const images = [
     '/coffee1.jpg',
     '/coffee2.jpg',
