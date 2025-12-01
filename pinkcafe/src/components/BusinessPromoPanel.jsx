@@ -16,7 +16,7 @@ function BusinessPromoPanel() {
   }, [images.length]);
 
   return (
-    <div className="hidden lg:flex flex-col justify-center items-center h-auto w-[510px] bg-white bg-opacity-40 backdrop-blur-md p-12 rounded-2xl shadow-xl">
+    <div className="hidden lg:flex flex-col justify-center items-center h-auto w-[510px] bg-white bg-opacity-40 backdrop-blur-md p-12 rounded-2xl" style={{ boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)' }}>
       {/* Cycling image carousel */}
       <div className="w-full h-56 mb-8 rounded-xl overflow-hidden shadow-lg flex items-center justify-center bg-gray-100">
         <img

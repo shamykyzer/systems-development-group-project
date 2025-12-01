@@ -12,11 +12,11 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-pinkcafe rounded-2xl p-8 space-y-6 w-full max-w-md">
+    <div className="bg-pinkcafe rounded-2xl p-8 space-y-6 w-full max-w-md" style={{ boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)' }}>
       {/* Header */}
       <div className="text-center">
         <h1 className="text-9xl font-extrabold font-sans text-pinkcafe2 mb-2">Pink</h1>
-        <h1 className="text-9xl font-extrabold font-sans text-pinkcafe2 mb-2 pl-9 pb-10">Cafe</h1>
+        <h1 className="text-9xl font-extrabold font-sans text-pinkcafe2 mb-2 pl-9 pb-10">Café</h1>
       </div>
 
       {/* Login Form */}
