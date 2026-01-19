@@ -43,5 +43,4 @@ function BusinessPromoPanel() {
     </div>
   );
 }
-
 export default BusinessPromoPanel;
