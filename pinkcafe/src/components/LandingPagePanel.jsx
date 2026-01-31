@@ -33,26 +33,26 @@ function LandingPagePanel(){
     };
     
     return(
-        <div className="bg-pinkcafe p-8 w-full min-h-screen">
+        <div className="ml-0 md:ml-64 bg-pinkcafe p-4 md:p-8 w-auto min-h-screen transition-all duration-300">
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-5xl font-bold text-pinkcafe2 mb-2">Sales Forecasting Dashboard</h1>
-                <p className="text-pinkcafe2 text-lg opacity-80">AI-powered product demand predictions</p>
+            <div className="mb-8 mt-16 md:mt-0">
+                <h1 className="text-3xl md:text-5xl font-bold text-pinkcafe2 mb-2">Sales Forecasting Dashboard</h1>
+                <p className="text-pinkcafe2 text-base md:text-lg opacity-80">AI-powered product demand predictions</p>
             </div>
             
             {/* Graph Layout */}
-            <div className="flex gap-6 h-[650px]">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:h-[650px]">
                 {/* Main Large Graph */}
-                <div className="flex-grow w-2/3 bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+                <div className="flex-grow md:w-2/3 bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col min-h-[400px] md:min-h-0">
                     {/* Header Section */}
-                    <div className="bg-pinkcafe2 p-6">
-                        <h2 className="text-3xl font-bold text-white mb-1">
+                    <div className="bg-pinkcafe2 p-4 md:p-6">
+                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">
                             {graphs[mainGraph].title}
                         </h2>
                         <p className="text-white opacity-90 text-sm mb-4">{graphs[mainGraph].subtitle}</p>
                         <div className="flex items-end gap-3">
-                            <span className="text-5xl font-bold text-white">{graphs[mainGraph].value}</span>
-                            <span className={`text-xl font-semibold mb-2 ${
+                            <span className="text-3xl md:text-5xl font-bold text-white">{graphs[mainGraph].value}</span>
+                            <span className={`text-lg md:text-xl font-semibold mb-2 ${
                                 graphs[mainGraph].isPositive ? 'text-green-300' : 'text-red-300'
                             }`}>
                                 {graphs[mainGraph].change}
@@ -70,12 +70,12 @@ function LandingPagePanel(){
                 </div>
                 
                 {/* Smaller Graphs Panel */}
-                <div className="w-1/3 flex flex-col gap-4">
+                <div className="w-full md:w-1/3 flex flex-col gap-4">
                     {Object.keys(graphs).map((graphKey) => (
                         <div
                             key={graphKey}
                             onClick={() => setMainGraph(graphKey)}
-                            className={`bg-white rounded-xl shadow-lg p-5 cursor-pointer transition-all duration-300 flex flex-col ${
+                            className={`bg-white rounded-xl shadow-lg p-4 md:p-5 cursor-pointer transition-all duration-300 flex flex-col ${
                                 mainGraph === graphKey 
                                     ? 'ring-4 ring-pinkcafe2 shadow-2xl' 
                                     : 'hover:shadow-2xl hover:-translate-y-1'
