@@ -180,6 +180,6 @@ def get_sales_summary():
 if __name__ == '__main__':
     print("Initializing database...")
     init_db()
-    print("\nFlask server starting on http://localhost:5000")
+    print("\nFlask server starting on http://0.0.0.0:5000")
     print("Test credentials: admin@pinkcafe.com / admin123")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
