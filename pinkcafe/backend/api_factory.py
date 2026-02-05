@@ -1,14 +1,14 @@
 from flask import Flask
 from flask_cors import CORS
 
-from .config import Config
-from .db import init_db
-from .routes.analytics import bp as analytics_bp
-from .routes.auth import bp as auth_bp
-from .routes.datasets import bp as datasets_bp
-from .routes.evaluation import bp as evaluation_bp
-from .routes.forecast import bp as forecast_bp
-from .routes.health import bp as health_bp
+from config import Config
+from db import init_db
+from routes.analytics import bp as analytics_bp
+from routes.auth import bp as auth_bp
+from routes.datasets import bp as datasets_bp
+from routes.evaluation import bp as evaluation_bp
+from routes.forecast import bp as forecast_bp
+from routes.health import bp as health_bp
 
 
 def create_app(config: Config) -> Flask:

@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from ..db import connect
-from ..services.analytics import AnalyticsError, fluctuation, list_items_for_dataset, top_sellers
+from db import connect
+from services.analytics import AnalyticsError, fluctuation, list_items_for_dataset, top_sellers
 
 
 bp = Blueprint("analytics", __name__)

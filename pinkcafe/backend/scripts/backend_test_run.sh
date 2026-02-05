@@ -12,7 +12,6 @@ BASE_URL="${BASE_URL:-http://127.0.0.1:5000}"
 DB_PATH="${DB_PATH:-data/test_run.db}"
 
 backend_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-repo_root="$(cd "$backend_dir/.." && pwd)"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 not found. Install Python 3.12+ first." >&2
@@ -38,12 +37,13 @@ ensure_venv() {
   fi
   # shellcheck disable=SC1091
   source .venv/bin/activate
-  python -m pip install --upgrade pip >/dev/null
-  pip install -r requirements.txt >/dev/null
+  export PIP_DISABLE_PIP_VERSION_CHECK=1
+  pip install --no-input -r requirements.txt >/dev/null || pip install --no-input -r requirements.txt
 }
 
 health_ok() {
-  curl -sS "$BASE_URL/api/v1/health" | grep -q '"ok": true'
+  # Accept both {"ok":true} and {"ok": true}
+  curl -sS "$BASE_URL/api/v1/health" | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true'
 }
 
 wait_for_health() {
@@ -85,7 +85,10 @@ else
   echo "Starting backend in background ..."
   cd "$backend_dir"
   # Use an isolated DB so smoke tests don't pollute the dev DB.
-  DATABASE_PATH="$DB_PATH" FLASK_DEBUG=0 python app.py >/tmp/pinkcafe_backend_test_run.log 2>&1 &
+  : "${FLASK_ENV:=production}"
+  : "${MPLCONFIGDIR:=/tmp/matplotlib}"
+  export FLASK_ENV MPLCONFIGDIR
+  DATABASE_PATH="$DB_PATH" FLASK_DEBUG=0 ./.venv/bin/python app.py >/tmp/pinkcafe_backend_test_run.log 2>&1 &
   server_pid="$!"
   started_by_script="1"
 

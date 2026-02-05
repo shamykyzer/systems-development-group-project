@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from .analytics import get_dataset_end_date, list_items_for_dataset
-from .forecasting import (
+from services.analytics import get_dataset_end_date, list_items_for_dataset
+from services.forecasting import (
     ForecastError,
     _parse_iso_date,  # internal helper, ok within package
     _to_iso,  # internal helper, ok within package
@@ -86,7 +86,7 @@ def evaluate_item_backtest(
 
     horizon_days = horizon_weeks * 7
     algo = (algorithm or "baseline").strip().lower()
-    if algo in {"baseline", "seasonal_naive", "seasonal_naive_7"}:
+    if algo in {"baseline", "seasonal_naive", "seasonal_naive_7", "baseline_seasonal_naive_7"}:
         algo_name = "baseline_seasonal_naive_7"
         pred = forecast_baseline_seasonal_naive_7(history, horizon_days)
     elif algo == "prophet":
@@ -158,7 +158,7 @@ def run_evaluation(
     results: Dict[str, Any] = {"dataset_id": dataset_id, "runs": []}
     for algo in algorithms:
         algo_norm = (algo or "").strip().lower()
-        if algo_norm in {"baseline", "seasonal_naive", "seasonal_naive_7"}:
+        if algo_norm in {"baseline", "seasonal_naive", "seasonal_naive_7", "baseline_seasonal_naive_7"}:
             algo_name = "baseline_seasonal_naive_7"
         elif algo_norm == "prophet":
             algo_name = "prophet"

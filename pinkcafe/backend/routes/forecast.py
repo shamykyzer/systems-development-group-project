@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from ..db import connect
-from ..services.forecasting import ForecastError, run_forecast, zoom_forecast
+from db import connect
+from services.forecasting import ForecastError, run_forecast, zoom_forecast
 
 
 bp = Blueprint("forecast", __name__)

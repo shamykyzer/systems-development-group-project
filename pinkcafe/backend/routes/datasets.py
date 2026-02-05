@@ -3,8 +3,8 @@ from typing import Dict, List, Tuple
 
 from flask import Blueprint, current_app, jsonify, request
 
-from ..db import connect
-from ..services.csv_ingest import CsvIngestError, normalize_number_sold_column, parse_wide_csv_bytes
+from db import connect
+from services.csv_ingest import CsvIngestError, normalize_number_sold_column, parse_wide_csv_bytes
 
 
 bp = Blueprint("datasets", __name__)

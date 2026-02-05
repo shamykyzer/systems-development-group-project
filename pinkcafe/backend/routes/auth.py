@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from ..db import connect
-from ..services.passwords import hash_password, verify_password
+from db import connect
+from services.passwords import hash_password, verify_password
 
 
 bp = Blueprint("auth", __name__)
@@ -12,6 +12,7 @@ def _json_error(message: str, status: int = 400):
 
 
 @bp.post("/api/v1/auth/register")
+@bp.post("/api/register")  # backward-compatible alias for older frontend
 def register():
     data = request.get_json(silent=True) or {}
     if not isinstance(data, dict):
@@ -41,6 +42,7 @@ def register():
 
 
 @bp.post("/api/v1/auth/login")
+@bp.post("/api/login")  # backward-compatible alias for older frontend
 def login():
     data = request.get_json(silent=True) or {}
     if not isinstance(data, dict):

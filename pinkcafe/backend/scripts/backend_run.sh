@@ -20,10 +20,16 @@ if [[ ! -d ".venv" ]]; then
 fi
 
 source .venv/bin/activate
-python -m pip install --upgrade pip >/dev/null
-pip install -r requirements.txt
+export PIP_DISABLE_PIP_VERSION_CHECK=1
+pip install --no-input -r requirements.txt >/dev/null || pip install --no-input -r requirements.txt
 
 echo
 echo "Starting backend on http://127.0.0.1:5000 ..."
+# Default to debug OFF to avoid environments where the Werkzeug debugger can't write to /dev/shm.
+: "${FLASK_DEBUG:=0}"
+: "${FLASK_ENV:=production}"
+: "${MPLCONFIGDIR:=/tmp/matplotlib}"
+export FLASK_DEBUG FLASK_ENV MPLCONFIGDIR
+
 exec python app.py
 

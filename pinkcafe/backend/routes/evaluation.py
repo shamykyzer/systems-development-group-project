@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
-from ..db import connect
-from ..services.evaluation import EvaluationError, run_evaluation
+from db import connect
+from services.evaluation import EvaluationError, run_evaluation
 
 
 bp = Blueprint("evaluation", __name__)

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
-from .analytics import get_dataset_end_date
+from services.analytics import get_dataset_end_date
 
 
 class ForecastError(ValueError):
