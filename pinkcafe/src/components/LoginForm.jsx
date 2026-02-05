@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {FaEyeSlash} from 'react-icons/fa';
 
 function LoginForm() {
@@ -6,6 +7,7 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,9 +28,10 @@ function LoginForm() {
 
       if (data.success) {
         console.log('Login successful:', data.user);
-        alert(`Welcome ${data.user.username}!`);
-        // TODO: Store user data in localStorage or context
-        // TODO: Redirect to dashboard
+        // Optional: store user for later use
+        localStorage.setItem('pinkcafe_user', JSON.stringify(data.user));
+        // Redirect to home immediately
+        navigate('/home');
       } else {
         setError(data.message);
       }
