@@ -5,12 +5,13 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
+      target: backend
     container_name: pinkcafe-backend
     ports:
       - "5000:5000"
     volumes:
-      - ./pinkcafe/backend:/app
+      - ./pinkcafe/Backend:/app
       - backend-db:/app/data
     environment:
       - FLASK_ENV=development
@@ -21,8 +22,9 @@ services:
   # React Frontend
   frontend:
     build:
-      context: ./pinkcafe
-      dockerfile: Dockerfile.frontend
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
     container_name: pinkcafe-frontend
     ports:
       - "3000:3000"
@@ -39,5 +41,22 @@ services:
     tty: true
     restart: unless-stopped
 
+  # Prophet Forecasting Service (optional)
+  prophet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prophet
+    container_name: pinkcafe-prophet
+    volumes:
+      - ./pinkcafe/Backend:/app/backend
+      - prophet-output:/app/output
+    environment:
+      - MPLBACKEND=Agg
+    restart: "no"
+    profiles:
+      - forecasting
+
 volumes:
   backend-db:
+  prophet-output:
