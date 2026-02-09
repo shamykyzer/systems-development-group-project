@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {FaEyeSlash} from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function LoginForm() {
   const [email, setEmail] = useState('');

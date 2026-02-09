@@ -17,6 +17,7 @@ Goal: **use only the root `Dockerfile`** (pulled from `main`) and make the **bac
   - **Dev targets**: `backend`, `frontend`, `prophet`
   - **Combined runtime target**: `app` runs gunicorn and serves built React assets via Flask when `FRONTEND_DIR` is set
   - **Port change**: backend now exposes/binds **5001** (was 5000)
+  - **Cleanup**: removed duplicated/accidentally-pasted Dockerfile stages that caused duplicate stage name warnings
 
 - **`docker-compose.yml` updated** to align with the single root `Dockerfile` and port 5001:
   - `backend` service:
@@ -33,13 +34,29 @@ Goal: **use only the root `Dockerfile`** (pulled from `main`) and make the **bac
     - maps ports **`5001:5001`**
     - sets `PORT=5001`
     - moved under `profiles: [prod]` to avoid clashing with the dev `backend` service when running `docker compose up`
+  - Added UI testing services (under `profiles: [testing]`):
+    - `backend_inactive`: backend status page forced **Inactive** on `http://localhost:5002/`
+    - `backend_db_fail`: simulates DB failure (status page shows **Inactive**) on `http://localhost:5003/`
+    - `app_inactive`: combined app on `http://localhost:5001/` but forces all `/api*` calls to return `503`
 
 ## Backend (Flask)
 - **Backend entrypoint now uses env var `PORT` (default 5001)** so Docker/Compose can force port 5001:
-  - Updated `pinkcafe/backend/app.py` to:
+  - Updated `src/backend/app.py` to:
     - read `PORT` from environment (default `"5001"`)
     - run `app.run(..., port=port)`
-  - Updated `pinkcafe/Backend/app.py` similarly (repo contains both `Backend/` and `backend/`)
+  - (Legacy note) Previously there were multiple backend folder variants; backend source now lives under `src/backend/`.
+
+- **Backend status page improvements + failure simulation helpers**
+  - `/` (API-only mode) renders a small status page with a badge:
+    - **Live** when dependency checks pass
+    - **Inactive** when `STATUS_FORCE_INACTIVE=true`, DB is unreachable, or a test failure marker is present
+  - Added env toggles:
+    - `STATUS_FORCE_INACTIVE=true` (force badge inactive)
+    - `API_FORCE_DOWN=true` (return 503 for all `/api*` routes)
+    - `SKIP_DB_INIT=true` and `ALLOW_DB_STARTUP_FAILURE=true` (allow startup during DB failure simulations)
+  - Added marker endpoints (used by test scripts):
+    - `POST /api/v1/status/marker` (set inactive marker)
+    - `DELETE /api/v1/status/marker` (clear marker)
 
 - **Login endpoint confirmed**:
   - `POST /api/login` exists as a backward-compatible alias
@@ -59,6 +76,14 @@ Goal: **use only the root `Dockerfile`** (pulled from `main`) and make the **bac
 
 - **CRA proxy updated**:
   - `pinkcafe/package.json` proxy set to `http://localhost:5001`
+
+## Tests / scripts
+- Renamed backend helper scripts folder:
+  - `src/backend/scripts/` → `src/backend/tests/`
+- Test scripts now set/clear the backend “inactive” marker automatically:
+  - `src/backend/tests/backend_smoke_test.sh`
+  - `src/backend/tests/backend_test_run.sh`
+  - `src/backend/test_run.sh` (tour test)
 
 ## Notes / gotchas encountered
 - **Docker container name conflict** can happen when `container_name:` is set in compose and old containers exist.

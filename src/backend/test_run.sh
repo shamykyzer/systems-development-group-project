@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # End-to-end backend tour test runner (one command).
-# Keeps existing scripts intact:
-# - scripts/backend_run.sh
-# - scripts/backend_smoke_test.sh
-# - scripts/backend_test_run.sh
+# Keeps existing tests intact:
+# - tests/backend_run.sh
+# - tests/backend_smoke_test.sh
+# - tests/backend_test_run.sh
 #
 # This script starts a clean backend instance on a non-default port with a fresh DB,
 # exercises ingestion + analytics + baseline forecast + zoom + evaluation, then stops.
@@ -19,6 +19,11 @@ fi
 BASE_URL="${BASE_URL:-http://127.0.0.1:5005}"
 PORT="${PORT:-5005}"
 DB_PATH="${DB_PATH:-data/test_run.db}"
+
+script_dir="$backend_dir/tests"
+# shellcheck disable=SC1091
+source "$script_dir/status_marker.sh"
+status_marker_trap_exit "test_run.sh"
 
 COFFEE_CSV_DEFAULT_1="$repo_root/pinkcafe/Pink CoffeeSales March - Oct 2025.csv"
 COFFEE_CSV_DEFAULT_2="$backend_dir/Pink CoffeeSales March - Oct 2025.csv"
@@ -77,7 +82,7 @@ ensure_venv() {
 wait_for_health() {
   local tries=50
   for _ in $(seq 1 "$tries"); do
-    if curl -fsS "$BASE_URL/api/v1/health" >/dev/null 2>&1; then
+    if curl -fsS "$BASE_URL/api" >/dev/null 2>&1; then
       return 0
     fi
     sleep 0.2
@@ -141,8 +146,8 @@ if ! wait_for_health; then
 fi
 
 echo
-echo "1) Health"
-curl -sS "$BASE_URL/api/v1/health" | pretty_json
+echo "1) Backend status (/api)"
+curl -sS "$BASE_URL/api" | pretty_json
 
 echo
 echo "2) Upload coffee dataset"

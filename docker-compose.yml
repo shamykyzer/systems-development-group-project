@@ -22,6 +22,29 @@ services:
       - prod
     restart: unless-stopped
 
+  # Combined runtime but API forced "down" (UI testing)
+  app_inactive:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: pinkcafe-app-inactive
+    ports:
+      - "5001:5001"
+    volumes:
+      - backend-db:/app/data
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - PYTHONUNBUFFERED=1
+      - PORT=5001
+      - DATABASE_PATH=/app/data/pinkcafe.db
+      - CORS_ORIGINS=*
+      - API_FORCE_DOWN=true
+    profiles:
+      - testing
+    restart: "no"
+
   # Flask Backend
   backend:
     build:
@@ -32,7 +55,7 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./pinkcafe/Backend:/app
+      - ./src/backend:/app
       - backend-db:/app/data
     environment:
       - FLASK_ENV=development
@@ -45,6 +68,60 @@ services:
       - CORS_ORIGINS=http://localhost:3000
     command: python app.py
     restart: unless-stopped
+
+  # Backend (inactive status page) - for UI testing only
+  backend_inactive:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    container_name: pinkcafe-backend-inactive
+    ports:
+      - "5002:5001"
+    volumes:
+      - ./src/backend:/app
+      - backend-db:/app/data
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+      - PORT=5001
+      - DATABASE_PATH=/app/data/pinkcafe.db
+      - CORS_ORIGINS=http://localhost:3000
+      # Force the "/" status badge to render inactive + return 503
+      - STATUS_FORCE_INACTIVE=true
+    command: python app.py
+    restart: "no"
+    profiles:
+      - testing
+
+  # Backend (simulate DB failure) - for UI testing only
+  backend_db_fail:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    container_name: pinkcafe-backend-db-fail
+    ports:
+      - "5003:5001"
+    volumes:
+      - ./src/backend:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+      - PORT=5001
+      # Point DB somewhere that cannot be opened
+      - DATABASE_PATH=/proc/doesnotexist/pinkcafe.db
+      - CORS_ORIGINS=http://localhost:3000
+      # Let the app start even though DB init fails
+      - ALLOW_DB_STARTUP_FAILURE=true
+      # (Optional) skip init_db entirely so startup is always clean
+      - SKIP_DB_INIT=true
+    command: python app.py
+    restart: "no"
+    profiles:
+      - testing
 
   # React Frontend
   frontend:
@@ -79,8 +156,7 @@ services:
     container_name: pinkcafe-prophet
     volumes:
       # Optional: mount backend code for quick iteration (no rebuild)
-      - ./pinkcafe/backend:/app/backend
-      - ./pinkcafe/Backend:/app/backend
+      - ./src/backend:/app/backend
       - prophet-output:/app/output
     environment:
       - MPLBACKEND=Agg
@@ -90,5 +166,4 @@ services:
 
 volumes:
   backend-db:
-  prophet-output:
   prophet-output:

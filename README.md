@@ -45,11 +45,11 @@ The dashboard provides interactive visualizations of historical sales data and p
 
 This repo currently contains:
 - **Frontend**: React app in `pinkcafe/` (Create React App).
-- **Backend**: Flask API in `pinkcafe/backend/` (Python + SQLite).
+- **Backend**: Flask API source in `src/backend/` (Python + SQLite).
 
 ### Backend changes implemented so far
 
-- **Normalized backend path**: the backend directory is now `pinkcafe/backend/` (lowercase) to match Docker/Compose on Linux.
+- **Normalized backend path**: the backend directory is now `src/backend/`.
 - **Modular Flask backend**: moved from a single monolithic Flask script to a small module layout with an **app factory**, **config**, and **blueprints** under `routes/`.
 - **Normalized SQLite schema**: added tables for `datasets`, `items`, `sales`, forecasting runs, and evaluation metrics (foundation for forecasting/evaluation features).
 - **CSV ingestion API**: upload wide-column CSVs and persist them into the normalized schema. This supports both coffee CSV header styles currently in the repo.
@@ -60,26 +60,26 @@ This repo currently contains:
 
 ### Backend package layout (important files)
 
-- `pinkcafe/backend/app.py`: **entrypoint** (keeps `python3 app.py` working in Docker/local)
-- `pinkcafe/backend/api_factory.py`: `create_app()` app factory + blueprint registration
-- `pinkcafe/backend/config.py`: env-driven config (`DATABASE_PATH`, `CORS_ORIGINS`, etc.)
-- `pinkcafe/backend/db.py`: SQLite connect + schema init
-- `pinkcafe/backend/schema.py`: SQLite schema (`datasets/items/sales/model_runs/forecasts/evaluation_*`)
-- `pinkcafe/backend/routes/`: Flask blueprints (health/auth/datasets/analytics/forecast/evaluation)
-- `pinkcafe/backend/services/`: CSV parsing, analytics, forecasting (Prophet + baseline), evaluation, passwords (bcrypt)
-- `pinkcafe/backend/CSV_Files/`: sample datasets used by scripts/tests
-- `pinkcafe/backend/scripts/`: helper scripts for local dev + API smoke tests
-- `pinkcafe/backend/csv_import.py`: **local CLI importer** that loads a wide CSV into the normalized schema (`datasets/items/sales`) using the same parsing logic as the API (`services/csv_ingest.py`)
+- `src/backend/app.py`: **entrypoint** (keeps `python3 app.py` working in Docker/local)
+- `src/backend/api_factory.py`: `create_app()` app factory + blueprint registration
+- `src/backend/config.py`: env-driven config (`DATABASE_PATH`, `CORS_ORIGINS`, etc.)
+- `src/backend/db.py`: SQLite connect + schema init
+- `src/backend/schema.py`: SQLite schema (`datasets/items/sales/model_runs/forecasts/evaluation_*`)
+- `src/backend/routes/`: Flask blueprints (health/auth/datasets/analytics/forecast/evaluation)
+- `src/backend/services/`: CSV parsing, analytics, forecasting (Prophet + baseline), evaluation, passwords (bcrypt)
+- `src/backend/CSV_Files/`: sample datasets used by scripts/tests
+- `src/backend/tests/`: helper test scripts for local dev + API smoke tests
+- `src/backend/csv_import.py`: **local CLI importer** that loads a wide CSV into the normalized schema (`datasets/items/sales`) using the same parsing logic as the API (`services/csv_ingest.py`)
 
-### Backend scripts (what to run and when)
+### Backend test scripts (what to run and when)
 
-- **Start the backend (local dev)**: `pinkcafe/backend/scripts/backend_run.sh`
+- **Start the backend (local dev)**: `src/backend/tests/backend_run.sh`
   - Creates `.venv` if missing, installs requirements, then runs `python app.py`.
-- **Smoke test (assumes backend is already running)**: `pinkcafe/backend/scripts/backend_smoke_test.sh`
-  - Uploads the sample CSVs in `pinkcafe/backend/CSV_Files/` and calls the analytics endpoints.
-- **One-command backend test run (start → smoke test → stop)**: `pinkcafe/backend/scripts/backend_test_run.sh`
+- **Smoke test (assumes backend is already running)**: `src/backend/tests/backend_smoke_test.sh`
+  - Uploads the sample CSVs in `src/backend/CSV_Files/` and calls the analytics endpoints.
+- **One-command backend test run (start → smoke test → stop)**: `src/backend/tests/backend_test_run.sh`
   - Starts the backend with an isolated DB (`DB_PATH`, default `data/test_run.db`), runs the smoke test, then stops the backend.
-- **Full “tour” test (includes forecast + zoom + evaluation)**: `pinkcafe/backend/test_run.sh`
+- **Full “tour” test (includes forecast + zoom + evaluation)**: `src/backend/test_run.sh`
   - Runs a longer end-to-end sequence beyond the smoke test (baseline forecast, zoom, evaluation).
 
 ### Local CSV import helper (CLI)
@@ -87,7 +87,7 @@ This repo currently contains:
 If you want to import a CSV **without** using the API upload endpoint, use the CLI importer:
 
 ```bash
-cd pinkcafe/backend
+cd src/backend
 python3 csv_import.py --csv CSV_Files/"Pink CoffeeSales March - Oct 2025.csv" --category coffee --name coffee-sample
 ```
 
@@ -107,13 +107,13 @@ sudo apt install -y python3.12-venv
 This creates the venv (if missing), installs deps, then starts the API:
 
 ```bash
-./pinkcafe/backend/scripts/backend_run.sh
+./src/backend/tests/backend_run.sh
 ```
 
 #### Manual start (if you prefer)
 
 ```bash
-cd pinkcafe/backend
+cd src/backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -123,7 +123,7 @@ python3 app.py
 Health check:
 
 ```bash
-curl -s http://127.0.0.1:5000/api/v1/health
+curl -s http://127.0.0.1:5001/api
 ```
 
 ## Tests
@@ -135,12 +135,12 @@ The backend currently uses **scripted smoke/tour tests** (not a `pytest` suite y
 With the backend running, this uploads the sample coffee + croissant CSVs and hits the analytics endpoints:
 
 ```bash
-./pinkcafe/backend/scripts/backend_smoke_test.sh
+./src/backend/tests/backend_smoke_test.sh
 ```
 
 What the smoke test does:
-- **Checks health**: `GET /api/v1/health`
-- **Uploads + ingests sample CSVs** from `pinkcafe/backend/CSV_Files/`:
+- **Checks backend status**: `GET /api`
+- **Uploads + ingests sample CSVs** from `src/backend/CSV_Files/`:
   - Coffee (`category=coffee`): `Pink CoffeeSales March - Oct 2025.csv`
   - Food (`category=food`): `Pink CroissantSales March - Oct 2025.csv`
 - **Calls analytics** on the uploaded dataset:
@@ -155,10 +155,10 @@ A successful run prints JSON responses for each step and ends with **“Smoke te
 This does everything in one command: sets up the venv/deps, starts the backend (if needed), runs the smoke test, then stops the backend.
 
 ```bash
-./pinkcafe/backend/scripts/backend_test_run.sh
+./src/backend/tests/backend_test_run.sh
 ```
 
-If you are already inside `pinkcafe/backend/`, you can also run:
+If you are already inside `src/backend/`, you can also run:
 
 ```bash
 ./test_run.sh
@@ -171,40 +171,37 @@ Run these from the **repo root**:
 Upload/ingest a coffee CSV:
 
 ```bash
-curl -s -X POST http://127.0.0.1:5000/api/v1/datasets \
+curl -s -X POST http://127.0.0.1:5001/api/v1/datasets \
   -F "category=coffee" \
   -F "name=coffee-march-oct-2025" \
-  -F "file=@pinkcafe/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
+  -F "file=@src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
 ```
 
 List datasets:
 
 ```bash
-curl -s http://127.0.0.1:5000/api/v1/datasets
+curl -s http://127.0.0.1:5001/api/v1/datasets
 ```
 
 List items in a dataset (used to get `item_id`):
 
 ```bash
-curl -s "http://127.0.0.1:5000/api/v1/items?dataset_id=1"
+curl -s "http://127.0.0.1:5001/api/v1/items?dataset_id=1"
 ```
 
 Top sellers (last 4 weeks):
 
 ```bash
-curl -s "http://127.0.0.1:5000/api/v1/analytics/top-sellers?dataset_id=1&category=coffee&weeks=4&limit=3"
+curl -s "http://127.0.0.1:5001/api/v1/analytics/top-sellers?dataset_id=1&category=coffee&weeks=4&limit=3"
 ```
 
 Fluctuation series (last 4 weeks):
 
 ```bash
-curl -s "http://127.0.0.1:5000/api/v1/analytics/fluctuation?dataset_id=1&item_id=1&weeks=4"
+curl -s "http://127.0.0.1:5001/api/v1/analytics/fluctuation?dataset_id=1&item_id=1&weeks=4"
 ```
 
 ### Implemented backend endpoints (so far)
-
-- **Health**
-  - `GET /api/v1/health`
 
 - **Auth**
   - `POST /api/v1/auth/register` (JSON: `username`, `email`, `password`)
@@ -239,11 +236,16 @@ curl -s "http://127.0.0.1:5000/api/v1/analytics/fluctuation?dataset_id=1&item_id
 
 ### Backend config (env vars)
 
-- `DATABASE_PATH`: SQLite DB file path (default `data/pinkcafe.db` under `pinkcafe/backend/`)
+- `DATABASE_PATH`: SQLite DB file path (default `data/pinkcafe.db` under `src/backend/`)
 - `CORS_ORIGINS`: CORS origins (default `*`)
 - `FLASK_ENV` (or `ENV`): environment (default `development`)
 - `FLASK_DEBUG`: debug flag (`1/true/yes`)
 - `SECRET_KEY`: Flask secret key (dev default is not suitable for production)
+- `STATUS_FORCE_INACTIVE`: if true, forces the backend `/` status page to show **Inactive** (UI testing)
+- `STATUS_MARKER_FILE`: optional override path for the status marker file (used by test scripts)
+- `API_FORCE_DOWN`: if true, forces all `/api*` requests to return `503` (UI testing)
+- `SKIP_DB_INIT`: if true, skips database init on startup (useful for failure simulations)
+- `ALLOW_DB_STARTUP_FAILURE`: if true, the backend will start even if DB init fails (useful for failure simulations)
 
 ### Docker
 
@@ -255,23 +257,134 @@ From the repo root:
 docker compose up --build
 ```
 
-- Backend: `http://localhost:5000`
+- Backend: `http://localhost:5001`
 - Frontend: `http://localhost:3000`
+- Backend landing page (API-only mode): `GET /` shows a small status page with a **pulsing red “Live”** indicator (dark theme).
+- API home: `GET /api`
 - The backend’s SQLite DB persists via the `backend-db` named volume mounted at `/app/data` (default `DATABASE_PATH=data/pinkcafe.db`).
 
-#### Backend-only Docker image
+## Testing “inactive / down” states (UI + status page)
+
+This repo supports a few intentional failure modes so you can see:
+- how the **frontend behaves** when the API is down, and/or
+- how the backend **status page** (`/`) shows **Inactive**.
+
+### 1) Backend status page forced Inactive (grey badge)
+
+This keeps the backend running, but forces the **`/` status page** to render **Inactive**.
 
 ```bash
-docker build -f Dockerfile.backend -t pinkcafe-backend .
-docker run --rm -p 5000:5000 -e FLASK_ENV=development pinkcafe-backend
+docker compose down
+docker compose --profile testing up --build --force-recreate backend_inactive
 ```
 
-#### Standalone Prophet batch job (PNG output)
+Open:
+- `http://localhost:5002/` → **Inactive** badge (grey, smaller, labeled “Inactive”)
 
-The repo root `Dockerfile` runs `pinkcafe/backend/Prophet.py` and writes PNGs to `/app/output`.
+Notes:
+- This only affects the status page; API routes may still work.
+- This uses host port `5002` (so it won’t conflict with a backend already running on `5001`).
+
+### 2) Backend status page goes Inactive due to DB failure
+
+This runs the backend on host port `5003` but points `DATABASE_PATH` somewhere invalid so the DB check fails and the status page flips to **Inactive**.
 
 ```bash
-docker build -t pinkcafe-prophet .
+docker compose down
+docker compose --profile testing up --build --force-recreate backend_db_fail
+```
+
+Open:
+- `http://localhost:5003/` → **Inactive** (reason: DB unreachable)
+
+### 3) Backend status page goes Inactive after a failed test script
+
+The backend exposes a marker endpoint used by scripts:
+- `POST /api/v1/status/marker` sets an “inactive” marker
+- `DELETE /api/v1/status/marker` clears it
+
+The scripts below now auto-clear the marker when they start, and set it if they exit non‑zero:
+- `src/backend/tests/backend_smoke_test.sh`
+- `src/backend/tests/backend_test_run.sh`
+- `src/backend/test_run.sh`
+
+#### Steps
+
+1) Start the backend normally (so you can see `/` update):
+
+```bash
+docker compose down
+docker compose up --build --force-recreate backend
+```
+
+2) Run a script in a bash environment (WSL or Git Bash). To force a failure, point a CSV env var at a missing file:
+
+```bash
+cd src/backend
+COFFEE_CSV="does-not-exist.csv" ./tests/backend_smoke_test.sh
+```
+
+3) Refresh:
+- `http://localhost:5001/` → should show **Inactive** (reason: test failed)
+
+4) Run the script again without forcing a failure. On success the marker is cleared and the page returns to **Live** (as long as DB check passes).
+
+### 4) Frontend when backend is not running (connection refused)
+
+If you want the frontend to call `http://localhost:5001` but **nothing is listening**, run only the frontend (no backend container):
+
+```bash
+docker compose down
+docker compose up --build --no-deps frontend
+```
+
+Open:
+- `http://localhost:3000/` → the UI should display whatever “API down / network error” state your frontend implements.
+
+### 5) Frontend served on 5001 but API intentionally down (all `/api*` return 503)
+
+This is useful if you want the site to load from `:5001` but every API call fails.
+
+```bash
+docker compose down
+docker compose --profile testing up --build --force-recreate app_inactive
+```
+
+Open:
+- `http://localhost:5001/` → React app loads
+- Any `http://localhost:5001/api...` call → `503` (`backend_disabled`)
+
+To stop and remove containers:
+
+```bash
+docker compose down --remove-orphans
+```
+
+#### Production (single container serving API + built frontend)
+
+This uses the `app` service (behind the `prod` profile) and serves the React build from Flask:
+
+```bash
+docker compose --profile prod up --build
+```
+
+- App/API: `http://localhost:5001`
+
+#### Backend-only Docker image (without Compose)
+
+Build the backend target from the root `Dockerfile`:
+
+```bash
+docker build --target backend -t pinkcafe-backend .
+docker run --rm -p 5001:5001 -e PORT=5001 -e FLASK_ENV=development pinkcafe-backend
+```
+
+#### Prophet batch job (PNG output)
+
+The root `Dockerfile` has a `prophet` target that runs `src/backend/Prophet.py` and writes PNGs to `/app/output`.
+
+```bash
+docker build --target prophet -t pinkcafe-prophet .
 mkdir -p output
 docker run --rm -v "$(pwd)/output:/app/output" pinkcafe-prophet
 ```
@@ -281,20 +394,11 @@ docker run --rm -v "$(pwd)/output:/app/output" pinkcafe-prophet
 ```
 systems-development-group-project/
 ├── docker-compose.yml
-├── Dockerfile                  # standalone Prophet batch job (runs Prophet.py)
-├── Dockerfile.backend
+├── Dockerfile                  # multi-stage (frontend build, backend, app, prophet)
 ├── README.md
+├── src/
+│  └── backend/                 # Flask API source
 └── pinkcafe/
-   ├── Dockerfile.frontend      # React dev server
-   ├── backend/                 # Flask API (this is the backend we’re building)
-   │  ├── app.py
-   │  ├── CSV_Files/
-   │  │  ├── Pink CoffeeSales March - Oct 2025.csv
-   │  │  └── Pink CroissantSales March - Oct 2025.csv
-   │  ├── routes/
-   │  ├── services/
-   │  ├── requirements.txt
-   │  └── scripts/
    ├── src/                     # React frontend
    ├── package.json
    └── package-lock.json

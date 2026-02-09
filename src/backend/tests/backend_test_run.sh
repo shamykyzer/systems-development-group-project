@@ -4,14 +4,19 @@ set -euo pipefail
 # One-command backend test runner:
 # - ensures venv + deps
 # - starts backend in background (if not already running)
-# - waits for /api/v1/health
+# - waits for /api
 # - runs the smoke test script
 # - stops backend (if started by this script)
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:5000}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:5001}"
 DB_PATH="${DB_PATH:-data/test_run.db}"
 
 backend_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/status_marker.sh"
+status_marker_trap_exit "backend_test_run.sh"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 not found. Install Python 3.12+ first." >&2
@@ -42,8 +47,8 @@ ensure_venv() {
 }
 
 health_ok() {
-  # Accept both {"ok":true} and {"ok": true}
-  curl -sS "$BASE_URL/api/v1/health" | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true'
+  # /api returns {"status":"running", ...} when the backend is up.
+  curl -sS "$BASE_URL/api" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"running"'
 }
 
 wait_for_health() {
@@ -88,7 +93,7 @@ else
   : "${FLASK_ENV:=production}"
   : "${MPLCONFIGDIR:=/tmp/matplotlib}"
   export FLASK_ENV MPLCONFIGDIR
-  DATABASE_PATH="$DB_PATH" FLASK_DEBUG=0 ./.venv/bin/python app.py >/tmp/pinkcafe_backend_test_run.log 2>&1 &
+  DATABASE_PATH="$DB_PATH" PORT=5001 FLASK_DEBUG=0 ./.venv/bin/python app.py >/tmp/pinkcafe_backend_test_run.log 2>&1 &
   server_pid="$!"
   started_by_script="1"
 
@@ -102,7 +107,7 @@ fi
 
 echo
 echo "Running smoke test..."
-BASE_URL="$BASE_URL" "$backend_dir/scripts/backend_smoke_test.sh"
+BASE_URL="$BASE_URL" "$backend_dir/tests/backend_smoke_test.sh"
 
 echo
 echo "All done."

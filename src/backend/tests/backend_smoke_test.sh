@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:5000}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:5001}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/status_marker.sh"
+status_marker_trap_exit "backend_smoke_test.sh"
+
 # Resolve repo root robustly (works from any CWD)
 if command -v git >/dev/null 2>&1; then
   repo_root="$(git -C "$script_dir" rev-parse --show-toplevel 2>/dev/null || true)"
@@ -14,8 +18,8 @@ if [[ -z "$repo_root" ]]; then
   repo_root="$(cd "$script_dir/../../.." && pwd)"
 fi
 
-coffee_csv="${COFFEE_CSV:-$repo_root/pinkcafe/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv}"
-food_csv="${FOOD_CSV:-$repo_root/pinkcafe/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv}"
+coffee_csv="${COFFEE_CSV:-$repo_root/src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv}"
+food_csv="${FOOD_CSV:-$repo_root/src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv}"
 
 if ! command -v curl >/dev/null 2>&1; then
   echo "curl is required for this smoke test." >&2
@@ -49,8 +53,8 @@ for k in expr: obj=obj[k]
 print(obj)' "$expr"
 }
 
-echo "1) Health check: $BASE_URL/api/v1/health"
-json_get "$BASE_URL/api/v1/health" | python3 -m json.tool
+echo "1) Backend status: $BASE_URL/api"
+json_get "$BASE_URL/api" | python3 -m json.tool
 
 echo
 echo "2) Upload coffee dataset (category=coffee)"
@@ -83,3 +87,4 @@ json_get "$BASE_URL/api/v1/analytics/fluctuation?dataset_id=$coffee_ds_id&item_i
 
 echo
 echo "Smoke test complete."
+
