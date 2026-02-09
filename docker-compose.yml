@@ -32,7 +32,7 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./pinkcafe/backend:/app
+      - ./pinkcafe/Backend:/app
       - backend-db:/app/data
     environment:
       - FLASK_ENV=development
@@ -70,6 +70,7 @@ services:
 
   # Prophet Forecasting Service (optional batch job)
   # Enable with: docker compose --profile forecasting up --build prophet
+  # Prophet Forecasting Service (optional)
   prophet:
     build:
       context: .
@@ -79,6 +80,7 @@ services:
     volumes:
       # Optional: mount backend code for quick iteration (no rebuild)
       - ./pinkcafe/backend:/app/backend
+      - ./pinkcafe/Backend:/app/backend
       - prophet-output:/app/output
     environment:
       - MPLBACKEND=Agg
@@ -88,4 +90,5 @@ services:
 
 volumes:
   backend-db:
+  prophet-output:
   prophet-output:

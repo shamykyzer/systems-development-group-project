@@ -8,6 +8,7 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,7 +84,7 @@ function LoginForm() {
             </label>
             <div className="relative">
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -92,7 +93,17 @@ function LoginForm() {
             required
             disabled={loading}
           />
-          <FaEyeSlash className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer" />
+          {showPassword ? (
+            <FaEye 
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer" 
+              onClick={() => setShowPassword(false)}
+            />
+          ) : (
+            <FaEyeSlash 
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer" 
+              onClick={() => setShowPassword(true)}
+            />
+          )}
             </div>
           </div>
 
