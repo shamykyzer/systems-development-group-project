@@ -19,12 +19,12 @@ jobs:
           load: true   # <-- Important so 'docker run' can use it
 
       - name: Run container
-        run: docker run -d --name pinkcafe-app -p 8080:5000 pinkcafe-app:runtime
+        run: docker run -d --name pinkcafe-app -p 8080:5001 pinkcafe-app:runtime
 
       - name: Smoke check
         run: |
           for i in {1..30}; do
-            curl -fsS http://localhost:8080/api/v1/health >/dev/null && exit 0
+            curl -fsS http://localhost:8080/api >/dev/null && exit 0
             sleep 1
           done
           echo "App didn't respond"; docker logs pinkcafe-app || true; exit 1

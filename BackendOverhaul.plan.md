@@ -41,14 +41,14 @@ todos:
 
 ## What we have today (baseline)
 
-- **Backend code**: single file Flask app in [`pinkcafe/Backend/app.py`](/home/shamy/systems-development-group-project/pinkcafe/Backend/app.py).
+- **Backend code (legacy)**: originally a single-file Flask app (since refactored into `src/backend/`).
   - Endpoints: `POST /api/login`, `POST /api/register`, `GET /api/sales`, `GET /api/sales/summary`.
-  - DB: in-repo SQLite file `pinkcafe/Backend/pinkcafe.db`.
+  - DB: in-repo SQLite file (now managed under the backend directory / configured via `DATABASE_PATH`).
   - Auth: SHA256 hashing (`hash_password`) (not suitable for production).
-- **Data scripts**: `pinkcafe/backend/csv_import.py` (local CLI importer into the normalized schema) and `pinkcafe/backend/Prophet.py` (standalone Prophet batch script; not wired into the API).
+- **Data scripts**: `src/backend/csv_import.py` (local CLI importer into the normalized schema) and `src/backend/Prophet.py` (standalone Prophet batch script; not wired into the API).
 - **CSV reality** (important):
-  - Coffee CSV (canonical): [`pinkcafe/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv`](/home/shamy/systems-development-group-project/pinkcafe/backend/CSV_Files/Pink%20CoffeeSales%20March%20-%20Oct%202025.csv) with header `Date,Cappuccino,Americano`.
-  - Food CSV example: [`pinkcafe/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv`](/home/shamy/systems-development-group-project/pinkcafe/backend/CSV_Files/Pink%20CroissantSales%20March%20-%20Oct%202025.csv) with `Date,Number Sold` (single item).
+  - Coffee CSV (canonical): `src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv` with header `Date,Cappuccino,Americano`.
+  - Food CSV example: `src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv` with `Date,Number Sold` (single item).
 - **Scope decisions you made**:
   - Keep **Flask + SQLite**.
   - Data is **wide-column CSVs**.
@@ -71,7 +71,7 @@ Implement backend capabilities to support:
 
 ### 1) Restructure into a real Python package
 
-Convert `pinkcafe/Backend/` into a package-like layout (still Flask):
+Convert the legacy backend into a package-like layout (still Flask):
 
 - `backend/app.py` (app factory + route registration)
 - `backend/config.py` (env-driven config: DB path, CORS, secrets)
@@ -85,7 +85,7 @@ Convert `pinkcafe/Backend/` into a package-like layout (still Flask):
 - `backend/routes/` (`auth.py`, `sales.py`, `forecast.py`, `evaluation.py`)
 - `backend/tests/` (pytest)
 
-**Note:** right now Docker files reference `pinkcafe/backend` (lowercase) in [`docker-compose.yml`](/home/shamy/systems-development-group-project/docker-compose.yml) and [`Dockerfile.backend`](/home/shamy/systems-development-group-project/Dockerfile.backend), but the repo contains `pinkcafe/Backend` (uppercase). On Linux this mismatch breaks volume mounts/builds; the overhaul should normalize the folder naming.
+**Note:** backend source now lives under `src/backend/` and Docker/Compose should reference that path consistently.
 
 ### 2) Database schema (SQLite) to support the requirements
 
