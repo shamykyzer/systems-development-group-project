@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Flask Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    container_name: pinkcafe-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./pinkcafe/Backend:/app
+      - backend-db:/app/data
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    command: python app.py
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: pinkcafe-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./pinkcafe/src:/app/src
+      - ./pinkcafe/public:/app/public
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Prophet Forecasting Service (optional)
+  prophet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prophet
+    container_name: pinkcafe-prophet
+    volumes:
+      - ./pinkcafe/Backend:/app/backend
+      - prophet-output:/app/output
+    environment:
+      - MPLBACKEND=Agg
+    restart: "no"
+    profiles:
+      - forecasting
+
+volumes:
+  backend-db:
+  prophet-output:
