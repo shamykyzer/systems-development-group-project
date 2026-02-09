@@ -1,0 +1,39 @@
+# ---- Python (do not commit virtualenvs / caches / build artifacts) ----
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv*/
+.venv_test/
+venv/
+env/
+.env/
+
+# SQLite / local data (don't commit)
+*.db
+*.sqlite
+*.sqlite3
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing / type checking / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
