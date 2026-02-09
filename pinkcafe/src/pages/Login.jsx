@@ -4,16 +4,16 @@ import BusinessPromoPanel from '../components/BusinessPromoPanel.jsx';
 
 function Login() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-pinkcafe">
-      {/* Blurred background image only on large screens */}
+    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
+      {/* Blurred background image on all screens */}
       <div
-        className="hidden lg:block absolute inset-0 w-full h-full z-0"
+        className="absolute inset-0 w-full h-full z-0"
         style={{
-          backgroundImage: "url('/CoffeeBeans.jpg')",
+          backgroundImage: "url('/login_wallpaper.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          filter: 'blur(5px) brightness(0.60)',
+          filter: 'brightness(0.60)',
         }}
         aria-hidden="true"
       />

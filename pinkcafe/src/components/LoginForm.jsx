@@ -45,7 +45,7 @@ function LoginForm() {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-9xl font-extrabold font-sans text-pinkcafe2 mb-2">Pink</h1>
-        <h1 className="text-9xl font-extrabold font-sans text-pinkcafe2 mb-2 pl-9 pb-10">Cafe</h1>
+        <h1 className="text-9xl font-thin text-pinkcafe2 mb-2 pl-9 pb-10">Cafe</h1>
       </div>
 
       {/* Login Form */}
@@ -82,7 +82,7 @@ function LoginForm() {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
+            className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition mb-4"
             placeholder="••••••••"
             required
             disabled={loading}
@@ -91,11 +91,6 @@ function LoginForm() {
             </div>
           </div>
 
-          <div className="flex items-center">
-            <a href="#" className="text-sm text-pinkcafe2 font-medium pb-10 pl-60">
-          Forgot password?
-            </a>
-          </div>
 
           <button
             type="submit"
@@ -105,14 +100,6 @@ function LoginForm() {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-
-        {/* Sign Up Link */}
-      <p className="text-center text-sm text-gray-600">
-        Don't have an account?{' '}
-        <a href="#" className="text-black font-medium">
-          Sign up
-        </a>
-      </p>
     </div>
   );
 }
