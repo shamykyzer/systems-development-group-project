@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build image (buildx + load to docker)
+      - name: Build runtime image (app target)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -21,13 +21,18 @@ jobs:
       - name: Run container
         run: docker run -d --name pinkcafe-app -p 8080:5001 pinkcafe-app:runtime
 
-      - name: Smoke check
+      - name: Wait for API
         run: |
           for i in {1..30}; do
             curl -fsS http://localhost:8080/api >/dev/null && exit 0
             sleep 1
           done
           echo "App didn't respond"; docker logs pinkcafe-app || true; exit 1
+
+      - name: Backend smoke test (datasets + analytics)
+        run: |
+          # Run the same smoke test scripts used locally, but target the container's mapped port.
+          BASE_URL="http://127.0.0.1:8080" bash ./src/backend/tests/backend_smoke_test.sh
 
       - name: Cleanup
         if: always()
