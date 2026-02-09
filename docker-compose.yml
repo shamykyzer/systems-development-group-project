@@ -1,0 +1,64 @@
+services:
+  # Flask Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: pinkcafe-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./pinkcafe/backend:/app
+      - backend-db:/app/data
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - PYTHONUNBUFFERED=1
+      # Persist DB in the named volume mounted at /app/data
+      - DATABASE_PATH=/app/data/pinkcafe.db
+      # Allow local dev frontend to call the API (adjust as needed)
+      - CORS_ORIGINS=http://localhost:3000
+    command: python app.py
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./pinkcafe
+      dockerfile: Dockerfile.frontend
+    container_name: pinkcafe-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./pinkcafe/src:/app/src
+      - ./pinkcafe/public:/app/public
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Prophet Forecasting Service (optional batch job)
+  # Enable with: docker compose --profile forecasting up --build prophet
+  prophet:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pinkcafe-prophet
+    volumes:
+      # Optional: mount backend code for quick iteration (no rebuild)
+      - ./pinkcafe/backend:/app/backend
+      - prophet-output:/app/output
+    environment:
+      - MPLBACKEND=Agg
+    restart: "no"
+    profiles:
+      - forecasting
+
+volumes:
+  backend-db:
+  prophet-output:

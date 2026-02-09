@@ -1,0 +1,20 @@
+node_modules
+npm-debug.log
+.git
+.github
+*.md
+.env
+.vscode
+
+# Python / backend local artifacts (never copy into images)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+htmlcov/
+.hypothesis/
+.venv*/
