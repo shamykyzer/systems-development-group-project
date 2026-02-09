@@ -15,7 +15,9 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      // Default to same-origin so the app works when frontend is served by the backend container.
+      // For local dev with separate ports, set REACT_APP_API_URL=http://localhost:5001
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
       const response = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: {
@@ -36,7 +38,7 @@ function LoginForm() {
         setError(data.message);
       }
     } catch (err) {
-      setError('Failed to connect to server. Make sure the backend is running.');
+      setError('Could not reach the backend. Is it running on port 5001?');
       console.error('Login error:', err);
     } finally {
       setLoading(false);

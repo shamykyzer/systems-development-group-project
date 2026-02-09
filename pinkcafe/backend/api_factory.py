@@ -1,4 +1,6 @@
-from flask import Flask
+import os
+
+from flask import Flask, abort, send_from_directory
 from flask_cors import CORS
 
 from config import Config
@@ -12,7 +14,31 @@ from routes.health import bp as health_bp
 
 
 def create_app(config: Config) -> Flask:
-    app = Flask(__name__)
+    # If a React build is present, serve it from the backend container.
+    # This enables a single-image deploy (Flask API + static frontend).
+    frontend_dir = os.getenv("FRONTEND_DIR")
+    if frontend_dir and os.path.exists(os.path.join(frontend_dir, "index.html")):
+        app = Flask(__name__, static_folder=frontend_dir, static_url_path="")
+
+        @app.get("/")
+        def _frontend_index():
+            return send_from_directory(frontend_dir, "index.html")
+
+        @app.get("/<path:path>")
+        def _frontend_assets(path: str):
+            # Never swallow API routes; let Flask return 404 if an API path doesn't exist.
+            if path.startswith("api/"):
+                abort(404)
+
+            candidate = os.path.join(frontend_dir, path)
+            if os.path.exists(candidate):
+                return send_from_directory(frontend_dir, path)
+
+            # SPA fallback (React Router)
+            return send_from_directory(frontend_dir, "index.html")
+    else:
+        app = Flask(__name__)
+
     app.config["ENV"] = config.env
     app.config["DEBUG"] = config.debug
     app.config["SECRET_KEY"] = config.secret_key

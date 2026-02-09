@@ -4,8 +4,8 @@ from flask import Blueprint, jsonify
 bp = Blueprint("health", __name__)
 
 
-@bp.get("/")
-def home():
+@bp.get("/api")
+def api_home():
     return jsonify({"message": "Pink Cafe Backend API", "status": "running"})
 
 
