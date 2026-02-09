@@ -1,12 +1,36 @@
 services:
+  # Combined runtime (frontend + backend in one container)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: pinkcafe-app
+    ports:
+      - "5001:5001"
+    volumes:
+      - backend-db:/app/data
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - PYTHONUNBUFFERED=1
+      - PORT=5001
+      - DATABASE_PATH=/app/data/pinkcafe.db
+      # Same-origin by default; keep permissive unless you want to lock it down
+      - CORS_ORIGINS=*
+    profiles:
+      - prod
+    restart: unless-stopped
+
   # Flask Backend
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
+      target: backend
     container_name: pinkcafe-backend
     ports:
-      - "5000:5000"
+      - "5001:5001"
     volumes:
       - ./pinkcafe/backend:/app
       - backend-db:/app/data
@@ -14,6 +38,7 @@ services:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       - PYTHONUNBUFFERED=1
+      - PORT=5001
       # Persist DB in the named volume mounted at /app/data
       - DATABASE_PATH=/app/data/pinkcafe.db
       # Allow local dev frontend to call the API (adjust as needed)
@@ -24,8 +49,9 @@ services:
   # React Frontend
   frontend:
     build:
-      context: ./pinkcafe
-      dockerfile: Dockerfile.frontend
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
     container_name: pinkcafe-frontend
     ports:
       - "3000:3000"
@@ -34,7 +60,7 @@ services:
       - ./pinkcafe/public:/app/public
       - /app/node_modules
     environment:
-      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_API_URL=http://localhost:5001
       - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
@@ -48,6 +74,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: prophet
     container_name: pinkcafe-prophet
     volumes:
       # Optional: mount backend code for quick iteration (no rebuild)

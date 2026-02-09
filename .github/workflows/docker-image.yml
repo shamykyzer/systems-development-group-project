@@ -14,20 +14,21 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          tags: bakery-ui:runtime
+          target: app
+          tags: pinkcafe-app:runtime
           load: true   # <-- Important so 'docker run' can use it
 
       - name: Run container
-        run: docker run -d --name bakery-ui -p 8080:80 bakery-ui:runtime
+        run: docker run -d --name pinkcafe-app -p 8080:5000 pinkcafe-app:runtime
 
       - name: Smoke check
         run: |
           for i in {1..30}; do
-            curl -fsS http://localhost:8080 >/dev/null && exit 0
+            curl -fsS http://localhost:8080/api/v1/health >/dev/null && exit 0
             sleep 1
           done
-          echo "UI didn't respond"; docker logs bakery-ui || true; exit 1
+          echo "App didn't respond"; docker logs pinkcafe-app || true; exit 1
 
       - name: Cleanup
         if: always()
-        run: docker rm -f bakery-ui || true
+        run: docker rm -f pinkcafe-app || true
