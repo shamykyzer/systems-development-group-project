@@ -95,9 +95,15 @@ function LoginForm() {
           </div>
 
           <div className="flex items-center">
-            <a href="#" className="text-sm text-pinkcafe2 font-medium pb-10 pl-60">
-          Forgot password?
-            </a>
+            <button
+              type="button"
+              className="text-sm text-pinkcafe2 font-medium pb-10 pl-60 hover:underline"
+              onClick={() =>
+                setError('Password reset is not implemented yet. Please contact an administrator.')
+              }
+            >
+              Forgot password?
+            </button>
           </div>
 
           <button
@@ -112,9 +118,15 @@ function LoginForm() {
         {/* Sign Up Link */}
       <p className="text-center text-sm text-gray-600">
         Don't have an account?{' '}
-        <a href="#" className="text-black font-medium">
+        <button
+          type="button"
+          className="text-black font-medium hover:underline"
+          onClick={() =>
+            setError('Sign up is not implemented yet. Please contact an administrator.')
+          }
+        >
           Sign up
-        </a>
+        </button>
       </p>
     </div>
   );
