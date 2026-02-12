@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import {FaEyeSlash, FaEye} from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -14,7 +16,9 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      // Default to same-origin so the app works when frontend is served by the backend container.
+      // For local dev with separate ports, set REACT_APP_API_URL=http://localhost:5001
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
       const response = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: {
@@ -27,14 +31,15 @@ function LoginForm() {
 
       if (data.success) {
         console.log('Login successful:', data.user);
-        alert(`Welcome ${data.user.username}!`);
-        // TODO: Store user data in localStorage or context
-        // TODO: Redirect to dashboard
+        // Optional: store user for later use
+        localStorage.setItem('pinkcafe_user', JSON.stringify(data.user));
+        // Redirect to home immediately
+        navigate('/home');
       } else {
         setError(data.message);
       }
     } catch (err) {
-      setError('Failed to connect to server. Make sure the backend is running.');
+      setError('Could not reach the backend. Is it running on port 5001?');
       console.error('Login error:', err);
     } finally {
       setLoading(false);
@@ -102,6 +107,17 @@ function LoginForm() {
             </div>
           </div>
 
+          <div className="flex items-center">
+            <button
+              type="button"
+              className="text-sm text-pinkcafe2 font-medium pb-10 pl-60 hover:underline"
+              onClick={() =>
+                setError('Password reset is not implemented yet. Please contact an administrator.')
+              }
+            >
+              Forgot password?
+            </button>
+          </div>
 
           <button
             type="submit"
@@ -111,6 +127,20 @@ function LoginForm() {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+
+        {/* Sign Up Link */}
+      <p className="text-center text-sm text-gray-600">
+        Don't have an account?{' '}
+        <button
+          type="button"
+          className="text-black font-medium hover:underline"
+          onClick={() =>
+            setError('Sign up is not implemented yet. Please contact an administrator.')
+          }
+        >
+          Sign up
+        </button>
+      </p>
     </div>
   );
 }
