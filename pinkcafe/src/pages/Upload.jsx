@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import NavBar from '../components/NavBar';
 import ForecastCsvUploader from '../components/ForecastCsvUploader';
+import DataPreviewTable from '../components/DataPreviewTable';
 
 
 
@@ -75,9 +76,18 @@ function Upload() {
         </div>
       )}
       
-      <div className="w-full md:w-10/12 lg:w-8/12 mx-auto p-6 space-y-6">
-        {/* <CSVValidator data={uploadedData} /> */}
-        {/* <DataPreviewTable data={uploadedData} /> */}
+      <div className="w-full p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          {/* Left column - Data Preview */}
+          <div>
+            <DataPreviewTable data={uploadedData?.preview} />
+          </div>
+          
+          {/* Right column - Placeholder for future component */}
+          <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-100 flex items-center justify-center">
+            <p className="text-gray-400 text-center">Future Component Here</p>
+          </div>
+        </div>
       </div>
     </div>
 </div>
