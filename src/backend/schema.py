@@ -85,5 +85,36 @@ CREATE TABLE IF NOT EXISTS evaluation_metrics (
 );
 
 CREATE INDEX IF NOT EXISTS idx_eval_run_item ON evaluation_metrics(evaluation_run_id, item_id);
+
+CREATE TABLE IF NOT EXISTS prophet_presets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  preset_name TEXT UNIQUE NOT NULL,
+  growth TEXT NOT NULL DEFAULT 'linear',
+  changepoint_prior_scale REAL NOT NULL DEFAULT 0.05,
+  seasonality_prior_scale REAL NOT NULL DEFAULT 10.0,
+  seasonality_mode TEXT NOT NULL DEFAULT 'multiplicative',
+  daily_seasonality INTEGER NOT NULL DEFAULT 0,
+  weekly_seasonality INTEGER NOT NULL DEFAULT 1,
+  yearly_seasonality INTEGER NOT NULL DEFAULT 1,
+  forecast_periods INTEGER NOT NULL DEFAULT 365,
+  floor_multiplier REAL NOT NULL DEFAULT 0.5,
+  cap_multiplier REAL NOT NULL DEFAULT 1.5,
+  custom_seasonality_enabled INTEGER NOT NULL DEFAULT 0,
+  custom_seasonality_name TEXT DEFAULT '',
+  custom_seasonality_period REAL DEFAULT 30.5,
+  custom_seasonality_fourier_order INTEGER DEFAULT 3,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default preset
+INSERT OR IGNORE INTO prophet_presets (
+  preset_name, growth, changepoint_prior_scale, seasonality_prior_scale,
+  seasonality_mode, daily_seasonality, weekly_seasonality, yearly_seasonality,
+  forecast_periods, floor_multiplier, cap_multiplier, custom_seasonality_enabled,
+  custom_seasonality_name, custom_seasonality_period, custom_seasonality_fourier_order
+) VALUES (
+  'Default', 'linear', 0.05, 10.0, 'multiplicative', 0, 1, 1, 365, 0.5, 1.5, 0, '', 30.5, 3
+);
 """
 
