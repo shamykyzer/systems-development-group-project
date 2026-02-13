@@ -1,33 +1,66 @@
 name: Docker Image CI
 
 on:
-  push: { branches: [ "main" ] }
-  pull_request: { branches: [ "main" ] }
+  push:
+    branches: ["main"]
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "src/backend/**"
+      - "pinkcafe/**"
+      - ".github/workflows/docker-image.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "src/backend/**"
+      - "pinkcafe/**"
+      - ".github/workflows/docker-image.yml"
+
+concurrency:
+  group: docker-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
-      - name: Build image (buildx + load to docker)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build runtime image (app target)
         uses: docker/build-push-action@v6
         with:
           context: .
-          tags: bakery-ui:runtime
+          target: app
+          tags: pinkcafe-app:runtime
           load: true   # <-- Important so 'docker run' can use it
+          provenance: false
+          sbom: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run container
-        run: docker run -d --name bakery-ui -p 8080:80 bakery-ui:runtime
+        run: docker run -d --name pinkcafe-app -p 8080:5001 pinkcafe-app:runtime
 
-      - name: Smoke check
+      - name: Wait for API
         run: |
           for i in {1..30}; do
-            curl -fsS http://localhost:8080 >/dev/null && exit 0
+            curl -fsS http://localhost:8080/api >/dev/null && exit 0
             sleep 1
           done
-          echo "UI didn't respond"; docker logs bakery-ui || true; exit 1
+          echo "App didn't respond"; docker logs pinkcafe-app || true; exit 1
+
+      - name: Backend smoke test (datasets + analytics)
+        run: |
+          # Run the same smoke test scripts used locally, but target the container's mapped port.
+          BASE_URL="http://127.0.0.1:8080" bash ./src/backend/tests/backend_smoke_test.sh
 
       - name: Cleanup
         if: always()
-        run: docker rm -f bakery-ui || true
+        run: docker rm -f pinkcafe-app || true
