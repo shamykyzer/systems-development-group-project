@@ -3,6 +3,13 @@ import React, { useState, useEffect } from 'react';
 // API base URL configuration - uses environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
+//choose what settings to show
+//add tool tips and ranges
+//comment
+//show unsaved changes
+//check error handeling and ranges
+//add icons to buttons
+
 // Default settings for Prophet forecasting model
 const DEFAULT_SETTINGS = {
   growth: 'linear',                          // Growth type: 'linear' or 'logistic'
@@ -37,6 +44,9 @@ function ProphetSettingsPanel() {
   
   // State: Show/hide create preset dialog
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  
+  // State: Creation mode - 'new' for default settings, 'duplicate' for current settings
+  const [creationMode, setCreationMode] = useState('new');
   
   // State: Model configuration settings with default values
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
@@ -167,7 +177,38 @@ function ProphetSettingsPanel() {
   };
 
   /**
-   * Creates a new preset with the current settings
+   * Opens the create dialog in 'new' mode (with default settings)
+   */
+  const handleNewPreset = () => {
+    setCreationMode('new');
+    setShowCreateDialog(true);
+    setNewPresetName('');
+    setSettings(DEFAULT_SETTINGS); // Populate fields with default settings
+  };
+
+  /**
+   * Opens the create dialog in 'duplicate' mode (with current settings)
+   * Reloads the preset settings from the backend to ensure we're duplicating saved values
+   */
+  const handleDuplicatePreset = async () => {
+    setCreationMode('duplicate');
+    setShowCreateDialog(true);
+    setNewPresetName('');
+    // Refetch the current preset settings to ensure we're duplicating the saved values
+    await fetchPresetSettings(selectedPreset);
+  };
+
+  /**
+   * Cancels the preset creation and returns to normal view
+   */
+  const handleCancelCreate = () => {
+    setShowCreateDialog(false);
+    setNewPresetName('');
+    setMessage({ type: '', text: '' });
+  };
+
+  /**
+   * Creates a new preset based on the creation mode
    */
   const handleCreatePreset = async () => {
     if (!newPresetName.trim()) {
@@ -179,6 +220,7 @@ function ProphetSettingsPanel() {
     setMessage({ type: '', text: '' });
     
     try {
+      // Always use current settings (which may have been modified by the user)
       const response = await fetch(`${API_BASE_URL}/api/prophet/presets`, {
         method: 'POST',
         headers: {
@@ -193,11 +235,14 @@ function ProphetSettingsPanel() {
       const data = await response.json();
       
       if (response.ok) {
-        setMessage({ type: 'success', text: `Preset '${newPresetName}' created successfully!` });
+        const modeText = creationMode === 'new' ? 'created with default settings' : 'duplicated';
+        setMessage({ type: 'success', text: `Preset '${newPresetName}' ${modeText} successfully!` });
         setNewPresetName('');
         setShowCreateDialog(false);
+        setCreationMode('new');
         await fetchAvailablePresets();
         setSelectedPreset(newPresetName);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to create preset' });
       }
@@ -317,7 +362,7 @@ function ProphetSettingsPanel() {
               value={selectedPreset}
               onChange={(e) => setSelectedPreset(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-              disabled={loading}
+              disabled={loading || showCreateDialog}
             >
               {/* Populate dropdown with available presets */}
               {availablePresets.map(preset => (
@@ -329,17 +374,26 @@ function ProphetSettingsPanel() {
           {/* Preset action buttons */}
           <div className="flex gap-2 sm:pt-7">
             <button
-              onClick={() => setShowCreateDialog(true)}
+              onClick={handleNewPreset}
               disabled={loading}
               className="flex-1 sm:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50"
-              title="Create new preset"
+              title="Create new preset with default settings"
             >
               + New
             </button>
             
             <button
+              onClick={handleDuplicatePreset}
+              disabled={loading}
+              className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50"
+              title="Duplicate current preset"
+            >
+              Duplicate
+            </button>
+            
+            <button
               onClick={handleDeletePreset}
-              disabled={loading || selectedPreset === 'Default'}
+              disabled={loading || selectedPreset === 'Default' || showCreateDialog}
               className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title={selectedPreset === 'Default' ? 'Cannot delete Default preset' : 'Delete preset'}
             >
@@ -349,51 +403,37 @@ function ProphetSettingsPanel() {
         </div>
       </div>
 
-      {/* Create Preset Dialog */}
-      {showCreateDialog && (
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 border-2 border-green-500">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Create New Preset</h3>
-          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Preset Name
-              </label>
-              <input
-                type="text"
-                value={newPresetName}
-                onChange={(e) => setNewPresetName(e.target.value)}
-                placeholder="Enter preset name..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                onKeyPress={(e) => e.key === 'Enter' && handleCreatePreset()}
-              />
-            </div>
-            <button
-              onClick={handleCreatePreset}
-              disabled={loading || !newPresetName.trim()}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base font-semibold rounded-lg transition duration-200 disabled:opacity-50"
-            >
-              Create
-            </button>
-            <button
-              onClick={() => {
-                setShowCreateDialog(false);
-                setNewPresetName('');
-              }}
-              disabled={loading}
-              className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm sm:text-base font-semibold rounded-lg transition duration-200"
-            >
-              Cancel
-            </button>
-          </div>
-          <p className="text-sm text-gray-500 mt-2">
-            The new preset will be created with the current settings displayed below.
-          </p>
-        </div>
-      )}
-
       {/* Main settings configuration form */}
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Preset Configuration</h2>
+      <div className={`bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 ${
+        showCreateDialog ? `border-2 ${creationMode === 'new' ? 'border-green-500' : 'border-blue-500'}` : ''
+      }`}>
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">
+          {showCreateDialog 
+            ? (creationMode === 'new' ? 'Create New Preset' : 'Duplicate Preset')
+            : 'Preset Configuration'}
+        </h2>
+        
+        {/* Preset name input - shown when creating */}
+        {showCreateDialog && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Preset Name
+            </label>
+            <input
+              type="text"
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.target.value)}
+              placeholder="Enter preset name..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              onKeyPress={(e) => e.key === 'Enter' && handleCreatePreset()}
+            />
+            <p className="text-sm text-gray-500 mt-2">
+              {creationMode === 'new' 
+                ? 'The preset will be created with default settings shown below.' 
+                : `The preset will be created with the current settings from '${selectedPreset}'.`}
+            </p>
+          </div>
+        )}
         
         {/* Two-column grid layout for configuration inputs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -618,31 +658,61 @@ function ProphetSettingsPanel() {
       {/* Action buttons section */}
       <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
         <div className="flex flex-wrap gap-4">
-          {/* Save settings button */}
-          <button
-            onClick={handleSaveSettings}
-            disabled={loading}
-            className="flex-1 min-w-0 bg-pink-600 hover:bg-pink-700 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Saving...' : 'Save Preset'}
-          </button>
-          
-          {/* Reset to defaults button */}
-          <button
-            onClick={handleResetToDefaults}
-            disabled={loading}
-            className="flex-1 min-w-0 bg-gray-500 hover:bg-gray-600 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Reset to Defaults
-          </button>
+          {showCreateDialog ? (
+            /* Create/Duplicate mode buttons */
+            <>
+              <button
+                onClick={handleCreatePreset}
+                disabled={loading || !newPresetName.trim()}
+                className={`flex-1 min-w-0 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  creationMode === 'new'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {loading ? 'Creating...' : (creationMode === 'new' ? 'Create Preset' : 'Duplicate Preset')}
+              </button>
+              
+              <button
+                onClick={handleCancelCreate}
+                disabled={loading}
+                className="flex-1 min-w-0 bg-gray-500 hover:bg-gray-600 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            /* Normal mode buttons */
+            <>
+              {/* Save settings button */}
+              <button
+                onClick={handleSaveSettings}
+                disabled={loading}
+                className="flex-1 min-w-0 bg-pink-600 hover:bg-pink-700 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save Preset'}
+              </button>
+              
+              {/* Reset to defaults button */}
+              <button
+                onClick={handleResetToDefaults}
+                disabled={loading}
+                className="flex-1 min-w-0 bg-gray-500 hover:bg-gray-600 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reset to Defaults
+              </button>
+            </>
+          )}
         </div>
         
         {/* Informational note about model retraining */}
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>Note:</strong> After updating a preset, you'll need to retrain Prophet using that preset for changes to take effect.
-          </p>
-        </div>
+        {!showCreateDialog && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> After updating a preset, you'll need to retrain Prophet using that preset for changes to take effect.
+            </p>
+          </div>
+        )}
       </div>
     </div>
     </div>  
