@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 //comment
-//save which preset should be used to train
 
 // Default settings for Prophet forecasting model
 const DEFAULT_SETTINGS = {
@@ -80,6 +79,35 @@ function ProphetSettingsPanel() {
   const hasUnsavedChanges = !showCreateDialog && JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
   /**
+   * Updates the active preset in the backend
+   * 
+   * @param {string} presetName - The name of the preset to set as active
+   */
+  const updateActivePreset = async (presetName) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/prophet/active-preset`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ preset_name: presetName })
+      });
+    } catch (error) {
+      console.error('Error updating active preset:', error);
+    }
+  };
+
+  /**
+   * Handles preset selection change
+   * 
+   * @param {string} presetName - The name of the newly selected preset
+   */
+  const handlePresetChange = async (presetName) => {
+    setSelectedPreset(presetName);
+    await updateActivePreset(presetName);
+  };
+
+  /**
    * Tooltip component for parameter descriptions
    */
   const TooltipIcon = ({ text }) => (
@@ -110,7 +138,14 @@ function ProphetSettingsPanel() {
       // Extract preset names from the response array
       if (Array.isArray(data)) {
         setAvailablePresets(data.map(preset => preset.preset_name));
-        if (data.length > 0 && !selectedPreset) {
+        
+        // Fetch the active preset
+        const activeResponse = await fetch(`${API_BASE_URL}/api/prophet/active-preset`);
+        const activeData = await activeResponse.json();
+        
+        if (activeData.preset_name) {
+          setSelectedPreset(activeData.preset_name);
+        } else if (data.length > 0 && !selectedPreset) {
           setSelectedPreset(data[0].preset_name);
         }
       }
@@ -282,7 +317,7 @@ function ProphetSettingsPanel() {
         setShowCreateDialog(false);
         setCreationMode('new');
         await fetchAvailablePresets();
-        setSelectedPreset(newPresetName);
+        await handlePresetChange(newPresetName);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to create preset' });
@@ -321,7 +356,7 @@ function ProphetSettingsPanel() {
       if (response.ok) {
         setMessage({ type: 'success', text: `Preset '${selectedPreset}' deleted successfully!` });
         await fetchAvailablePresets();
-        setSelectedPreset('Default');
+        await handlePresetChange('Default');
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to delete preset' });
       }
@@ -402,7 +437,7 @@ function ProphetSettingsPanel() {
             </label>
             <select
               value={selectedPreset}
-              onChange={(e) => setSelectedPreset(e.target.value)}
+              onChange={(e) => handlePresetChange(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={loading || showCreateDialog}
             >

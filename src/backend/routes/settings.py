@@ -174,3 +174,50 @@ def delete_preset(preset_name):
             return jsonify({"message": f"Preset '{preset_name}' deleted successfully"})
         else:
             return jsonify({"error": "Preset not found"}), 404
+
+@bp.route('/api/prophet/active-preset', methods=['GET'])
+def get_active_preset():
+    """Get the currently active Prophet preset"""
+    db_path = current_app.config.get("DATABASE_PATH", "data/pinkcafe.db")
+    with connect(db_path) as conn:
+        preset = conn.execute(
+            'SELECT preset_name FROM prophet_presets WHERE is_active = 1'
+        ).fetchone()
+        
+        if preset:
+            return jsonify({"preset_name": preset['preset_name']})
+        else:
+            # If no active preset, return Default
+            return jsonify({"preset_name": "Default"})
+
+@bp.route('/api/prophet/active-preset', methods=['PUT'])
+def set_active_preset():
+    """Set a preset as the active one"""
+    data = request.get_json()
+    preset_name = data.get('preset_name')
+    
+    if not preset_name:
+        return jsonify({"error": "preset_name is required"}), 400
+    
+    db_path = current_app.config.get("DATABASE_PATH", "data/pinkcafe.db")
+    with connect(db_path) as conn:
+        # Check if preset exists
+        existing = conn.execute(
+            'SELECT * FROM prophet_presets WHERE preset_name = ?',
+            (preset_name,)
+        ).fetchone()
+        
+        if not existing:
+            return jsonify({"error": "Preset not found"}), 404
+        
+        # Deactivate all presets
+        conn.execute('UPDATE prophet_presets SET is_active = 0')
+        
+        # Activate the selected preset
+        conn.execute(
+            'UPDATE prophet_presets SET is_active = 1 WHERE preset_name = ?',
+            (preset_name,)
+        )
+        conn.commit()
+        
+        return jsonify({"message": f"Preset '{preset_name}' set as active"})
