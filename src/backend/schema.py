@@ -103,6 +103,11 @@ CREATE TABLE IF NOT EXISTS prophet_presets (
   custom_seasonality_name TEXT DEFAULT '',
   custom_seasonality_period REAL DEFAULT 30.5,
   custom_seasonality_fourier_order INTEGER DEFAULT 3,
+  n_changepoints INTEGER NOT NULL DEFAULT 25,
+  changepoint_range REAL NOT NULL DEFAULT 0.8,
+  interval_width REAL NOT NULL DEFAULT 0.80,
+  holidays_prior_scale REAL NOT NULL DEFAULT 10.0,
+  holidays TEXT DEFAULT '[]',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -112,9 +117,11 @@ INSERT OR IGNORE INTO prophet_presets (
   preset_name, growth, changepoint_prior_scale, seasonality_prior_scale,
   seasonality_mode, daily_seasonality, weekly_seasonality, yearly_seasonality,
   forecast_periods, floor_multiplier, cap_multiplier, custom_seasonality_enabled,
-  custom_seasonality_name, custom_seasonality_period, custom_seasonality_fourier_order
+  custom_seasonality_name, custom_seasonality_period, custom_seasonality_fourier_order,
+  n_changepoints, changepoint_range, interval_width, holidays_prior_scale, holidays
 ) VALUES (
-  'Default', 'linear', 0.05, 10.0, 'multiplicative', 0, 1, 1, 365, 0.5, 1.5, 0, '', 30.5, 3
+  'Default', 'linear', 0.05, 10.0, 'multiplicative', 0, 1, 1, 365, 0.5, 1.5, 0, '', 30.5, 3,
+  25, 0.8, 0.80, 10.0, '[]'
 );
 """
 

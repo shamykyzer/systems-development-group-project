@@ -3,28 +3,30 @@ import React, { useState, useEffect } from 'react';
 // API base URL configuration - uses environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
-//choose what settings to show
-//add tool tips and ranges
 //comment
-//check error handeling and ranges
 //save which preset should be used to train
 
 // Default settings for Prophet forecasting model
 const DEFAULT_SETTINGS = {
   growth: 'linear',                          // Growth type: 'linear' or 'logistic'
   changepoint_prior_scale: 0.05,             // Controls trend flexibility (0.001-0.5)
-  seasonality_prior_scale: 10.0,             // Controls seasonality strength (0.01-50)
+  seasonality_prior_scale: 10.0,             // Controls seasonality strength (0.1-100)
   seasonality_mode: 'multiplicative',        // How seasonality affects the trend
   daily_seasonality: false,                  // Enable/disable daily patterns
   weekly_seasonality: true,                  // Enable/disable weekly patterns
   yearly_seasonality: true,                  // Enable/disable yearly patterns
   forecast_periods: 365,                     // Number of days to forecast (1-730)
-  floor_multiplier: 0.5,                     // Minimum constraint (0-1)
-  cap_multiplier: 1.5,                       // Maximum constraint (1-3)
+  floor_multiplier: 0.5,                     // Minimum constraint (0-0.95)
+  cap_multiplier: 1.5,                       // Maximum constraint (1.1-5.0)
   custom_seasonality_enabled: false,         // Toggle custom seasonality
   custom_seasonality_name: '',               // Name of custom seasonality
-  custom_seasonality_period: 30.5,           // Period in days for custom seasonality
-  custom_seasonality_fourier_order: 3        // Fourier order for custom seasonality (1-20)
+  custom_seasonality_period: 30.5,           // Period in days for custom seasonality (7-365)
+  custom_seasonality_fourier_order: 3,       // Fourier order for custom seasonality (1-20)
+  n_changepoints: 25,                        // Number of potential changepoints (5-50)
+  changepoint_range: 0.8,                    // Proportion of history for changepoints (0.6-0.95)
+  interval_width: 0.80,                      // Prediction interval width (0.50-0.99)
+  holidays_prior_scale: 10.0,                // How much holidays affect predictions (0.1-100)
+  holidays: []                               // Selected holidays for the model
 };
 
 /**
@@ -78,6 +80,25 @@ function ProphetSettingsPanel() {
   const hasUnsavedChanges = !showCreateDialog && JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
   /**
+   * Tooltip component for parameter descriptions
+   */
+  const TooltipIcon = ({ text }) => (
+    <span className="inline-block group relative cursor-pointer">
+      <svg className="w-4 h-4 inline text-gray-400 hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+      </svg>
+      <span className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out absolute right-[-8px] top-6 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+        {text.split('\n').map((line, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <br />}
+            {line}
+          </React.Fragment>
+        ))}
+      </span>
+    </span>
+  );
+
+  /**
    * Fetches the list of available presets from the backend API
    * Populates the preset dropdown selector
    */
@@ -126,7 +147,12 @@ function ProphetSettingsPanel() {
           custom_seasonality_enabled: Boolean(data.custom_seasonality_enabled),
           custom_seasonality_name: data.custom_seasonality_name,
           custom_seasonality_period: data.custom_seasonality_period,
-          custom_seasonality_fourier_order: data.custom_seasonality_fourier_order
+          custom_seasonality_fourier_order: data.custom_seasonality_fourier_order,
+          n_changepoints: data.n_changepoints ?? 25,
+          changepoint_range: data.changepoint_range ?? 0.8,
+          interval_width: data.interval_width ?? 0.80,
+          holidays_prior_scale: data.holidays_prior_scale ?? 10.0,
+          holidays: data.holidays ?? []
         };
         setSettings(loadedSettings);
         setSavedSettings(loadedSettings); // Update saved settings
@@ -148,6 +174,13 @@ function ProphetSettingsPanel() {
    */
   const handleInputChange = (field, value) => {
     setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  /**
+   * Prevents scroll wheel from changing number input values
+   */
+  const handleNumberScroll = (e) => {
+    e.target.blur();
   };
 
   /**
@@ -459,9 +492,9 @@ function ProphetSettingsPanel() {
           
           {/* Growth Type selector - determines how the trend grows over time */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Growth Type
-              <span className="text-gray-500 text-xs ml-2">(Linear or Logistic)</span>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Growth Type <span className="text-gray-500 text-xs">(Linear or Logistic)</span></span>
+              <TooltipIcon text={"Linear: Assumes unbounded growth. Best for most bakery sales without natural limits.\n\nLogistic: Used when there's a maximum capacity (saturating growth), requires setting cap_multiplier."} />
             </label>
             <select
               value={settings.growth}
@@ -475,9 +508,9 @@ function ProphetSettingsPanel() {
 
           {/* Seasonality Mode - how seasonal effects combine with trend */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Seasonality Mode
-              <span className="text-gray-500 text-xs ml-2">(Multiplicative or Additive)</span>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Seasonality Mode <span className="text-gray-500 text-xs">(Multiplicative or Additive)</span></span>
+              <TooltipIcon text={"Multiplicative: Seasonal effects scale with the trend (e.g., 20% increase during holidays).\n\nAdditive: Fixed seasonal effect regardless of trend level."} />
             </label>
             <select
               value={settings.seasonality_mode}
@@ -491,9 +524,9 @@ function ProphetSettingsPanel() {
 
           {/* Changepoint Prior Scale - controls how flexible the trend is */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Changepoint Prior Scale
-              <span className="text-gray-500 text-xs ml-2">(0.001 - 0.5)</span>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Changepoint Prior Scale <span className="text-gray-500 text-xs">(0.001 - 0.5)</span></span>
+              <TooltipIcon text={"Controls how flexible the trend is at changepoints.\n\nLower values (0.001-0.05) create smoother, more conservative trends.\n\nHigher values (0.1-0.5) allow more dramatic trend changes."} />
             </label>
             <input
               type="number"
@@ -502,34 +535,34 @@ function ProphetSettingsPanel() {
               max="0.5"
               value={settings.changepoint_prior_scale}
               onChange={(e) => handleInputChange('changepoint_prior_scale', parseFloat(e.target.value))}
+              onWheel={handleNumberScroll}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Controls trend flexibility. Lower = smoother</p>
           </div>
 
           {/* Seasonality Prior Scale - controls strength of seasonal components */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Seasonality Prior Scale
-              <span className="text-gray-500 text-xs ml-2">(0.01 - 50)</span>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Seasonality Prior Scale <span className="text-gray-500 text-xs">(0.1 - 100)</span></span>
+              <TooltipIcon text={"Controls the strength of seasonal patterns (weekly, yearly).\n\nHigher values (20-100) allow stronger seasonal effects.\n\nLower values (0.1-5) dampen seasonality for smoother predictions."} />
             </label>
             <input
               type="number"
               step="0.1"
-              min="0.01"
-              max="50"
+              min="0.1"
+              max="100"
               value={settings.seasonality_prior_scale}
               onChange={(e) => handleInputChange('seasonality_prior_scale', parseFloat(e.target.value))}
+              onWheel={handleNumberScroll}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Controls seasonality strength</p>
           </div>
 
           {/* Forecast Periods - how many days into the future to predict */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Forecast Periods (days)
-              <span className="text-gray-500 text-xs ml-2">(1 - 730)</span>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Forecast Periods <span className="text-gray-500 text-xs">(1 - 730 days)</span></span>
+              <TooltipIcon text={"Number of days to forecast into the future.\n\nLonger forecasts have wider uncertainty intervals.\n\nMaximum 730 days (2 years)."} />
             </label>
             <input
               type="number"
@@ -537,50 +570,131 @@ function ProphetSettingsPanel() {
               max="730"
               value={settings.forecast_periods}
               onChange={(e) => handleInputChange('forecast_periods', parseInt(e.target.value))}
+              onWheel={handleNumberScroll}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Interval Width - uncertainty prediction interval */}
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Interval Width <span className="text-gray-500 text-xs">(0.50 - 0.99)</span></span>
+              <TooltipIcon text={"Confidence level for prediction intervals.\n\n0.80 (80%) means 80% confidence the actual sales will fall within the predicted range.\n\nDoes not affect the main prediction, only the uncertainty bounds."} />
+            </label>
+            <input
+              type="number"
+              step="0.05"
+              min="0.50"
+              max="0.99"
+              value={settings.interval_width}
+              onChange={(e) => handleInputChange('interval_width', parseFloat(e.target.value))}
+              onWheel={handleNumberScroll}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Floor Multiplier - sets minimum value constraint for logistic growth */}
+          {settings.growth === 'logistic' && (
+            <div>
+              <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                <span>Floor Multiplier <span className="text-gray-500 text-xs">(0 - 0.95)</span></span>
+                <TooltipIcon text={"Minimum sales constraint as a proportion of historical data. 0.5 means sales won't drop below 50% of baseline.\n\nLower values allow bigger drops; higher values enforce a safety threshold.\n\nNot used with linear growth."} />
+              </label>
+              <input
+                type="number"
+                step="0.05"
+                min="0"
+                max="0.95"
+                value={settings.floor_multiplier}
+                onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
+                onWheel={handleNumberScroll}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Cap Multiplier - sets maximum value constraint for logistic growth */}
+          {settings.growth === 'logistic' && (
+            <div>
+              <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                <span>Cap Multiplier <span className="text-gray-500 text-xs">(1.1 - 5.0)</span></span>
+                <TooltipIcon text={"Maximum sales capacity as a proportion of historical peak. 1.5 means sales can't exceed 150% of historical maximum.\n\nUse 1.2-2.0 for established bakeries with physical constraints. Higher values (2.0-5.0) for growing businesses.\n\nNot used with linear growth."} />
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="1.1"
+                max="5.0"
+                value={settings.cap_multiplier}
+                onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
+                onWheel={handleNumberScroll}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          {/* Number of Changepoints - potential trend breaks */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Floor Multiplier
-              <span className="text-gray-500 text-xs ml-2">(0 - 1)</span>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Number of Changepoints <span className="text-gray-500 text-xs">(5 - 50)</span></span>
+              <TooltipIcon text={"Number of potential points where the trend can change direction.\n\nDefault 25 works for most cases.\n\nUse fewer (10-15) for stable businesses with consistent growth.\n\nUse more (30-50) for volatile periods.\n\nMore changepoints = more flexible but potentially overfits."} />
+            </label>
+            <input
+              type="number"
+              min="5"
+              max="50"
+              value={settings.n_changepoints}
+              onChange={(e) => handleInputChange('n_changepoints', parseInt(e.target.value))}
+              onWheel={handleNumberScroll}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Changepoint Range - proportion of history for fitting changepoints */}
+          <div>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Changepoint Range <span className="text-gray-500 text-xs">(0.6 - 0.95)</span></span>
+              <TooltipIcon text={"Proportion of historical data where changepoints can occur.\n\nDefault 0.80 means changepoints only in first 80% of data, preventing overfitting to recent noise.\n\nUse 0.90-0.95 if recent changes are important (new menu, expansion).\n\nUse 0.60-0.75 for more stable, conservative forecasts."} />
             </label>
             <input
               type="number"
               step="0.05"
-              min="0"
-              max="1"
-              value={settings.floor_multiplier}
-              onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
+              min="0.6"
+              max="0.95"
+              value={settings.changepoint_range}
+              onChange={(e) => handleInputChange('changepoint_range', parseFloat(e.target.value))}
+              onWheel={handleNumberScroll}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Minimum value constraint multiplier</p>
           </div>
 
-          {/* Cap Multiplier - sets maximum value constraint for logistic growth */}
+          {/* Holidays Prior Scale - impact of holidays on predictions */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cap Multiplier
-              <span className="text-gray-500 text-xs ml-2">(1 - 3)</span>
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+              <span>Holidays Prior Scale <span className="text-gray-500 text-xs">(0.1 - 100)</span></span>
+              <TooltipIcon text={"Controls how much selected holidays affect predictions.\n\nHigher values (20-100) create larger holiday spikes.\n\nLower values (1-10) give subtle holiday effects.\n\nRequires holidays to be selected below."} />
             </label>
             <input
               type="number"
-              step="0.1"
-              min="1"
-              max="3"
-              value={settings.cap_multiplier}
-              onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
+              step="0.5"
+              min="0.1"
+              max="100"
+              value={settings.holidays_prior_scale}
+              onChange={(e) => handleInputChange('holidays_prior_scale', parseFloat(e.target.value))}
+              onWheel={handleNumberScroll}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">Maximum value constraint multiplier</p>
           </div>
         </div>
 
         {/* Seasonality component toggles section */}
         <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
-          <h3 className="text-base sm:text-lg font-medium text-gray-800 mb-4">Seasonality Components</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-base sm:text-lg font-medium text-gray-800">
+              Seasonality Components
+            </h3>
+            <TooltipIcon text={"Enable seasonal patterns in your forecast.\n\nDaily: patterns within a day (peak hours for bakery).\n\nWeekly: day-of-week effects (weekend vs weekday).\n\nYearly: seasonal patterns across the year (summer slump, winter holidays)."} />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Daily seasonality toggle */}
             <label className="flex items-center space-x-3">
@@ -617,17 +731,70 @@ function ProphetSettingsPanel() {
           </div>
         </div>
 
+        {/* Holidays selection section */}
+        <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-base sm:text-lg font-medium text-gray-800">
+              Holidays & Events
+            </h3>
+            <TooltipIcon text={"Select holidays that create predictable sales spikes or dips for your bakery. Prophet will learn the typical effect of each holiday from historical data and apply it to future forecasts.\n\nStrength controlled by Holidays Prior Scale above."} />
+          </div>
+          <p className="text-sm text-gray-600 mb-4">Select holidays that significantly impact bakery sales</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              'New Year\'s Day',
+              'Valentine\'s Day',
+              'Easter',
+              'Mother\'s Day',
+              'Memorial Day',
+              'Father\'s Day',
+              'Independence Day',
+              'Labor Day',
+              'Halloween',
+              'Thanksgiving',
+              'Christmas Eve',
+              'Christmas',
+              'New Year\'s Eve',
+              'Super Bowl Sunday',
+              'Graduation Season',
+              'Black Friday'
+            ].map(holiday => (
+              <label key={holiday} className="flex items-center space-x-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={settings.holidays?.includes(holiday) || false}
+                  onChange={(e) => {
+                    const currentHolidays = settings.holidays || [];
+                    if (e.target.checked) {
+                      handleInputChange('holidays', [...currentHolidays, holiday]);
+                    } else {
+                      handleInputChange('holidays', currentHolidays.filter(h => h !== holiday));
+                    }
+                  }}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-gray-700">{holiday}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Custom seasonality configuration section */}
         <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
-          <div className="flex items-center mb-4">
-            {/* Toggle to enable/disable custom seasonality */}
-            <input
-              type="checkbox"
-              checked={settings.custom_seasonality_enabled}
-              onChange={(e) => handleInputChange('custom_seasonality_enabled', e.target.checked)}
-              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-            />
-            <h3 className="text-base sm:text-lg font-medium text-gray-800 ml-3">Custom Seasonality</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              {/* Toggle to enable/disable custom seasonality */}
+              <input
+                type="checkbox"
+                checked={settings.custom_seasonality_enabled}
+                onChange={(e) => handleInputChange('custom_seasonality_enabled', e.target.checked)}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <h3 className="text-base sm:text-lg font-medium text-gray-800 ml-3">
+                Custom Seasonality
+              </h3>
+            </div>
+            <TooltipIcon text={"Add custom seasonal patterns beyond daily/weekly/yearly.\n\nOnly enable if you have a specific recurring pattern not covered by standard seasonality."} />
           </div>
           
           {/* Custom seasonality fields - only shown when enabled */}
@@ -635,7 +802,10 @@ function ProphetSettingsPanel() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-8">
               {/* Custom seasonality name input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                  <span>Name</span>
+                  <TooltipIcon text="Descriptive name for your custom seasonality (e.g., 'monthly_promotion', 'biweekly_payday')." />
+                </label>
                 <input
                   type="text"
                   value={settings.custom_seasonality_name}
@@ -647,25 +817,35 @@ function ProphetSettingsPanel() {
               
               {/* Custom seasonality period (in days) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Period (days)</label>
+                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                  <span>Period <span className="text-gray-500 text-xs">(7 - 365 days)</span></span>
+                  <TooltipIcon text={"Length of the recurring cycle in days.\n\nMust be at least 7 days. Should be a pattern you observe repeating consistently in your sales data."} />
+                </label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="0.5"
+                  min="7"
+                  max="365"
                   value={settings.custom_seasonality_period}
                   onChange={(e) => handleInputChange('custom_seasonality_period', parseFloat(e.target.value))}
+                  onWheel={handleNumberScroll}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               
               {/* Fourier order - controls smoothness of custom seasonality */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fourier Order</label>
+                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                  <span>Fourier Order <span className="text-gray-500 text-xs">(1 - 20)</span></span>
+                  <TooltipIcon text={"Controls the complexity of the seasonal pattern.\n\nLower values (1-5) create smooth, simple patterns.\n\nHigher values (6-15) allow more complex, irregular patterns.\n\nMaximum 20, but values above 10 rarely needed."} />
+                </label>
                 <input
                   type="number"
                   min="1"
                   max="20"
                   value={settings.custom_seasonality_fourier_order}
                   onChange={(e) => handleInputChange('custom_seasonality_fourier_order', parseInt(e.target.value))}
+                  onWheel={handleNumberScroll}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
