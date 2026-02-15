@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 // API base URL configuration - uses environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
-//comment
-
 // Default settings for Prophet forecasting model
 const DEFAULT_SETTINGS = {
   growth: 'linear',                          // Growth type: 'linear' or 'logistic'
@@ -80,6 +78,7 @@ function ProphetSettingsPanel() {
 
   /**
    * Updates the active preset in the backend
+   * Marks the specified preset as active in the database so it persists across sessions
    * 
    * @param {string} presetName - The name of the preset to set as active
    */
@@ -98,7 +97,8 @@ function ProphetSettingsPanel() {
   };
 
   /**
-   * Handles preset selection change
+   * Handles preset selection change from dropdown
+   * Updates both the local state and persists the selection to the backend
    * 
    * @param {string} presetName - The name of the newly selected preset
    */
@@ -108,7 +108,11 @@ function ProphetSettingsPanel() {
   };
 
   /**
-   * Tooltip component for parameter descriptions
+   * TooltipIcon Component
+   * Displays an info icon that shows a tooltip on hover with detailed parameter descriptions
+   * Supports multi-line text by splitting on \n characters and rendering as separate lines
+   * 
+   * @param {string} text - The tooltip text to display (supports \n for line breaks)
    */
   const TooltipIcon = ({ text }) => (
     <span className="inline-block group relative cursor-pointer">
@@ -128,24 +132,26 @@ function ProphetSettingsPanel() {
 
   /**
    * Fetches the list of available presets from the backend API
-   * Populates the preset dropdown selector
+   * Also retrieves and sets the currently active preset as the selected one
+   * This ensures the last-used preset is automatically selected on component mount
    */
   const fetchAvailablePresets = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/prophet/presets`);
       const data = await response.json();
       
-      // Extract preset names from the response array
+      // Extract preset names from the response array and populate dropdown
       if (Array.isArray(data)) {
         setAvailablePresets(data.map(preset => preset.preset_name));
         
-        // Fetch the active preset
+        // Fetch the active preset from backend to restore user's last selection
         const activeResponse = await fetch(`${API_BASE_URL}/api/prophet/active-preset`);
         const activeData = await activeResponse.json();
         
         if (activeData.preset_name) {
           setSelectedPreset(activeData.preset_name);
         } else if (data.length > 0 && !selectedPreset) {
+          // Fallback: use first available preset if no active preset is set
           setSelectedPreset(data[0].preset_name);
         }
       }
@@ -285,6 +291,8 @@ function ProphetSettingsPanel() {
 
   /**
    * Creates a new preset based on the creation mode
+   * Mode 'new' uses default settings, mode 'duplicate' uses current preset settings
+   * After creation, automatically sets the new preset as active and switches to it
    */
   const handleCreatePreset = async () => {
     if (!newPresetName.trim()) {
@@ -296,7 +304,7 @@ function ProphetSettingsPanel() {
     setMessage({ type: '', text: '' });
     
     try {
-      // Always use current settings (which may have been modified by the user)
+      // Use current settings (default or duplicated) for the new preset
       const response = await fetch(`${API_BASE_URL}/api/prophet/presets`, {
         method: 'POST',
         headers: {
@@ -316,6 +324,7 @@ function ProphetSettingsPanel() {
         setNewPresetName('');
         setShowCreateDialog(false);
         setCreationMode('new');
+        // Refresh preset list and set newly created preset as active
         await fetchAvailablePresets();
         await handlePresetChange(newPresetName);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -332,6 +341,7 @@ function ProphetSettingsPanel() {
 
   /**
    * Deletes the currently selected preset
+   * Prevents deletion of the Default preset and switches to Default after successful deletion
    */
   const handleDeletePreset = async () => {
     if (selectedPreset === 'Default') {
@@ -355,6 +365,7 @@ function ProphetSettingsPanel() {
       
       if (response.ok) {
         setMessage({ type: 'success', text: `Preset '${selectedPreset}' deleted successfully!` });
+        // Refresh preset list and switch to Default preset
         await fetchAvailablePresets();
         await handlePresetChange('Default');
       } else {
@@ -500,7 +511,7 @@ function ProphetSettingsPanel() {
           )}
         </div>
         
-        {/* Preset name input - shown when creating */}
+        {/* Preset name input - only shown when creating/duplicating a preset */}
         {showCreateDialog && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -512,7 +523,7 @@ function ProphetSettingsPanel() {
               onChange={(e) => setNewPresetName(e.target.value)}
               placeholder="Enter preset name..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleCreatePreset()}
+              onKeyPress={(e) => e.key === 'Enter' && handleCreatePreset()} // Allow Enter key to submit
             />
             <p className="text-sm text-gray-500 mt-2">
               {creationMode === 'new' 
@@ -628,7 +639,8 @@ function ProphetSettingsPanel() {
             />
           </div>
 
-          {/* Floor Multiplier - sets minimum value constraint for logistic growth */}
+          {/* Floor Multiplier - only shown for logistic growth */}
+          {/* Conditionally rendered because floor constraint is not applicable to linear growth */}
           {settings.growth === 'logistic' && (
             <div>
               <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
@@ -648,7 +660,8 @@ function ProphetSettingsPanel() {
             </div>
           )}
 
-          {/* Cap Multiplier - sets maximum value constraint for logistic growth */}
+          {/* Cap Multiplier - only shown for logistic growth */}
+          {/* Conditionally rendered because cap constraint is not applicable to linear growth */}
           {settings.growth === 'logistic' && (
             <div>
               <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
@@ -941,7 +954,7 @@ function ProphetSettingsPanel() {
           )}
         </div>
         
-        {/* Informational note about model retraining */}
+        {/* Informational note about model retraining - only shown in normal mode */}
         {!showCreateDialog && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
