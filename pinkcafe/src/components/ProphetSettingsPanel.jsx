@@ -6,9 +6,8 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 //choose what settings to show
 //add tool tips and ranges
 //comment
-//show unsaved changes
 //check error handeling and ranges
-//add icons to buttons
+//save which preset should be used to train
 
 // Default settings for Prophet forecasting model
 const DEFAULT_SETTINGS = {
@@ -51,6 +50,9 @@ function ProphetSettingsPanel() {
   // State: Model configuration settings with default values
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   
+  // State: Saved settings to track unsaved changes
+  const [savedSettings, setSavedSettings] = useState(DEFAULT_SETTINGS);
+  
   // State: Loading indicator for async operations
   const [loading, setLoading] = useState(false);
   
@@ -71,6 +73,9 @@ function ProphetSettingsPanel() {
       fetchPresetSettings(selectedPreset);
     }
   }, [selectedPreset]);
+
+  // Computed: Check if there are unsaved changes
+  const hasUnsavedChanges = !showCreateDialog && JSON.stringify(settings) !== JSON.stringify(savedSettings);
 
   /**
    * Fetches the list of available presets from the backend API
@@ -107,7 +112,7 @@ function ProphetSettingsPanel() {
       
       if (response.ok) {
         // Update settings state with fetched data from backend, converting integers to booleans for checkboxes
-        setSettings({
+        const loadedSettings = {
           growth: data.growth,
           changepoint_prior_scale: data.changepoint_prior_scale,
           seasonality_prior_scale: data.seasonality_prior_scale,
@@ -122,7 +127,9 @@ function ProphetSettingsPanel() {
           custom_seasonality_name: data.custom_seasonality_name,
           custom_seasonality_period: data.custom_seasonality_period,
           custom_seasonality_fourier_order: data.custom_seasonality_fourier_order
-        });
+        };
+        setSettings(loadedSettings);
+        setSavedSettings(loadedSettings); // Update saved settings
         setMessage({ type: '', text: '' }); // Clear any previous messages
       }
     } catch (error) {
@@ -163,6 +170,7 @@ function ProphetSettingsPanel() {
       const data = await response.json();
       
       if (response.ok) {
+        setSavedSettings(settings); // Update saved settings after successful save
         setMessage({ type: 'success', text: `Preset '${selectedPreset}' saved successfully!` });
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -319,6 +327,7 @@ function ProphetSettingsPanel() {
       const data = await response.json();
       
       if (response.ok) {
+        setSavedSettings(DEFAULT_SETTINGS); // Update saved settings after reset
         setMessage({ type: 'success', text: `Preset '${selectedPreset}' reset to defaults and saved successfully!` });
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -361,7 +370,7 @@ function ProphetSettingsPanel() {
             <select
               value={selectedPreset}
               onChange={(e) => setSelectedPreset(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={loading || showCreateDialog}
             >
               {/* Populate dropdown with available presets */}
@@ -376,27 +385,30 @@ function ProphetSettingsPanel() {
             <button
               onClick={handleNewPreset}
               disabled={loading}
-              className="flex-1 sm:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50"
+              className="flex-1 sm:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
               title="Create new preset with default settings"
             >
-              + New
+              <img src="/icons/plus-solid-full.svg" alt="" className="w-4 h-4 brightness-0 invert" />
+              New
             </button>
             
             <button
               onClick={handleDuplicatePreset}
               disabled={loading}
-              className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50"
+              className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
               title="Duplicate current preset"
             >
+              <img src="/icons/clone-solid-full.svg" alt="" className="w-4 h-4 brightness-0 invert" />
               Duplicate
             </button>
             
             <button
               onClick={handleDeletePreset}
               disabled={loading || selectedPreset === 'Default' || showCreateDialog}
-              className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               title={selectedPreset === 'Default' ? 'Cannot delete Default preset' : 'Delete preset'}
             >
+              <img src="/icons/trash-solid-full.svg" alt="" className="w-4 h-4 brightness-0 invert" />
               Delete
             </button>
           </div>
@@ -407,11 +419,18 @@ function ProphetSettingsPanel() {
       <div className={`bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 ${
         showCreateDialog ? `border-2 ${creationMode === 'new' ? 'border-green-500' : 'border-blue-500'}` : ''
       }`}>
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">
-          {showCreateDialog 
-            ? (creationMode === 'new' ? 'Create New Preset' : 'Duplicate Preset')
-            : 'Preset Configuration'}
-        </h2>
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+            {showCreateDialog 
+              ? (creationMode === 'new' ? 'Create New Preset' : 'Duplicate Preset')
+              : 'Preset Configuration'}
+          </h2>
+          {hasUnsavedChanges && (
+            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs sm:text-sm font-semibold rounded-full border border-yellow-300">
+              Unsaved Changes
+            </span>
+          )}
+        </div>
         
         {/* Preset name input - shown when creating */}
         {showCreateDialog && (
@@ -424,7 +443,7 @@ function ProphetSettingsPanel() {
               value={newPresetName}
               onChange={(e) => setNewPresetName(e.target.value)}
               placeholder="Enter preset name..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               onKeyPress={(e) => e.key === 'Enter' && handleCreatePreset()}
             />
             <p className="text-sm text-gray-500 mt-2">
@@ -447,7 +466,7 @@ function ProphetSettingsPanel() {
             <select
               value={settings.growth}
               onChange={(e) => handleInputChange('growth', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="linear">Linear</option>
               <option value="logistic">Logistic</option>
@@ -463,7 +482,7 @@ function ProphetSettingsPanel() {
             <select
               value={settings.seasonality_mode}
               onChange={(e) => handleInputChange('seasonality_mode', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="multiplicative">Multiplicative</option>
               <option value="additive">Additive</option>
@@ -483,7 +502,7 @@ function ProphetSettingsPanel() {
               max="0.5"
               value={settings.changepoint_prior_scale}
               onChange={(e) => handleInputChange('changepoint_prior_scale', parseFloat(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">Controls trend flexibility. Lower = smoother</p>
           </div>
@@ -501,7 +520,7 @@ function ProphetSettingsPanel() {
               max="50"
               value={settings.seasonality_prior_scale}
               onChange={(e) => handleInputChange('seasonality_prior_scale', parseFloat(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">Controls seasonality strength</p>
           </div>
@@ -518,7 +537,7 @@ function ProphetSettingsPanel() {
               max="730"
               value={settings.forecast_periods}
               onChange={(e) => handleInputChange('forecast_periods', parseInt(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -535,7 +554,7 @@ function ProphetSettingsPanel() {
               max="1"
               value={settings.floor_multiplier}
               onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">Minimum value constraint multiplier</p>
           </div>
@@ -553,7 +572,7 @@ function ProphetSettingsPanel() {
               max="3"
               value={settings.cap_multiplier}
               onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">Maximum value constraint multiplier</p>
           </div>
@@ -569,7 +588,7 @@ function ProphetSettingsPanel() {
                 type="checkbox"
                 checked={settings.daily_seasonality}
                 onChange={(e) => handleInputChange('daily_seasonality', e.target.checked)}
-                className="w-5 h-5 text-pink-600 rounded focus:ring-pink-500"
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
               />
               <span className="text-gray-700">Daily Seasonality</span>
             </label>
@@ -580,7 +599,7 @@ function ProphetSettingsPanel() {
                 type="checkbox"
                 checked={settings.weekly_seasonality}
                 onChange={(e) => handleInputChange('weekly_seasonality', e.target.checked)}
-                className="w-5 h-5 text-pink-600 rounded focus:ring-pink-500"
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
               />
               <span className="text-gray-700">Weekly Seasonality</span>
             </label>
@@ -591,7 +610,7 @@ function ProphetSettingsPanel() {
                 type="checkbox"
                 checked={settings.yearly_seasonality}
                 onChange={(e) => handleInputChange('yearly_seasonality', e.target.checked)}
-                className="w-5 h-5 text-pink-600 rounded focus:ring-pink-500"
+                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
               />
               <span className="text-gray-700">Yearly Seasonality</span>
             </label>
@@ -606,7 +625,7 @@ function ProphetSettingsPanel() {
               type="checkbox"
               checked={settings.custom_seasonality_enabled}
               onChange={(e) => handleInputChange('custom_seasonality_enabled', e.target.checked)}
-              className="w-5 h-5 text-pink-600 rounded focus:ring-pink-500"
+              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
             />
             <h3 className="text-base sm:text-lg font-medium text-gray-800 ml-3">Custom Seasonality</h3>
           </div>
@@ -622,7 +641,7 @@ function ProphetSettingsPanel() {
                   value={settings.custom_seasonality_name}
                   onChange={(e) => handleInputChange('custom_seasonality_name', e.target.value)}
                   placeholder="e.g., monthly"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               
@@ -634,7 +653,7 @@ function ProphetSettingsPanel() {
                   step="0.1"
                   value={settings.custom_seasonality_period}
                   onChange={(e) => handleInputChange('custom_seasonality_period', parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               
@@ -647,7 +666,7 @@ function ProphetSettingsPanel() {
                   max="20"
                   value={settings.custom_seasonality_fourier_order}
                   onChange={(e) => handleInputChange('custom_seasonality_fourier_order', parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -688,9 +707,11 @@ function ProphetSettingsPanel() {
               <button
                 onClick={handleSaveSettings}
                 disabled={loading}
-                className="flex-1 min-w-0 bg-pink-600 hover:bg-pink-700 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex-1 min-w-0 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  hasUnsavedChanges ? 'bg-pink-600 hover:bg-pink-700' : 'bg-pink-500 hover:bg-pink-600'
+                }`}
               >
-                {loading ? 'Saving...' : 'Save Preset'}
+                {loading ? 'Saving...' : (hasUnsavedChanges ? 'Save Changes' : 'Save Preset')}
               </button>
               
               {/* Reset to defaults button */}
