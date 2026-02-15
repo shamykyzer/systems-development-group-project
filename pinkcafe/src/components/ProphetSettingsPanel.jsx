@@ -96,22 +96,22 @@ function ProphetSettingsPanel() {
       const data = await response.json();
       
       if (response.ok) {
-        // Update settings state with fetched data, converting integers to booleans
+        // Update settings state with fetched data from backend, converting integers to booleans for checkboxes
         setSettings({
-          growth: data.growth || 'linear',
-          changepoint_prior_scale: data.changepoint_prior_scale || 0.05,
-          seasonality_prior_scale: data.seasonality_prior_scale || 10.0,
-          seasonality_mode: data.seasonality_mode || 'multiplicative',
+          growth: data.growth,
+          changepoint_prior_scale: data.changepoint_prior_scale,
+          seasonality_prior_scale: data.seasonality_prior_scale,
+          seasonality_mode: data.seasonality_mode,
           daily_seasonality: Boolean(data.daily_seasonality),
           weekly_seasonality: Boolean(data.weekly_seasonality),
           yearly_seasonality: Boolean(data.yearly_seasonality),
-          forecast_periods: data.forecast_periods || 365,
-          floor_multiplier: data.floor_multiplier || 0.5,
-          cap_multiplier: data.cap_multiplier || 1.5,
+          forecast_periods: data.forecast_periods,
+          floor_multiplier: data.floor_multiplier,
+          cap_multiplier: data.cap_multiplier,
           custom_seasonality_enabled: Boolean(data.custom_seasonality_enabled),
-          custom_seasonality_name: data.custom_seasonality_name || '',
-          custom_seasonality_period: data.custom_seasonality_period || 30.5,
-          custom_seasonality_fourier_order: data.custom_seasonality_fourier_order || 3
+          custom_seasonality_name: data.custom_seasonality_name,
+          custom_seasonality_period: data.custom_seasonality_period,
+          custom_seasonality_fourier_order: data.custom_seasonality_fourier_order
         });
         setMessage({ type: '', text: '' }); // Clear any previous messages
       }
@@ -248,12 +248,43 @@ function ProphetSettingsPanel() {
   };
 
   /**
-   * Resets settings to default values
+   * Resets settings to default values and saves them to the backend
    */
-  const handleResetToDefaults = () => {
-    setSettings(DEFAULT_SETTINGS);
-    setMessage({ type: 'info', text: 'Settings reset to defaults' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleResetToDefaults = async () => {
+    if (!window.confirm(`Are you sure you want to reset settings to defaults for preset '${selectedPreset}'?`)) {
+      return;
+    }
+
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+    
+    try {
+      // Reset to default settings
+      setSettings(DEFAULT_SETTINGS);
+      
+      // Save the default settings to the backend
+      const response = await fetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(DEFAULT_SETTINGS)
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: `Preset '${selectedPreset}' reset to defaults and saved successfully!` });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to save default settings' });
+      }
+    } catch (error) {
+      console.error('Error resetting to defaults:', error);
+      setMessage({ type: 'error', text: 'Failed to reset and save settings. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
