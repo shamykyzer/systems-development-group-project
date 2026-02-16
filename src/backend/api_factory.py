@@ -13,6 +13,7 @@ from routes.datasets import bp as datasets_bp
 from routes.evaluation import bp as evaluation_bp
 from routes.forecast import bp as forecast_bp
 from routes.health import bp as health_bp
+from routes.settings import bp as settings_bp
 from status_marker import marker_path, read_marker
 
 
@@ -280,6 +281,7 @@ def create_app(config: Config) -> Flask:
     app.register_blueprint(analytics_bp)
     app.register_blueprint(forecast_bp)
     app.register_blueprint(evaluation_bp)
+    app.register_blueprint(settings_bp)
 
     return app
 
