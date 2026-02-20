@@ -58,14 +58,15 @@ function Upload() {
   };
 
   return (
-<div className="flex min-h-screen bg-pinkcafe">
+<div className="flex min-h-screen bg-[linear-gradient(to_bottom,#f5dce0_0%,#efd2d6_12%,#e8c8cc_25%,#e0bcc0_38%,#d8b0b4_50%,#d0a4a8_62%,#c9989c_75%,#c18c90_88%,#b98084_100%)]">
     <NavBar />
-    <div className="flex-1 md:ml-64 overflow-y-auto">
+    <div className="flex-1 md:ml-64 overflow-y-auto flex flex-col items-center justify-center min-h-screen py-8">
+      <div className="w-full max-w-xl flex flex-col items-center gap-6">
       <ForecastCsvUploader onFileSelect={handleFileSelect} />
       
       {/* Process button - shown after file selected but before processing */}
       {selectedFile && !uploadedData && (
-        <div className="w-full md:w-6/12 mx-auto px-6 pb-6">
+        <div className="w-full max-w-md mx-auto px-6">
           <button
             onClick={handleProcessFile}
             className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
@@ -74,8 +75,9 @@ function Upload() {
           </button>
         </div>
       )}
+      </div>
       
-      <div className="w-full md:w-10/12 lg:w-8/12 mx-auto p-6 space-y-6">
+      <div className="w-full md:w-10/12 lg:w-8/12 mx-auto p-6 space-y-6 mt-8">
         {/* <CSVValidator data={uploadedData} /> */}
         {/* <DataPreviewTable data={uploadedData} /> */}
       </div>
