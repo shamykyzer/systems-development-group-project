@@ -39,4 +39,3 @@ def clear_marker(path: str) -> None:
         os.remove(path)
     except FileNotFoundError:
         pass
-

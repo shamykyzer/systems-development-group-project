@@ -39,7 +39,9 @@ def _mape(y_true: List[float], y_pred: List[float]) -> float:
     return 100.0 * sum(abs((a - b) / a) for a, b in pairs) / len(pairs)
 
 
-def _compute_backtest_windows(end_iso: str, train_weeks: int, horizon_weeks: int) -> Tuple[str, str, str, str]:
+def _compute_backtest_windows(
+    end_iso: str, train_weeks: int, horizon_weeks: int
+) -> Tuple[str, str, str, str]:
     if horizon_weeks <= 0:
         raise EvaluationError("horizon_weeks must be > 0")
     if train_weeks < 4 or train_weeks > 8:
@@ -59,7 +61,9 @@ def _compute_backtest_windows(end_iso: str, train_weeks: int, horizon_weeks: int
     )
 
 
-def _load_actual_holdout(conn, dataset_id: int, item_id: int, start_iso: str, end_iso: str) -> pd.DataFrame:
+def _load_actual_holdout(
+    conn, dataset_id: int, item_id: int, start_iso: str, end_iso: str
+) -> pd.DataFrame:
     return load_item_series(conn, dataset_id, item_id, start_iso, end_iso)
 
 
@@ -86,7 +90,12 @@ def evaluate_item_backtest(
 
     horizon_days = horizon_weeks * 7
     algo = (algorithm or "baseline").strip().lower()
-    if algo in {"baseline", "seasonal_naive", "seasonal_naive_7", "baseline_seasonal_naive_7"}:
+    if algo in {
+        "baseline",
+        "seasonal_naive",
+        "seasonal_naive_7",
+        "baseline_seasonal_naive_7",
+    }:
         algo_name = "baseline_seasonal_naive_7"
         pred = forecast_baseline_seasonal_naive_7(history, horizon_days)
     elif algo == "prophet":
@@ -96,7 +105,9 @@ def evaluate_item_backtest(
         raise EvaluationError("algorithm must be 'prophet' or 'baseline'")
 
     # Align predictions with actual by date
-    actual_map = {d.strftime("%Y-%m-%d"): float(y) for d, y in zip(actual["ds"], actual["y"])}
+    actual_map = {
+        d.strftime("%Y-%m-%d"): float(y) for d, y in zip(actual["ds"], actual["y"])
+    }
     y_true: List[float] = []
     y_pred: List[float] = []
     for r in pred.to_dict(orient="records"):
@@ -122,7 +133,9 @@ def evaluate_item_backtest(
     }
 
 
-def create_evaluation_run(conn, dataset_id: int, algorithm: str, params: Dict[str, Any]) -> int:
+def create_evaluation_run(
+    conn, dataset_id: int, algorithm: str, params: Dict[str, Any]
+) -> int:
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO evaluation_runs (dataset_id, algorithm, params_json) VALUES (?, ?, ?)",
@@ -131,9 +144,14 @@ def create_evaluation_run(conn, dataset_id: int, algorithm: str, params: Dict[st
     return int(cur.lastrowid)
 
 
-def store_metrics(conn, evaluation_run_id: int, item_id: int, metrics: Dict[str, float]) -> None:
+def store_metrics(
+    conn, evaluation_run_id: int, item_id: int, metrics: Dict[str, float]
+) -> None:
     cur = conn.cursor()
-    rows = [(evaluation_run_id, item_id, name, float(value)) for name, value in metrics.items()]
+    rows = [
+        (evaluation_run_id, item_id, name, float(value))
+        for name, value in metrics.items()
+    ]
     cur.executemany(
         "INSERT INTO evaluation_metrics (evaluation_run_id, item_id, metric_name, metric_value) VALUES (?, ?, ?, ?)",
         rows,
@@ -158,7 +176,12 @@ def run_evaluation(
     results: Dict[str, Any] = {"dataset_id": dataset_id, "runs": []}
     for algo in algorithms:
         algo_norm = (algo or "").strip().lower()
-        if algo_norm in {"baseline", "seasonal_naive", "seasonal_naive_7", "baseline_seasonal_naive_7"}:
+        if algo_norm in {
+            "baseline",
+            "seasonal_naive",
+            "seasonal_naive_7",
+            "baseline_seasonal_naive_7",
+        }:
             algo_name = "baseline_seasonal_naive_7"
         elif algo_norm == "prophet":
             algo_name = "prophet"
@@ -169,7 +192,11 @@ def run_evaluation(
             conn,
             dataset_id=dataset_id,
             algorithm=algo_name,
-            params={"train_weeks": train_weeks, "horizon_weeks": horizon_weeks, "category": category},
+            params={
+                "train_weeks": train_weeks,
+                "horizon_weeks": horizon_weeks,
+                "category": category,
+            },
         )
 
         per_item = []
@@ -189,7 +216,8 @@ def run_evaluation(
             except (EvaluationError, ForecastError) as e:
                 per_item.append({"item": item, "error": str(e)})
 
-        results["runs"].append({"evaluation_run_id": run_id, "algorithm": algo_name, "results": per_item})
+        results["runs"].append(
+            {"evaluation_run_id": run_id, "algorithm": algo_name, "results": per_item}
+        )
 
     return results
-

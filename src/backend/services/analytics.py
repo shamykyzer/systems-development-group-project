@@ -32,7 +32,9 @@ def get_dataset_end_date(conn, dataset_id: int) -> Optional[str]:
     return str(row["end_date"])
 
 
-def list_items_for_dataset(conn, dataset_id: int, category: Optional[str] = None) -> List[Dict[str, Any]]:
+def list_items_for_dataset(
+    conn, dataset_id: int, category: Optional[str] = None
+) -> List[Dict[str, Any]]:
     if category is None:
         rows = conn.execute(
             """
@@ -112,7 +114,9 @@ def fluctuation(
 
     start_iso, end_iso = _window_start_end(end_date_iso, weeks)
 
-    item = conn.execute("SELECT id, name, category FROM items WHERE id = ?", (item_id,)).fetchone()
+    item = conn.execute(
+        "SELECT id, name, category FROM items WHERE id = ?", (item_id,)
+    ).fetchone()
     if not item:
         raise AnalyticsError("unknown item_id")
 
@@ -140,9 +144,12 @@ def fluctuation(
 
     return {
         "dataset_id": dataset_id,
-        "item": {"id": int(item["id"]), "name": item["name"], "category": item["category"]},
+        "item": {
+            "id": int(item["id"]),
+            "name": item["name"],
+            "category": item["category"],
+        },
         "weeks": weeks,
         "window": {"start_date": start_iso, "end_date": end_iso},
         "series": series,
     }
-
