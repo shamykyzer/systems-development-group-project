@@ -68,6 +68,10 @@ echo "3) Upload food dataset (category=food)"
 echo "   - file: $food_csv"
 food_resp="$(json_post_dataset "food" "food-smoke" "$food_csv")"
 echo "$food_resp" | python3 -m json.tool
+if ! echo "$food_resp" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get('success') else 1)" 2>/dev/null; then
+  echo "Food dataset upload failed. Check CSV format (first column must be 'Date')." >&2
+  exit 1
+fi
 food_ds_id="$(echo "$food_resp" | extract_json_field 'dataset.id')"
 
 echo
