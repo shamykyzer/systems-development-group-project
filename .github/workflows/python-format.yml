@@ -1,0 +1,65 @@
+name: Python Format & Lint
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/backend/**/*.py"
+      - ".github/workflows/python-format.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/backend/**/*.py"
+      - ".github/workflows/python-format.yml"
+
+permissions:
+  contents: write  # Needed to push format commits to PR branch
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Check UTF-8 encoding
+        run: |
+          python3 -c "
+          import sys
+          from pathlib import Path
+          for f in Path('src/backend').rglob('*.py'):
+              try:
+                  f.read_bytes().decode('utf-8')
+              except UnicodeDecodeError as e:
+                  print(f'::error file={f}::Not valid UTF-8: {e}')
+                  sys.exit(1)
+          print('All Python files are valid UTF-8')
+          "
+
+      - name: Ruff format (apply)
+        run: ruff format src/backend/
+
+      - name: Ruff lint
+        run: ruff check src/backend/
+
+      - name: Commit and push if formatted
+        if: github.event_name == 'pull_request' && github.repository == github.event.pull_request.head.repo.full_name
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A src/backend/
+          if git diff --staged --quiet; then
+            echo "No formatting changes needed"
+          else
+            git commit -m "style: apply ruff format [skip ci]"
+            git push
+          fi
