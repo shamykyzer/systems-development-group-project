@@ -1,2 +1,1 @@
 """PinkCafe backend package."""
-

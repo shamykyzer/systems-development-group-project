@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 
@@ -83,7 +82,9 @@ def load_item_series(
     return pd.DataFrame({"ds": ds, "y": y})
 
 
-def forecast_baseline_seasonal_naive_7(history: pd.DataFrame, horizon_days: int) -> pd.DataFrame:
+def forecast_baseline_seasonal_naive_7(
+    history: pd.DataFrame, horizon_days: int
+) -> pd.DataFrame:
     """
     Simple, fast baseline:
       yhat(t) = y(t-7) if available, else last observed
@@ -137,20 +138,39 @@ def forecast_prophet(history: pd.DataFrame, horizon_days: int) -> pd.DataFrame:
     )
     m.fit(df)
 
-    future = m.make_future_dataframe(periods=horizon_days, freq="D", include_history=False)
+    future = m.make_future_dataframe(
+        periods=horizon_days, freq="D", include_history=False
+    )
     fc = m.predict(future)[["ds", "yhat", "yhat_lower", "yhat_upper"]]
     fc["date"] = fc["ds"].dt.strftime("%Y-%m-%d")
     return fc[["date", "yhat", "yhat_lower", "yhat_upper"]]
 
 
-def create_model_run(conn, dataset_id: int, item_id: int, algorithm: str, train_start: str, train_end: str, horizon_days: int, params: Dict[str, Any]) -> int:
+def create_model_run(
+    conn,
+    dataset_id: int,
+    item_id: int,
+    algorithm: str,
+    train_start: str,
+    train_end: str,
+    horizon_days: int,
+    params: Dict[str, Any],
+) -> int:
     cur = conn.cursor()
     cur.execute(
         """
         INSERT INTO model_runs (dataset_id, item_id, algorithm, train_start, train_end, horizon_days, params_json)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (dataset_id, item_id, algorithm, train_start, train_end, horizon_days, json.dumps(params)),
+        (
+            dataset_id,
+            item_id,
+            algorithm,
+            train_start,
+            train_end,
+            horizon_days,
+            json.dumps(params),
+        ),
     )
     return int(cur.lastrowid)
 
@@ -227,7 +247,9 @@ def run_forecast(
     }
 
 
-def zoom_forecast(conn, model_run_id: int, start_iso: str, end_iso: str) -> Dict[str, Any]:
+def zoom_forecast(
+    conn, model_run_id: int, start_iso: str, end_iso: str
+) -> Dict[str, Any]:
     start_d = _parse_iso_date(start_iso)
     end_d = _parse_iso_date(end_iso)
     if end_d < start_d:
@@ -255,4 +277,3 @@ def zoom_forecast(conn, model_run_id: int, start_iso: str, end_iso: str) -> Dict
         "window": {"start_date": start_iso, "end_date": end_iso},
         "forecast": [dict(r) for r in rows],
     }
-

@@ -1,0 +1,133 @@
+name: Python Format & Lint
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/backend/**/*.py"
+      - ".github/workflows/python-format.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/backend/**/*.py"
+      - ".github/workflows/python-format.yml"
+
+permissions:
+  contents: write  # Needed to push format commits to PR branch
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Check UTF-8 encoding
+        id: utf8
+        run: |
+          python3 -c "
+          import sys
+          from pathlib import Path
+          for f in Path('src/backend').rglob('*.py'):
+              try:
+                  f.read_bytes().decode('utf-8')
+              except UnicodeDecodeError as e:
+                  print(f'::error file={f}::Not valid UTF-8: {e}')
+                  sys.exit(1)
+          print('All Python files are valid UTF-8')
+          "
+
+      - name: Ruff format (apply)
+        id: format
+        run: ruff format src/backend/
+
+      - name: Ruff lint
+        id: lint
+        run: |
+          set -o pipefail
+          ruff check src/backend/ 2>&1 | tee debuglog.md
+
+      - name: Save debug log on failure
+        if: failure()
+        run: |
+          {
+            echo "# Python Format & Lint - Failure Log"
+            echo ""
+            echo "## Workflow: ${{ github.workflow }}"
+            echo "## Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "## Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+            echo ""
+            echo "## Why it failed"
+            echo ""
+            if [ "${{ steps.utf8.outcome }}" = "failure" ]; then
+              echo "**UTF-8 encoding check failed.** At least one Python file has invalid UTF-8. Common causes:"
+              echo "- File saved with wrong encoding (e.g. Latin-1, Windows-1252)"
+              echo "- Binary or corrupted content in a .py file"
+              echo "- Merge conflict markers or stray bytes"
+              echo ""
+              echo "Fix: Re-save the file as UTF-8 (no BOM) in your editor."
+            elif [ "${{ steps.format.outcome }}" = "failure" ]; then
+              echo "**Ruff format failed.** Formatting could not be applied. Common causes:"
+              echo "- Syntax errors preventing Ruff from parsing"
+              echo "- Ruff version mismatch or config issue"
+              echo ""
+              echo "Fix: Run \`ruff format src/backend/\` locally and fix any errors."
+            elif [ "${{ steps.lint.outcome }}" = "failure" ]; then
+              echo "**Ruff lint failed.** Code style or lint rules were violated. Common causes:"
+              echo "- Unused imports (F401)"
+              echo "- Undefined names (F821)"
+              echo "- Line length (E501)"
+              echo "- Other Ruff rules (see output below)"
+              echo ""
+              echo "Fix: Run \`ruff check src/backend/\` and address reported issues."
+            else
+              echo "Unknown step failed. Check the full run logs above."
+            fi
+            echo ""
+            echo "---"
+            echo ""
+            if [ -f debuglog.md ]; then
+              echo "## Ruff lint output"
+              echo ""
+              cat debuglog.md
+              echo ""
+            fi
+            echo "## Ruff check (re-run)"
+            echo ""
+            ruff check src/backend/ 2>&1 || true
+            echo ""
+            echo "## Ruff format check"
+            echo ""
+            ruff format --check src/backend/ 2>&1 || true
+          } > debuglog.md
+
+      - name: Commit debug log
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add debuglog.md
+          git diff --staged --quiet || git commit -m "ci: add failure debug log [skip ci]"
+          git push || true
+
+      - name: Commit and push if formatted
+        if: github.event_name == 'pull_request' && github.repository == github.event.pull_request.head.repo.full_name
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A src/backend/
+          if git diff --staged --quiet; then
+            echo "No formatting changes needed"
+          else
+            git commit -m "style: apply ruff format [skip ci]"
+            git push
+          fi

@@ -4,7 +4,11 @@ from typing import Dict, List, Tuple
 from flask import Blueprint, current_app, jsonify, request
 
 from db import connect
-from services.csv_ingest import CsvIngestError, normalize_number_sold_column, parse_wide_csv_bytes
+from services.csv_ingest import (
+    CsvIngestError,
+    normalize_number_sold_column,
+    parse_wide_csv_bytes,
+)
 
 
 bp = Blueprint("datasets", __name__)
@@ -25,7 +29,10 @@ def _upsert_item_ids(conn, item_names: List[str], category: str) -> Dict[str, in
     cur = conn.cursor()
     out: Dict[str, int] = {}
     for name in item_names:
-        cur.execute("INSERT OR IGNORE INTO items (name, category) VALUES (?, ?)", (name, category))
+        cur.execute(
+            "INSERT OR IGNORE INTO items (name, category) VALUES (?, ?)",
+            (name, category),
+        )
         cur.execute("SELECT id FROM items WHERE name = ?", (name,))
         row = cur.fetchone()
         out[name] = int(row["id"])
@@ -33,7 +40,10 @@ def _upsert_item_ids(conn, item_names: List[str], category: str) -> Dict[str, in
 
 
 def _insert_sales_rows(
-    conn, dataset_id: int, parsed_rows: List[Tuple[str, Dict[str, int]]], item_ids: Dict[str, int]
+    conn,
+    dataset_id: int,
+    parsed_rows: List[Tuple[str, Dict[str, int]]],
+    item_ids: Dict[str, int],
 ) -> int:
     cur = conn.cursor()
     sales: List[Tuple[int, str, int, int]] = []
@@ -41,7 +51,8 @@ def _insert_sales_rows(
         for item_name, qty in values.items():
             sales.append((dataset_id, date_iso, item_ids[item_name], qty))
     cur.executemany(
-        "INSERT INTO sales (dataset_id, date, item_id, quantity) VALUES (?, ?, ?, ?)", sales
+        "INSERT INTO sales (dataset_id, date, item_id, quantity) VALUES (?, ?, ?, ?)",
+        sales,
     )
     return len(sales)
 
@@ -127,4 +138,3 @@ def create_dataset_and_ingest():
         ),
         201,
     )
-

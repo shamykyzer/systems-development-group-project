@@ -35,7 +35,9 @@ def register():
                 (username, email, pw_hash),
             )
             conn.commit()
-            return jsonify({"success": True, "message": "User registered successfully"}), 201
+            return jsonify(
+                {"success": True, "message": "User registered successfully"}
+            ), 201
         except Exception:  # noqa: BLE001
             # Keep message generic so we don't leak which field was duplicate
             return _json_error("Username or email already exists", 400)
@@ -67,7 +69,10 @@ def login():
         {
             "success": True,
             "message": "Login successful",
-            "user": {"id": int(user["id"]), "username": user["username"], "email": user["email"]},
+            "user": {
+                "id": int(user["id"]),
+                "username": user["username"],
+                "email": user["email"],
+            },
         }
     )
-

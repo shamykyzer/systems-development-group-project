@@ -22,6 +22,14 @@ concurrency:
   group: docker-ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write  # Needed to push debuglog.md on failure
+
+env:
+  CONTAINER_NAME: pinkcafe-app
+  HOST_PORT: 8080
+  API_URL: http://127.0.0.1:8080
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -34,33 +42,126 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build runtime image (app target)
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           target: app
           tags: pinkcafe-app:runtime
-          load: true   # <-- Important so 'docker run' can use it
+          load: true
           provenance: false
           sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run container
-        run: docker run -d --name pinkcafe-app -p 8080:5001 pinkcafe-app:runtime
+        id: run
+        run: |
+          docker run -d \
+            --name ${{ env.CONTAINER_NAME }} \
+            -p ${{ env.HOST_PORT }}:5001 \
+            -e FLASK_ENV=production \
+            -e FLASK_DEBUG=0 \
+            -e DATABASE_PATH=/app/data/pinkcafe.db \
+            -e CORS_ORIGINS='*' \
+            pinkcafe-app:runtime
 
       - name: Wait for API
+        id: wait
         run: |
-          for i in {1..30}; do
-            curl -fsS http://localhost:8080/api >/dev/null && exit 0
+          echo "Waiting for backend to respond..."
+          i=0
+          while [ $i -lt 60 ]; do
+            if curl -fsS "${{ env.API_URL }}/api" >/dev/null 2>&1; then
+              echo "Backend responded after ${i}s"
+              exit 0
+            fi
             sleep 1
+            i=$((i + 1))
           done
-          echo "App didn't respond"; docker logs pinkcafe-app || true; exit 1
+          echo "Backend did not respond within 60s"
+          docker logs ${{ env.CONTAINER_NAME }} 2>&1 || true
+          exit 1
+
+      - name: Verify smoke test inputs
+        id: verify
+        run: |
+          COFFEE="src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
+          FOOD="src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
+          test -f "$COFFEE" || { echo "Missing: $COFFEE"; exit 1; }
+          test -f "$FOOD" || { echo "Missing: $FOOD"; exit 1; }
+          echo "CSV files found"
 
       - name: Backend smoke test (datasets + analytics)
+        id: smoke
         run: |
-          # Run the same smoke test scripts used locally, but target the container's mapped port.
-          BASE_URL="http://127.0.0.1:8080" bash ./src/backend/tests/backend_smoke_test.sh
+          set -o pipefail
+          BASE_URL="${{ env.API_URL }}" bash ./src/backend/tests/backend_smoke_test.sh 2>&1 | tee debuglog.md
+
+      - name: Save debug log on failure
+        if: failure()
+        run: |
+          {
+            echo "# Docker Image CI - Failure Log"
+            echo ""
+            echo "## Workflow: ${{ github.workflow }}"
+            echo "## Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "## Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+            echo ""
+            echo "## Why it failed"
+            echo ""
+            if [ "${{ steps.build.outcome }}" = "failure" ]; then
+              echo "**Build failed.** The Docker image could not be built. Common causes:"
+              echo "- Syntax errors in Dockerfile or missing dependencies"
+              echo "- Frontend build failure (npm install/build errors)"
+              echo "- Backend requirements.txt missing or incompatible packages"
+              echo "- Prophet or other heavy deps failing to compile"
+            elif [ "${{ steps.run.outcome }}" = "failure" ]; then
+              echo "**Run container failed.** The image built but the container failed to start. Common causes:"
+              echo "- Missing entrypoint or CMD"
+              echo "- Port already in use"
+              echo "- Missing env vars or config"
+            elif [ "${{ steps.wait.outcome }}" = "failure" ]; then
+              echo "**Wait for API failed.** The container started but /api did not respond within 60s. Common causes:"
+              echo "- Backend crashed on startup (check container logs below)"
+              echo "- Database init failed"
+              echo "- Gunicorn/Flask not binding to 0.0.0.0:5001"
+            elif [ "${{ steps.verify.outcome }}" = "failure" ]; then
+              echo "**Verify smoke test inputs failed.** Required CSV files are missing. Common causes:"
+              echo "- CSV_Files/Pink CoffeeSales March - Oct 2025.csv not in repo"
+              echo "- CSV_Files/Pink CroissantSales March - Oct 2025.csv not in repo"
+              echo "- CSV files not committed or in .gitignore"
+            elif [ "${{ steps.smoke.outcome }}" = "failure" ]; then
+              echo "**Backend smoke test failed.** API responded but dataset upload or analytics failed. Common causes:"
+              echo "- CSV format invalid (first column must be 'Date', merge conflicts in CSV)"
+              echo "- Backend route error or database error"
+              echo "- Check smoke test output below for details"
+            else
+              echo "Unknown step failed. Check the full run logs above."
+            fi
+            echo ""
+            echo "---"
+            echo ""
+            if [ -f debuglog.md ]; then
+              echo "## Smoke test output"
+              echo ""
+              cat debuglog.md
+              echo ""
+            fi
+            echo "## Container logs (if available)"
+            echo ""
+            docker logs ${{ env.CONTAINER_NAME }} 2>&1 || echo "(container not running)"
+          } > debuglog.md
+
+      - name: Commit debug log
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add debuglog.md
+          git diff --staged --quiet || git commit -m "ci: add failure debug log [skip ci]"
+          git push || true
 
       - name: Cleanup
         if: always()
-        run: docker rm -f pinkcafe-app || true
+        run: docker rm -f ${{ env.CONTAINER_NAME }} 2>/dev/null || true
