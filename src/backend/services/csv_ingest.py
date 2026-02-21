@@ -3,7 +3,7 @@ import io
 import re
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, List, Tuple
 
 
 _DDMMYYYY = re.compile(r"^\d{2}/\d{2}/\d{4}$")
