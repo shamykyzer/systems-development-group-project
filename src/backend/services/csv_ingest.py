@@ -83,24 +83,35 @@ def parse_wide_csv_bytes(raw: bytes) -> ParsedWideCsv:
     # Detect two-row header: first row contains 'Number Sold' and second row has blank first cell.
     if len(rows) >= 3:
         maybe = [_clean_header_cell(c) for c in rows[1]]
-        if header1 and header1[0].lower() == "date" and (maybe and maybe[0] == "") and (
-            any(h.lower() in {"cappuccino", "americano"} for h in maybe[1:])
-            or "number sold" in " ".join(h.lower() for h in header1)
+        if (
+            header1
+            and header1[0].lower() == "date"
+            and (maybe and maybe[0] == "")
+            and (
+                any(h.lower() in {"cappuccino", "americano"} for h in maybe[1:])
+                or "number sold" in " ".join(h.lower() for h in header1)
+            )
         ):
             header2 = maybe
 
     if header2 is not None:
         # Build columns from second row (skip first date column)
-        item_names = [h for h in header2[1:] if h and not h.lower().startswith("unnamed")]
+        item_names = [
+            h for h in header2[1:] if h and not h.lower().startswith("unnamed")
+        ]
         data_start_idx = 2
     else:
         if not header1 or header1[0].lower() != "date":
             raise CsvIngestError("First column must be 'Date'")
-        item_names = [h for h in header1[1:] if h and not h.lower().startswith("unnamed")]
+        item_names = [
+            h for h in header1[1:] if h and not h.lower().startswith("unnamed")
+        ]
         data_start_idx = 1
 
     if not item_names:
-        raise CsvIngestError("No item columns found (expected at least one column after Date)")
+        raise CsvIngestError(
+            "No item columns found (expected at least one column after Date)"
+        )
 
     parsed_rows: List[Tuple[str, Dict[str, int]]] = []
     for r in rows[data_start_idx:]:
@@ -143,4 +154,3 @@ def normalize_number_sold_column(parsed: ParsedWideCsv, filename: str) -> Parsed
             new_rows.append((date_iso, {item: values[parsed.item_names[0]]}))
         return ParsedWideCsv(item_names=[item], rows=new_rows)
     return parsed
-

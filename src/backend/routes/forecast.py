@@ -75,7 +75,10 @@ def forecast_zoom():
     db_path = current_app.config.get("DATABASE_PATH", "data/pinkcafe.db")
     with connect(db_path) as conn:
         try:
-            return jsonify(zoom_forecast(conn, model_run_id=model_run_id, start_iso=start, end_iso=end))
+            return jsonify(
+                zoom_forecast(
+                    conn, model_run_id=model_run_id, start_iso=start, end_iso=end
+                )
+            )
         except ForecastError as e:
             return _json_error(str(e), 400)
-

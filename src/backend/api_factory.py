@@ -65,8 +65,8 @@ def create_app(config: Config) -> Flask:
                 try:
                     marker = read_marker(marker_file) or {}
                     if marker.get("inactive") is True:
-                            ok = False
-                            reason = marker.get("reason") or "test_failed"
+                        ok = False
+                        reason = marker.get("reason") or "test_failed"
                 except Exception:
                     # If marker can't be read, ignore and fall back to DB check.
                     pass
@@ -209,7 +209,9 @@ def create_app(config: Config) -> Flask:
                     )
                 )
             )
-            html = html.replace("__STATUS_BADGE__", badge_html).replace("__STATUS_TEXT__", status_text)
+            html = html.replace("__STATUS_BADGE__", badge_html).replace(
+                "__STATUS_TEXT__", status_text
+            )
             return Response(
                 html,
                 status=200 if ok else 503,
@@ -236,7 +238,9 @@ def create_app(config: Config) -> Flask:
         "yes",
         "on",
     }
-    allow_db_startup_failure = os.getenv("ALLOW_DB_STARTUP_FAILURE", "").strip().lower() in {
+    allow_db_startup_failure = os.getenv(
+        "ALLOW_DB_STARTUP_FAILURE", ""
+    ).strip().lower() in {
         "1",
         "true",
         "yes",
@@ -284,4 +288,3 @@ def create_app(config: Config) -> Flask:
     app.register_blueprint(settings_bp)
 
     return app
-
