@@ -10,7 +10,7 @@ df = pd.read_csv(csv_path)
 print("Data loaded successfully!")
 print(f"Shape: {df.shape}")
 print(f"Columns: {df.columns.tolist()}")
-print(f"\nFirst few rows:")
+print("\nFirst few rows:")
 print(df.head())
 
 # Parse dates (format is DD/MM/YYYY)
@@ -48,7 +48,7 @@ future_cappuccino = model_cappuccino.make_future_dataframe(periods=365, freq='D'
 future_cappuccino['floor'] = df_cappuccino['floor'].iloc[0]  # Apply floor to forecast
 forecast_cappuccino = model_cappuccino.predict(future_cappuccino)
 
-print(f"\nCappuccino Forecast (next 7 days):")
+print("\nCappuccino Forecast (next 7 days):")
 print(forecast_cappuccino[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(7))
 
 # Plot and save
@@ -93,7 +93,7 @@ future_americano['floor'] = df_americano['floor'].iloc[0]
 future_americano['cap'] = df_americano['cap'].iloc[0]
 forecast_americano = model_americano.predict(future_americano)
 
-print(f"\nAmericano Forecast (next 7 days):")
+print("\nAmericano Forecast (next 7 days):")
 print(forecast_americano[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(7))
 
 # Plot and save
