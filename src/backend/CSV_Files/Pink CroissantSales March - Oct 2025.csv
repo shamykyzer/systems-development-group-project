@@ -1,3 +1,4 @@
+<<<<<<< HEAD:pinkcafe/Backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv
 Date,Number Sold
 01/03/2025,82
 02/03/2025,67
@@ -229,6 +230,9 @@ Date,Number Sold
 14/10/2025,77
 15/10/2025,71
 16/10/2025,68
+=======
+Date,Number Sold
+01/03/2025,82
 02/03/2025,67
 03/03/2025,75
 04/03/2025,87
@@ -458,3 +462,4 @@ Date,Number Sold
 14/10/2025,77
 15/10/2025,71
 16/10/2025,68
+>>>>>>> main:src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv

@@ -44,7 +44,7 @@ The dashboard provides interactive visualizations of historical sales data and p
 ## Current Implementation Notes (Pink Cafe)
 
 This repo currently contains:
-- **Frontend**: React app in `src/frontend/` (Create React App).
+- **Frontend**: React app in `pinkcafe/` (Create React App).
 - **Backend**: Flask API source in `src/backend/` (Python + SQLite).
 
 ### Backend changes implemented so far
@@ -68,18 +68,18 @@ This repo currently contains:
 - `src/backend/routes/`: Flask blueprints (health/auth/datasets/analytics/forecast/evaluation)
 - `src/backend/services/`: CSV parsing, analytics, forecasting (Prophet + baseline), evaluation, passwords (bcrypt)
 - `src/backend/CSV_Files/`: sample datasets used by scripts/tests
-- `tests/`: helper test scripts for local dev + API smoke tests (outside src)
+- `src/backend/tests/`: helper test scripts for local dev + API smoke tests
 - `src/backend/csv_import.py`: **local CLI importer** that loads a wide CSV into the normalized schema (`datasets/items/sales`) using the same parsing logic as the API (`services/csv_ingest.py`)
 
 ### Backend test scripts (what to run and when)
 
-- **Start the backend (local dev)**: `tests/backend_run.sh`
+- **Start the backend (local dev)**: `src/backend/tests/backend_run.sh`
   - Creates `.venv` if missing, installs requirements, then runs `python app.py`.
-- **Smoke test (assumes backend is already running)**: `tests/backend_smoke_test.sh`
+- **Smoke test (assumes backend is already running)**: `src/backend/tests/backend_smoke_test.sh`
   - Uploads the sample CSVs in `src/backend/CSV_Files/` and calls the analytics endpoints.
-- **One-command backend test run (start → smoke test → stop)**: `tests/backend_test_run.sh`
+- **One-command backend test run (start → smoke test → stop)**: `src/backend/tests/backend_test_run.sh`
   - Starts the backend with an isolated DB (`DB_PATH`, default `data/test_run.db`), runs the smoke test, then stops the backend.
-- **Full “tour” test (includes forecast + zoom + evaluation)**: `tests/test_run.sh`
+- **Full “tour” test (includes forecast + zoom + evaluation)**: `src/backend/test_run.sh`
   - Runs a longer end-to-end sequence beyond the smoke test (baseline forecast, zoom, evaluation).
 
 ### Local CSV import helper (CLI)
@@ -107,7 +107,7 @@ sudo apt install -y python3.12-venv
 This creates the venv (if missing), installs deps, then starts the API:
 
 ```bash
-./tests/backend_run.sh
+./src/backend/tests/backend_run.sh
 ```
 
 #### Manual start (if you prefer)
@@ -135,7 +135,7 @@ The backend currently uses **scripted smoke/tour tests** (not a `pytest` suite y
 With the backend running, this uploads the sample coffee + croissant CSVs and hits the analytics endpoints:
 
 ```bash
-./tests/backend_smoke_test.sh
+./src/backend/tests/backend_smoke_test.sh
 ```
 
 What the smoke test does:
@@ -155,13 +155,13 @@ A successful run prints JSON responses for each step and ends with **“Smoke te
 This does everything in one command: sets up the venv/deps, starts the backend (if needed), runs the smoke test, then stops the backend.
 
 ```bash
-./tests/backend_test_run.sh
+./src/backend/tests/backend_test_run.sh
 ```
 
-From the repo root you can run:
+If you are already inside `src/backend/`, you can also run:
 
 ```bash
-./tests/test_run.sh
+./test_run.sh
 ```
 
 ### Backend API quick test (CSV ingest + analytics)
@@ -257,13 +257,6 @@ From the repo root:
 docker compose up --build
 ```
 
-**If `requirements.txt` changed but deps aren’t updating**, force a rebuild without cache:
-
-```bash
-docker compose build --no-cache backend
-# or: docker compose build --build-arg REBUILD_DEPS=1 backend
-```
-
 - Backend: `http://localhost:5001`
 - Frontend: `http://localhost:3000`
 - Backend landing page (API-only mode): `GET /` shows a small status page with a **pulsing red “Live”** indicator (dark theme).
@@ -311,9 +304,9 @@ The backend exposes a marker endpoint used by scripts:
 - `DELETE /api/v1/status/marker` clears it
 
 The scripts below now auto-clear the marker when they start, and set it if they exit non‑zero:
-- `tests/backend_smoke_test.sh`
-- `tests/backend_test_run.sh`
-- `tests/test_run.sh`
+- `src/backend/tests/backend_smoke_test.sh`
+- `src/backend/tests/backend_test_run.sh`
+- `src/backend/test_run.sh`
 
 #### Steps
 
@@ -327,6 +320,7 @@ docker compose up --build --force-recreate backend
 2) Run a script in a bash environment (WSL or Git Bash). To force a failure, point a CSV env var at a missing file:
 
 ```bash
+cd src/backend
 COFFEE_CSV="does-not-exist.csv" ./tests/backend_smoke_test.sh
 ```
 
@@ -402,11 +396,10 @@ systems-development-group-project/
 ├── docker-compose.yml
 ├── Dockerfile                  # multi-stage (frontend build, backend, app, prophet)
 ├── README.md
-├── tests/                      # Test scripts (backend smoke, tour, run)
-└── src/
-   ├── backend/                 # Flask API source
-   └── frontend/                # React frontend
-       ├── src/
-       ├── package.json
-       └── package-lock.json
+├── src/
+│  └── backend/                 # Flask API source
+└── pinkcafe/
+   ├── src/                     # React frontend
+   ├── package.json
+   └── package-lock.json
 ```
