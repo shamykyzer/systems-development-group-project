@@ -26,7 +26,7 @@ function ForecastCsvUploader({ onFileSelect }) {
   };
 
   return (
-    <div className="w-full md:w-6/12 mx-auto p-6 pt-20 md:pt-6">
+    <div className="w-full max-w-md mx-auto p-6">
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold mb-4">Upload Forecast CSV</h2>
         
