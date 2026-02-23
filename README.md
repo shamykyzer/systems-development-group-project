@@ -257,6 +257,20 @@ From the repo root:
 docker compose up --build
 ```
 
+Quick start (run in background, only backend + frontend):
+
+```bash
+docker compose up -d --build backend frontend
+docker compose ps
+```
+
+Useful follow-up commands:
+
+```bash
+docker compose logs -f backend frontend
+docker compose down
+```
+
 - Backend: `http://localhost:5001`
 - Frontend: `http://localhost:3000`
 - Backend landing page (API-only mode): `GET /` shows a small status page with a **pulsing red “Live”** indicator (dark theme).

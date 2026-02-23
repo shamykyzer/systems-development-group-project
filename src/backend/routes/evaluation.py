@@ -112,9 +112,15 @@ def evaluation_results():
             iid = int(r["item_id"])
             by_item.setdefault(
                 iid,
-                {"item_id": iid, "name": r["item_name"], "category": r["item_category"], "metrics": {}},
+                {
+                    "item_id": iid,
+                    "name": r["item_name"],
+                    "category": r["item_category"],
+                    "metrics": {},
+                },
             )
             by_item[iid]["metrics"][r["metric_name"]] = float(r["metric_value"])
 
-        return jsonify({"success": True, "run": dict(run), "results": list(by_item.values())})
-
+        return jsonify(
+            {"success": True, "run": dict(run), "results": list(by_item.values())}
+        )

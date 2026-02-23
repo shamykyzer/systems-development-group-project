@@ -19,36 +19,64 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 from db import connect, init_db
-from services.csv_ingest import CsvIngestError, normalize_number_sold_column, parse_wide_csv_bytes
+from services.csv_ingest import (
+    CsvIngestError,
+    normalize_number_sold_column,
+    parse_wide_csv_bytes,
+)
 
 
 def _upsert_item_ids(conn, item_names: List[str], category: str) -> Dict[str, int]:
     cur = conn.cursor()
     out: Dict[str, int] = {}
     for name in item_names:
-        cur.execute("INSERT OR IGNORE INTO items (name, category) VALUES (?, ?)", (name, category))
+        cur.execute(
+            "INSERT OR IGNORE INTO items (name, category) VALUES (?, ?)",
+            (name, category),
+        )
         cur.execute("SELECT id FROM items WHERE name = ?", (name,))
         row = cur.fetchone()
         out[name] = int(row["id"])
     return out
 
 
-def _insert_sales_rows(conn, dataset_id: int, parsed_rows: List[Tuple[str, Dict[str, int]]], item_ids: Dict[str, int]) -> int:
+def _insert_sales_rows(
+    conn,
+    dataset_id: int,
+    parsed_rows: List[Tuple[str, Dict[str, int]]],
+    item_ids: Dict[str, int],
+) -> int:
     cur = conn.cursor()
     sales = []
     for date_iso, values in parsed_rows:
         for item_name, qty in values.items():
             sales.append((dataset_id, date_iso, item_ids[item_name], qty))
-    cur.executemany("INSERT INTO sales (dataset_id, date, item_id, quantity) VALUES (?, ?, ?, ?)", sales)
+    cur.executemany(
+        "INSERT INTO sales (dataset_id, date, item_id, quantity) VALUES (?, ?, ?, ?)",
+        sales,
+    )
     return len(sales)
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Import a wide CSV into the Pink Cafe normalized SQLite schema")
-    p.add_argument("--db", default="data/pinkcafe.db", help="SQLite DB path (default: data/pinkcafe.db)")
+    p = argparse.ArgumentParser(
+        description="Import a wide CSV into the Pink Cafe normalized SQLite schema"
+    )
+    p.add_argument(
+        "--db",
+        default="data/pinkcafe.db",
+        help="SQLite DB path (default: data/pinkcafe.db)",
+    )
     p.add_argument("--csv", required=True, help="Path to CSV to ingest")
-    p.add_argument("--category", required=True, choices=["coffee", "food"], help="Category applied to item columns")
-    p.add_argument("--name", default=None, help="Dataset name (defaults to CSV filename)")
+    p.add_argument(
+        "--category",
+        required=True,
+        choices=["coffee", "food"],
+        help="Category applied to item columns",
+    )
+    p.add_argument(
+        "--name", default=None, help="Dataset name (defaults to CSV filename)"
+    )
     p.add_argument("--notes", default=None, help="Optional notes for datasets table")
     args = p.parse_args()
 

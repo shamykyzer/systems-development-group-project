@@ -25,4 +25,3 @@ def init_db(db_path: str) -> None:
         cur = conn.cursor()
         cur.executescript(SCHEMA_SQL)
         conn.commit()
-
