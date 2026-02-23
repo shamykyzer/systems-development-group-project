@@ -5,10 +5,6 @@ module.exports = {
   ],
   theme: {
     extend: {
-      fontFamily: {
-        display: ['Montserrat', 'system-ui', 'sans-serif'],
-        sans: ['Montserrat', 'system-ui', 'sans-serif'],
-      },
       colors: {
         pinkcafe: {
           DEFAULT: '#F6D9D2',
