@@ -103,6 +103,9 @@ jobs:
       - name: Save debug log on failure
         if: failure()
         run: |
+          # Capture smoke output before we overwrite debuglog.md (cat reads same file we write to otherwise)
+          SMOKE_OUTPUT=""
+          [ -f debuglog.md ] && SMOKE_OUTPUT=$(cat debuglog.md)
           {
             echo "# Docker Image CI - Failure Log"
             echo ""
@@ -144,10 +147,10 @@ jobs:
             echo ""
             echo "---"
             echo ""
-            if [ -f debuglog.md ]; then
+            if [ -n "$SMOKE_OUTPUT" ]; then
               echo "## Smoke test output"
               echo ""
-              cat debuglog.md
+              echo "$SMOKE_OUTPUT"
               echo ""
             fi
             echo "## Container logs (if available)"
