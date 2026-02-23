@@ -1,12 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 
 from db import connect
-from services.analytics import (
-    AnalyticsError,
-    fluctuation,
-    list_items_for_dataset,
-    top_sellers,
-)
+from services.analytics import AnalyticsError, fluctuation, list_items_for_dataset, top_sellers
 
 
 bp = Blueprint("analytics", __name__)
@@ -66,9 +61,7 @@ def get_top_sellers():
     db_path = current_app.config.get("DATABASE_PATH", "data/pinkcafe.db")
     with connect(db_path) as conn:
         try:
-            return jsonify(
-                top_sellers(conn, dataset_id, category, weeks=weeks, limit=limit)
-            )
+            return jsonify(top_sellers(conn, dataset_id, category, weeks=weeks, limit=limit))
         except AnalyticsError as e:
             return _json_error(str(e), 400)
 
@@ -97,3 +90,4 @@ def get_fluctuation():
             return jsonify(fluctuation(conn, dataset_id, item_id, weeks=weeks))
         except AnalyticsError as e:
             return _json_error(str(e), 400)
+
