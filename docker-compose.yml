@@ -133,8 +133,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./pinkcafe/src:/app/src
-      - ./pinkcafe/public:/app/public
+      - ./src/frontend/src:/app/src
+      - ./src/frontend/public:/app/public
       - /app/node_modules
     environment:
       - REACT_APP_API_URL=http://localhost:5001
