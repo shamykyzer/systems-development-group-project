@@ -7,7 +7,8 @@ on:
       - "Dockerfile"
       - "docker-compose.yml"
       - "src/backend/**"
-      - "pinkcafe/**"
+      - "src/frontend/**"
+      - "tests/**"
       - ".github/workflows/docker-image.yml"
   pull_request:
     branches: ["main"]
@@ -15,7 +16,8 @@ on:
       - "Dockerfile"
       - "docker-compose.yml"
       - "src/backend/**"
-      - "pinkcafe/**"
+      - "src/frontend/**"
+      - "tests/**"
       - ".github/workflows/docker-image.yml"
 
 concurrency:
@@ -96,7 +98,7 @@ jobs:
         id: smoke
         run: |
           set -o pipefail
-          BASE_URL="${{ env.API_URL }}" bash ./src/backend/tests/backend_smoke_test.sh 2>&1 | tee debuglog.md
+          BASE_URL="${{ env.API_URL }}" bash ./tests/backend_smoke_test.sh 2>&1 | tee debuglog.md
 
       - name: Save debug log on failure
         if: failure()
