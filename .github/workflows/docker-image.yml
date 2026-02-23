@@ -50,7 +50,7 @@ jobs:
           context: .
           target: app
           tags: pinkcafe-app:runtime
-          load: true
+          load: true   # <-- Important so 'docker run' can use it
           provenance: false
           sbom: false
           cache-from: type=gha

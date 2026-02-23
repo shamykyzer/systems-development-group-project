@@ -125,3 +125,4 @@ INSERT OR IGNORE INTO prophet_presets (
   25, 0.8, 0.80, 10.0, '[]', 1
 );
 """
+

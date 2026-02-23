@@ -18,10 +18,7 @@ class Config:
 
 def load_config() -> Config:
     env = os.getenv("FLASK_ENV", os.getenv("ENV", "development"))
-    debug = (
-        os.getenv("FLASK_DEBUG", "").lower() in {"1", "true", "yes"}
-        or env == "development"
-    )
+    debug = os.getenv("FLASK_DEBUG", "").lower() in {"1", "true", "yes"} or env == "development"
     secret_key = os.getenv("SECRET_KEY", "dev-secret-key-change-me")
 
     cors_origins = os.getenv("CORS_ORIGINS", "*")
@@ -36,3 +33,4 @@ def load_config() -> Config:
         cors_origins=cors_origins,
         database_path=database_path,
     )
+

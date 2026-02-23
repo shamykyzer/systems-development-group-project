@@ -15,9 +15,7 @@ def api_home():
 
 
 def _status_marker_path() -> str:
-    db_path = current_app.config.get(
-        "DATABASE_PATH", os.path.join("data", "pinkcafe.db")
-    )
+    db_path = current_app.config.get("DATABASE_PATH", os.path.join("data", "pinkcafe.db"))
     return marker_path(db_path)
 
 
@@ -56,3 +54,4 @@ def clear_status_marker():
     path = _status_marker_path()
     clear_marker(path)
     return ("", 204)
+
