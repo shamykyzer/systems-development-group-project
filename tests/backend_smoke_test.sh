@@ -8,15 +8,12 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/status_marker.sh"
 status_marker_trap_exit "backend_smoke_test.sh"
 
-# Resolve repo root robustly (works from any CWD)
+# Resolve repo root (tests/ is at project root, so repo root = parent of tests/)
+repo_root="$(cd "$script_dir/.." && pwd)"
 if command -v git >/dev/null 2>&1; then
-  repo_root="$(git -C "$script_dir" rev-parse --show-toplevel 2>/dev/null || true)"
-else
-  repo_root=""
+  repo_root="$(git -C "$repo_root" rev-parse --show-toplevel 2>/dev/null || true)"
 fi
-if [[ -z "$repo_root" ]]; then
-  repo_root="$(cd "$script_dir/../../.." && pwd)"
-fi
+[[ -z "$repo_root" ]] && repo_root="$(cd "$script_dir/.." && pwd)"
 
 coffee_csv="${COFFEE_CSV:-$repo_root/src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv}"
 food_csv="${FOOD_CSV:-$repo_root/src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv}"
@@ -91,4 +88,3 @@ json_get "$BASE_URL/api/v1/analytics/fluctuation?dataset_id=$coffee_ds_id&item_i
 
 echo
 echo "Smoke test complete."
-

@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+backend_dir="$repo_root/src/backend"
+
+cd "$backend_dir"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 not found. Install Python 3.12+ first." >&2
@@ -33,4 +37,3 @@ echo "Starting backend on http://127.0.0.1:5001 ..."
 export FLASK_DEBUG FLASK_ENV PORT MPLCONFIGDIR
 
 exec python app.py
-

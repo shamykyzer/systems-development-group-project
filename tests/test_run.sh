@@ -10,26 +10,28 @@ set -euo pipefail
 # This script starts a clean backend instance on a non-default port with a fresh DB,
 # exercises ingestion + analytics + baseline forecast + zoom + evaluation, then stops.
 
-backend_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(git -C "$backend_dir" rev-parse --show-toplevel 2>/dev/null || true)"
-if [[ -z "$repo_root" ]]; then
-  repo_root="$(cd "$backend_dir/../.." && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+if command -v git >/dev/null 2>&1; then
+  repo_root="$(git -C "$repo_root" rev-parse --show-toplevel 2>/dev/null || true)"
 fi
+[[ -z "$repo_root" ]] && repo_root="$(cd "$script_dir/.." && pwd)"
+
+backend_dir="$repo_root/src/backend"
 
 BASE_URL="${BASE_URL:-http://127.0.0.1:5005}"
 PORT="${PORT:-5005}"
 DB_PATH="${DB_PATH:-data/test_run.db}"
 
-script_dir="$backend_dir/tests"
 # shellcheck disable=SC1091
 source "$script_dir/status_marker.sh"
 status_marker_trap_exit "test_run.sh"
 
-COFFEE_CSV_DEFAULT_1="$repo_root/pinkcafe/Pink CoffeeSales March - Oct 2025.csv"
+COFFEE_CSV_DEFAULT_1="$repo_root/src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
 COFFEE_CSV_DEFAULT_2="$backend_dir/Pink CoffeeSales March - Oct 2025.csv"
 COFFEE_CSV_DEFAULT_3="$backend_dir/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
 
-FOOD_CSV_DEFAULT_1="$repo_root/pinkcafe/Pink CroissantSales March - Oct 2025.csv"
+FOOD_CSV_DEFAULT_1="$repo_root/src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
 FOOD_CSV_DEFAULT_2="$backend_dir/Pink CroissantSales March - Oct 2025.csv"
 FOOD_CSV_DEFAULT_3="$backend_dir/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
 
@@ -71,6 +73,7 @@ ensure_venv() {
       exit 1
     fi
   fi
+  # shellcheck disable=SC1091
   . .venv/bin/activate
   # Avoid `pip install --upgrade pip` here: it adds unnecessary network dependency.
   # If requirements are already installed, this is a no-op; otherwise it will
@@ -205,4 +208,3 @@ curl -sS -X POST "$BASE_URL/api/v1/evaluation/run" \
 
 echo
 echo "Tour test complete."
-

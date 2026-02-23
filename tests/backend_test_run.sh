@@ -11,9 +11,10 @@ set -euo pipefail
 BASE_URL="${BASE_URL:-http://127.0.0.1:5001}"
 DB_PATH="${DB_PATH:-data/test_run.db}"
 
-backend_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+backend_dir="$repo_root/src/backend"
+
 # shellcheck disable=SC1091
 source "$script_dir/status_marker.sh"
 status_marker_trap_exit "backend_test_run.sh"
@@ -107,8 +108,7 @@ fi
 
 echo
 echo "Running smoke test..."
-BASE_URL="$BASE_URL" "$backend_dir/tests/backend_smoke_test.sh"
+BASE_URL="$BASE_URL" "$script_dir/backend_smoke_test.sh"
 
 echo
 echo "All done."
-

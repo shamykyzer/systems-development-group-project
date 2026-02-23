@@ -12,11 +12,11 @@ FROM node:18-alpine AS frontend-build
 WORKDIR /app
 
 # Install dependencies (cached)
-COPY pinkcafe/package.json pinkcafe/package-lock.json ./
+COPY src/frontend/package.json src/frontend/package-lock.json ./
 RUN npm ci
 
 # Build
-COPY pinkcafe/ ./
+COPY src/frontend/ ./
 RUN npm run build
 # ============================================
 # Stage 2: Build Python deps (venv)
@@ -55,9 +55,9 @@ CMD ["python", "Prophet.py"]
 
 FROM node:18-alpine AS frontend
 WORKDIR /app
-COPY pinkcafe/package.json pinkcafe/package-lock.json ./
+COPY src/frontend/package.json src/frontend/package-lock.json ./
 RUN npm ci
-COPY pinkcafe/ ./
+COPY src/frontend/ ./
 EXPOSE 3000
 CMD ["npm", "start"]
 

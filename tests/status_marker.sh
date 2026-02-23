@@ -27,4 +27,3 @@ status_marker_trap_exit() {
   status_marker_clear
   trap 'rc=$?; if [[ $rc -ne 0 ]]; then status_marker_set_failed "'"$source"'" "$rc"; else status_marker_clear; fi' EXIT
 }
-
