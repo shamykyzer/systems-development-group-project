@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 // API base URL configuration - uses environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
@@ -61,10 +61,34 @@ function ProphetSettingsPanel() {
   // State: List of available presets fetched from the backend
   const [availablePresets, setAvailablePresets] = useState([]);
 
+  /**
+   * Fetches the list of available presets from the backend API
+   * Also retrieves and sets the currently active preset as the selected one
+   */
+  const fetchAvailablePresets = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/prophet/presets`);
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setAvailablePresets(data.map(preset => preset.preset_name));
+        const activeResponse = await fetch(`${API_BASE_URL}/api/prophet/active-preset`);
+        const activeData = await activeResponse.json();
+        if (activeData.preset_name) {
+          setSelectedPreset(activeData.preset_name);
+        } else if (data.length > 0) {
+          setSelectedPreset(data[0].preset_name);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching presets:', error);
+      setMessage({ type: 'error', text: 'Failed to load available presets' });
+    }
+  }, []);
+
   // Effect: Fetch available presets when component first mounts
   useEffect(() => {
     fetchAvailablePresets();
-  }, []);
+  }, [fetchAvailablePresets]);
 
   // Effect: Fetch preset settings whenever the selected preset changes
   useEffect(() => {
@@ -129,37 +153,6 @@ function ProphetSettingsPanel() {
       </span>
     </span>
   );
-
-  /**
-   * Fetches the list of available presets from the backend API
-   * Also retrieves and sets the currently active preset as the selected one
-   * This ensures the last-used preset is automatically selected on component mount
-   */
-  const fetchAvailablePresets = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/prophet/presets`);
-      const data = await response.json();
-      
-      // Extract preset names from the response array and populate dropdown
-      if (Array.isArray(data)) {
-        setAvailablePresets(data.map(preset => preset.preset_name));
-        
-        // Fetch the active preset from backend to restore user's last selection
-        const activeResponse = await fetch(`${API_BASE_URL}/api/prophet/active-preset`);
-        const activeData = await activeResponse.json();
-        
-        if (activeData.preset_name) {
-          setSelectedPreset(activeData.preset_name);
-        } else if (data.length > 0 && !selectedPreset) {
-          // Fallback: use first available preset if no active preset is set
-          setSelectedPreset(data[0].preset_name);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching presets:', error);
-      setMessage({ type: 'error', text: 'Failed to load available presets' });
-    }
-  };
 
   /**
    * Fetches the current settings for a specific preset from the backend
