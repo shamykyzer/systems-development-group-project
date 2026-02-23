@@ -257,6 +257,13 @@ From the repo root:
 docker compose up --build
 ```
 
+**If `requirements.txt` changed but deps aren’t updating**, force a rebuild without cache:
+
+```bash
+docker compose build --no-cache backend
+# or: docker compose build --build-arg REBUILD_DEPS=1 backend
+```
+
 - Backend: `http://localhost:5001`
 - Frontend: `http://localhost:3000`
 - Backend landing page (API-only mode): `GET /` shows a small status page with a **pulsing red “Live”** indicator (dark theme).
