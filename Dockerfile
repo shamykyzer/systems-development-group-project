@@ -31,9 +31,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
+# Copy requirements first (separate layer) so pip install cache invalidates when requirements change
 COPY src/backend/requirements.txt ./requirements.txt
-
-RUN python -m venv /opt/venv \
+# Pass REBUILD_DEPS=$(date +%s) to force pip install when cache is stale: docker compose build --build-arg REBUILD_DEPS=1
+ARG REBUILD_DEPS=0
+RUN echo "Rebuild deps: $REBUILD_DEPS" \
+    && python -m venv /opt/venv \
     && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 ENV PATH="/opt/venv/bin:$PATH"
