@@ -1,0 +1,1 @@
+Sentinel: prevents src/ directory from being created. Backend lives at backend/.

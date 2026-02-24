@@ -4,19 +4,17 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "Dockerfile"
-      - "docker-compose.yml"
-      - "src/backend/**"
-      - "src/frontend/**"
+      - "docker/**"
+      - "backend/**"
+      - "frontend/**"
       - "tests/**"
       - ".github/workflows/docker-image.yml"
   pull_request:
     branches: ["main"]
     paths:
-      - "Dockerfile"
-      - "docker-compose.yml"
-      - "src/backend/**"
-      - "src/frontend/**"
+      - "docker/**"
+      - "backend/**"
+      - "frontend/**"
       - "tests/**"
       - ".github/workflows/docker-image.yml"
 
@@ -48,6 +46,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: docker/Dockerfile
           target: app
           tags: pinkcafe-app:runtime
           load: true   # <-- Important so 'docker run' can use it
@@ -88,8 +87,8 @@ jobs:
       - name: Verify smoke test inputs
         id: verify
         run: |
-          COFFEE="src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
-          FOOD="src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
+          COFFEE="backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
+          FOOD="backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
           test -f "$COFFEE" || { echo "Missing: $COFFEE"; exit 1; }
           test -f "$FOOD" || { echo "Missing: $FOOD"; exit 1; }
           echo "CSV files found"

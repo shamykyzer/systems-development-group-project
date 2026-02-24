@@ -1,0 +1,2 @@
+# Ruff config - cache lives in backend/ to keep Python tooling scoped
+cache-dir = ".ruff_cache"

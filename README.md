@@ -37,19 +37,19 @@ The dashboard provides interactive visualizations of historical sales data and p
 
 - Python (Flask, SQLite, Pandas, Prophet)
 - React (Create React App)
-- Matplotlib / Plotly-style time series visualization (backend can generate chart-ready series; `Prophet.py` generates PNGs)
+- Matplotlib / Plotly-style time series visualization (backend can generate chart-ready series; `prophet/batch.py` generates PNGs)
 - Docker / Docker Compose (dev workflow)
 - CSV ingestion + normalization (wide-column CSVs)
 
 ## Current Implementation Notes (Pink Cafe)
 
 This repo currently contains:
-- **Frontend**: React app in `src/frontend/` (Create React App).
-- **Backend**: Flask API source in `src/backend/` (Python + SQLite).
+- **Frontend**: React app in `frontend/` (Create React App).
+- **Backend**: Flask API source in `backend/` (Python + SQLite).
 
 ### Backend changes implemented so far
 
-- **Normalized backend path**: the backend directory is now `src/backend/`.
+- **Normalized backend path**: the backend directory is now `backend/`.
 - **Modular Flask backend**: moved from a single monolithic Flask script to a small module layout with an **app factory**, **config**, and **blueprints** under `routes/`.
 - **Normalized SQLite schema**: added tables for `datasets`, `items`, `sales`, forecasting runs, and evaluation metrics (foundation for forecasting/evaluation features).
 - **CSV ingestion API**: upload wide-column CSVs and persist them into the normalized schema. This supports both coffee CSV header styles currently in the repo.
@@ -60,23 +60,23 @@ This repo currently contains:
 
 ### Backend package layout (important files)
 
-- `src/backend/app.py`: **entrypoint** (keeps `python3 app.py` working in Docker/local)
-- `src/backend/api_factory.py`: `create_app()` app factory + blueprint registration
-- `src/backend/config.py`: env-driven config (`DATABASE_PATH`, `CORS_ORIGINS`, etc.)
-- `src/backend/db.py`: SQLite connect + schema init
-- `src/backend/schema.py`: SQLite schema (`datasets/items/sales/model_runs/forecasts/evaluation_*`)
-- `src/backend/routes/`: Flask blueprints (health/auth/datasets/analytics/forecast/evaluation)
-- `src/backend/services/`: CSV parsing, analytics, forecasting (Prophet + baseline), evaluation, passwords (bcrypt)
-- `src/backend/CSV_Files/`: sample datasets used by scripts/tests
+- `backend/app.py`: **entrypoint** (keeps `python3 app.py` working in Docker/local)
+- `backend/api_factory.py`: `create_app()` app factory + blueprint registration
+- `backend/config.py`: env-driven config (`DATABASE_PATH`, `CORS_ORIGINS`, etc.)
+- `backend/db/`: SQLite connect + schema (`db/connection.py`, `db/schema.py`)
+- `backend/routes/`: Flask blueprints (health/auth/datasets/analytics/forecast/evaluation)
+- `backend/prophet/`: Prophet & forecasting ML (batch script, Prophet + baseline algorithms)
+- `backend/services/`: CSV parsing, analytics, evaluation, passwords (bcrypt)
+- `backend/CSV_Files/`: sample datasets used by scripts/tests
 - `tests/`: helper test scripts for local dev + API smoke tests (outside src)
-- `src/backend/csv_import.py`: **local CLI importer** that loads a wide CSV into the normalized schema (`datasets/items/sales`) using the same parsing logic as the API (`services/csv_ingest.py`)
+- `backend/scripts/csv_import.py`: **local CLI importer** that loads a wide CSV into the normalized schema (`datasets/items/sales`) using the same parsing logic as the API (`services/csv_ingest.py`)
 
 ### Backend test scripts (what to run and when)
 
 - **Start the backend (local dev)**: `tests/backend_run.sh`
   - Creates `.venv` if missing, installs requirements, then runs `python app.py`.
 - **Smoke test (assumes backend is already running)**: `tests/backend_smoke_test.sh`
-  - Uploads the sample CSVs in `src/backend/CSV_Files/` and calls the analytics endpoints.
+  - Uploads the sample CSVs in `backend/CSV_Files/` and calls the analytics endpoints.
 - **One-command backend test run (start → smoke test → stop)**: `tests/backend_test_run.sh`
   - Starts the backend with an isolated DB (`DB_PATH`, default `data/test_run.db`), runs the smoke test, then stops the backend.
 - **Full “tour” test (includes forecast + zoom + evaluation)**: `tests/test_run.sh`
@@ -87,8 +87,8 @@ This repo currently contains:
 If you want to import a CSV **without** using the API upload endpoint, use the CLI importer:
 
 ```bash
-cd src/backend
-python3 csv_import.py --csv CSV_Files/"Pink CoffeeSales March - Oct 2025.csv" --category coffee --name coffee-sample
+cd backend
+python3 scripts/csv_import.py --csv CSV_Files/"Pink CoffeeSales March - Oct 2025.csv" --category coffee --name coffee-sample
 ```
 
 This imports into the **current normalized tables** (`datasets/items/sales`). The legacy `coffee_sales` table approach is no longer used.
@@ -113,7 +113,7 @@ This creates the venv (if missing), installs deps, then starts the API:
 #### Manual start (if you prefer)
 
 ```bash
-cd src/backend
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -140,7 +140,7 @@ With the backend running, this uploads the sample coffee + croissant CSVs and hi
 
 What the smoke test does:
 - **Checks backend status**: `GET /api`
-- **Uploads + ingests sample CSVs** from `src/backend/CSV_Files/`:
+- **Uploads + ingests sample CSVs** from `backend/CSV_Files/`:
   - Coffee (`category=coffee`): `Pink CoffeeSales March - Oct 2025.csv`
   - Food (`category=food`): `Pink CroissantSales March - Oct 2025.csv`
 - **Calls analytics** on the uploaded dataset:
@@ -174,7 +174,7 @@ Upload/ingest a coffee CSV:
 curl -s -X POST http://127.0.0.1:5001/api/v1/datasets \
   -F "category=coffee" \
   -F "name=coffee-march-oct-2025" \
-  -F "file=@src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
+  -F "file=@backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
 ```
 
 List datasets:
@@ -236,7 +236,7 @@ curl -s "http://127.0.0.1:5001/api/v1/analytics/fluctuation?dataset_id=1&item_id
 
 ### Backend config (env vars)
 
-- `DATABASE_PATH`: SQLite DB file path (default `data/pinkcafe.db` under `src/backend/`)
+- `DATABASE_PATH`: SQLite DB file path (default `data/pinkcafe.db` under `backend/`)
 - `CORS_ORIGINS`: CORS origins (default `*`)
 - `FLASK_ENV` (or `ENV`): environment (default `development`)
 - `FLASK_DEBUG`: debug flag (`1/true/yes`)
@@ -249,19 +249,19 @@ curl -s "http://127.0.0.1:5001/api/v1/analytics/fluctuation?dataset_id=1&item_id
 
 ### Docker
 
+Docker files live in the `docker/` folder. Run all commands from the repo root using `-f docker/docker-compose.yml`.
+
 #### Docker Compose (recommended: frontend + backend)
 
-From the repo root:
-
 ```bash
-docker compose up --build
+docker compose -f docker/docker-compose.yml up --build
 ```
 
 **If `requirements.txt` changed but deps aren’t updating**, force a rebuild without cache:
 
 ```bash
-docker compose build --no-cache backend
-# or: docker compose build --build-arg REBUILD_DEPS=1 backend
+docker compose -f docker/docker-compose.yml build --no-cache backend
+# or: docker compose -f docker/docker-compose.yml build --build-arg REBUILD_DEPS=1 backend
 ```
 
 - Backend: `http://localhost:5001`
@@ -281,8 +281,8 @@ This repo supports a few intentional failure modes so you can see:
 This keeps the backend running, but forces the **`/` status page** to render **Inactive**.
 
 ```bash
-docker compose down
-docker compose --profile testing up --build --force-recreate backend_inactive
+docker compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml --profile testing up --build --force-recreate backend_inactive
 ```
 
 Open:
@@ -297,8 +297,8 @@ Notes:
 This runs the backend on host port `5003` but points `DATABASE_PATH` somewhere invalid so the DB check fails and the status page flips to **Inactive**.
 
 ```bash
-docker compose down
-docker compose --profile testing up --build --force-recreate backend_db_fail
+docker compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml --profile testing up --build --force-recreate backend_db_fail
 ```
 
 Open:
@@ -320,8 +320,8 @@ The scripts below now auto-clear the marker when they start, and set it if they 
 1) Start the backend normally (so you can see `/` update):
 
 ```bash
-docker compose down
-docker compose up --build --force-recreate backend
+docker compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml up --build --force-recreate backend
 ```
 
 2) Run a script in a bash environment (WSL or Git Bash). To force a failure, point a CSV env var at a missing file:
@@ -340,8 +340,8 @@ COFFEE_CSV="does-not-exist.csv" ./tests/backend_smoke_test.sh
 If you want the frontend to call `http://localhost:5001` but **nothing is listening**, run only the frontend (no backend container):
 
 ```bash
-docker compose down
-docker compose up --build --no-deps frontend
+docker compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml up --build --no-deps frontend
 ```
 
 Open:
@@ -352,8 +352,8 @@ Open:
 This is useful if you want the site to load from `:5001` but every API call fails.
 
 ```bash
-docker compose down
-docker compose --profile testing up --build --force-recreate app_inactive
+docker compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml --profile testing up --build --force-recreate app_inactive
 ```
 
 Open:
@@ -363,7 +363,7 @@ Open:
 To stop and remove containers:
 
 ```bash
-docker compose down --remove-orphans
+docker compose -f docker/docker-compose.yml down --remove-orphans
 ```
 
 #### Production (single container serving API + built frontend)
@@ -371,42 +371,91 @@ docker compose down --remove-orphans
 This uses the `app` service (behind the `prod` profile) and serves the React build from Flask:
 
 ```bash
-docker compose --profile prod up --build
+docker compose -f docker/docker-compose.yml --profile prod up --build
 ```
 
 - App/API: `http://localhost:5001`
 
 #### Backend-only Docker image (without Compose)
 
-Build the backend target from the root `Dockerfile`:
+Build the backend target from `docker/Dockerfile`:
 
 ```bash
-docker build --target backend -t pinkcafe-backend .
+docker build -f docker/Dockerfile --target backend -t pinkcafe-backend .
 docker run --rm -p 5001:5001 -e PORT=5001 -e FLASK_ENV=development pinkcafe-backend
 ```
 
 #### Prophet batch job (PNG output)
 
-The root `Dockerfile` has a `prophet` target that runs `src/backend/Prophet.py` and writes PNGs to `/app/output`.
+The `docker/Dockerfile` has a `prophet` target that runs `backend/prophet/batch.py` and writes PNGs to `/app/output`.
 
 ```bash
-docker build --target prophet -t pinkcafe-prophet .
+docker build -f docker/Dockerfile --target prophet -t pinkcafe-prophet .
 mkdir -p output
 docker run --rm -v "$(pwd)/output:/app/output" pinkcafe-prophet
+```
+
+## Git ignore files
+
+Canonical `.gitignore` files live in the `git/` folder:
+
+- `git/root.gitignore` → root-level ignores (`.ruff_cache`, `.vscode`, `.venv`, `.env`, `debug.log`, `debuglog.md`, etc.)
+- `git/frontend.gitignore` → frontend-specific ignores (`node_modules`, `build`, `coverage`, etc.)
+
+To sync them to their target locations after editing:
+
+```bash
+./git/sync.sh
+```
+
+Or manually:
+
+```bash
+cp git/root.gitignore .gitignore
+cp git/frontend.gitignore frontend/.gitignore
+```
+
+## Python tooling (Ruff)
+
+Ruff is configured via `backend/ruff.toml`. The Ruff cache (`.ruff_cache`) is stored under `backend/` to keep Python tooling scoped to the backend. Run Ruff from the backend directory:
+
+```bash
+cd backend && ruff check .
+```
+
+Or from the repo root:
+
+```bash
+ruff check backend/
 ```
 
 ## Repo Structure (current)
 
 ```
 systems-development-group-project/
-├── docker-compose.yml
-├── Dockerfile                  # multi-stage (frontend build, backend, app, prophet)
+├── docker/                     # Docker config
+│   ├── Dockerfile             # multi-stage (frontend build, backend, app, prophet)
+│   ├── docker-compose.yml
+│   └── .dockerignore
+├── git/                        # Canonical .gitignore files
+│   ├── root.gitignore
+│   ├── frontend.gitignore
+│   ├── sync.sh                 # Sync gitignore files to target locations
+│   └── README.md
+├── backend/                    # Flask API source
+│   ├── db/                     # Database (connection, schema)
+│   ├── prophet/                # Prophet & forecasting ML (batch script, forecasting logic)
+│   ├── scripts/                # CLI scripts (csv_import)
+│   ├── utils/                  # Utilities (status_marker)
+│   ├── ruff.toml               # Ruff config (cache in backend/.ruff_cache)
+│   ├── app.py
+│   ├── routes/
+│   ├── services/
+│   └── ...
+├── frontend/                   # React frontend
+│   ├── src/
+│   ├── package.json
+│   └── package-lock.json
 ├── README.md
-├── tests/                      # Test scripts (backend smoke, tour, run)
-└── src/
-   ├── backend/                 # Flask API source
-   └── frontend/                # React frontend
-       ├── src/
-       ├── package.json
-       └── package-lock.json
+└── tests/                      # Test scripts (backend smoke, tour, run)
 ```

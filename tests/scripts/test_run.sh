@@ -17,7 +17,7 @@ if command -v git >/dev/null 2>&1; then
 fi
 [[ -z "$repo_root" ]] && repo_root="$(cd "$script_dir/../.." && pwd)"
 
-backend_dir="$repo_root/src/backend"
+backend_dir="$repo_root/backend"
 
 BASE_URL="${BASE_URL:-http://127.0.0.1:5005}"
 PORT="${PORT:-5005}"
@@ -27,11 +27,11 @@ DB_PATH="${DB_PATH:-data/test_run.db}"
 source "$script_dir/status_marker.sh"
 status_marker_trap_exit "test_run.sh"
 
-COFFEE_CSV_DEFAULT_1="$repo_root/src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
+COFFEE_CSV_DEFAULT_1="$repo_root/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
 COFFEE_CSV_DEFAULT_2="$backend_dir/Pink CoffeeSales March - Oct 2025.csv"
 COFFEE_CSV_DEFAULT_3="$backend_dir/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
 
-FOOD_CSV_DEFAULT_1="$repo_root/src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
+FOOD_CSV_DEFAULT_1="$repo_root/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
 FOOD_CSV_DEFAULT_2="$backend_dir/Pink CroissantSales March - Oct 2025.csv"
 FOOD_CSV_DEFAULT_3="$backend_dir/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
 

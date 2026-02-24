@@ -1,0 +1,27 @@
+
+Starting backend on http://127.0.0.1:5001 ...
+[config] __file__='/home/shamy/systems-development-group-project/backend/config.py' cwd='/home/shamy/systems-development-group-project/backend' database_path='/home/shamy/systems-development-group-project/backend/data/pinkcafe.db'
+
+Flask server starting on http://0.0.0.0:5001
+ * Serving Flask app 'api_factory'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://172.29.180.158:5001
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [24/Feb/2026 20:18:21] "OPTIONS /api/login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Feb/2026 20:18:21] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:22] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:23] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:23] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:24] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:27] "OPTIONS /api/login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Feb/2026 20:18:27] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:29] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:29] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:18:29] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:58:06] "OPTIONS /api/login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Feb/2026 20:58:06] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
+127.0.0.1 - - [24/Feb/2026 20:58:11] "OPTIONS /api/login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Feb/2026 20:58:11] "[31m[1mPOST /api/login HTTP/1.1[0m" 401 -
