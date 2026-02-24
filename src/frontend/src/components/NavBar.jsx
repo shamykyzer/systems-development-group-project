@@ -63,7 +63,7 @@ function NavBar() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2.5 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 border border-white/50"
+        className="md:hidden fixed top-4 left-4 z-50 p-2.5 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 ease-out border border-white/50"
         aria-label="Toggle menu"
       >
         <svg
@@ -113,18 +113,18 @@ function NavBar() {
                   key={to}
                   to={to}
                   title={label}
-                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all duration-200 ${
+                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ease-out ${
                     isActive
-                      ? 'bg-white/40 text-black'
-                      : 'text-black hover:bg-white/30 hover:text-black'
+                      ? 'bg-white/40 text-black shadow-sm'
+                      : 'text-black hover:bg-white/40 hover:shadow-md hover:scale-[1.02] hover:-translate-x-0.5 active:scale-[0.98]'
                   }`}
                 >
                   <span
-                    className={`flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-colors ${
-                      isActive ? 'bg-white/50' : 'bg-white/35 group-hover:bg-white/45'
+                    className={`flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-all duration-300 ease-out ${
+                      isActive ? 'bg-white/50' : 'bg-white/35 group-hover:bg-white/55 group-hover:scale-110'
                     }`}
                   >
-                    <Icon className="w-5 h-5 text-black" />
+                    <Icon className="w-5 h-5 text-black transition-transform duration-300 group-hover:scale-110" />
                   </span>
                   {label}
                 </Link>
@@ -134,7 +134,7 @@ function NavBar() {
 
           {/* User */}
           <div className="p-4 border-t border-[#c4b5ad]">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/25 hover:bg-white/35 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/25 hover:bg-white/40 hover:shadow-md hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pinkcafe2 to-pinkcafe2/80 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-sm">
                 {userInitial}
               </div>

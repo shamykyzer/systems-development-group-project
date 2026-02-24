@@ -47,11 +47,11 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-pinkcafe rounded-2xl p-8 space-y-6 w-full max-w-md">
+    <div className="bg-gradient-to-br from-pinkcafe to-pink-100 rounded-2xl p-8 space-y-6 w-full max-w-md">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-9xl font-extrabold font-sans text-black mb-2">Pink</h1>
-        <h1 className="text-9xl font-thin text-black mb-2 pl-9 pb-10">Cafe</h1>
+        <h1 className="text-9xl font-extrabold font-sans text-blackbrown mb-2">Pink</h1>
+        <h1 className="text-9xl font-thin text-blackbrown mb-2 pl-9 pb-10">Cafe</h1>
       </div>
 
       {/* Login Form */}
@@ -63,7 +63,7 @@ function LoginForm() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-sm font-bold text-black mb-2">
           Email Address
             </label>
             <input
@@ -71,7 +71,7 @@ function LoginForm() {
           id="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
           placeholder="you@pinkcafe.com"
           required
           disabled={loading}
@@ -79,38 +79,40 @@ function LoginForm() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="block text-sm font-bold text-black mb-2">
           Password
             </label>
-            <div className="relative">
+            <div className="relative mb-4">
           <input
             type={showPassword ? "text" : "password"}
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full pr-10 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition mb-4"
+            className="w-full pr-10 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
             placeholder="••••••••"
             required
             disabled={loading}
           />
-          {showPassword ? (
-            <FaEye 
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer" 
-              onClick={() => setShowPassword(false)}
-            />
-          ) : (
-            <FaEyeSlash 
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer" 
-              onClick={() => setShowPassword(true)}
-            />
-          )}
+          <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            {showPassword ? (
+              <FaEye 
+                className="h-5 w-5 text-black cursor-pointer pointer-events-auto" 
+                onClick={() => setShowPassword(false)}
+              />
+            ) : (
+              <FaEyeSlash 
+                className="h-5 w-5 text-black cursor-pointer pointer-events-auto" 
+                onClick={() => setShowPassword(true)}
+              />
+            )}
+          </span>
             </div>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex justify-end">
             <button
               type="button"
-              className="text-sm text-pinkcafe2 font-medium pb-10 pl-60 hover:underline"
+              className="text-sm text-black font-bold pb-10 hover:underline"
               onClick={() =>
                 setError('Password reset is not implemented yet. Please contact an administrator.')
               }
@@ -122,7 +124,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-pinkcafe2 text-white font-semibold py-3 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-black text-white font-semibold py-3 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
@@ -133,7 +135,7 @@ function LoginForm() {
         Don't have an account?{' '}
         <button
           type="button"
-          className="text-black font-medium hover:underline"
+          className="text-black font-bold hover:underline"
           onClick={() =>
             setError('Sign up is not implemented yet. Please contact an administrator.')
           }

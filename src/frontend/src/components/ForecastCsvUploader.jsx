@@ -58,7 +58,7 @@ function ForecastCsvUploader({ onFileSelect }) {
             <button
               type="button"
               onClick={() => document.getElementById('csv-file-input').click()}
-              className="bg-pinkcafe2 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
+              className="bg-black hover:bg-gray-800 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
             >
               Select CSV File
             </button>

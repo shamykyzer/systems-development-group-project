@@ -1,15 +1,16 @@
 import React from 'react';
 import LoginForm from '../components/LoginForm.jsx';
 import BusinessPromoPanel from '../components/BusinessPromoPanel.jsx';
+import loginWallpaper from '../assets/login_wallpaper.png';
 
 function Login() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
-      {/* Blurred background image on all screens */}
+      {/* Blurred background image on all screens - REQUIRED: assets/login_wallpaper.png must exist for login page to display correctly */}
       <div
         className="absolute inset-0 w-full h-full z-0"
         style={{
-          backgroundImage: "url('/login_wallpaper.png')",
+          backgroundImage: `url(${loginWallpaper})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

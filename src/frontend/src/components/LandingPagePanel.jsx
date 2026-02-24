@@ -215,7 +215,7 @@ function LandingPagePanel() {
                     return (
                         <div
                             key={i}
-                            className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                            className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 transition-all duration-300 ease-out hover:-translate-y-2 hover:shadow-xl hover:shadow-pinkcafe2/15 hover:border-pinkcafe2/25"
                         >
                             <div className="bg-pinkcafe2 px-4 py-3 flex items-center justify-between">
                                 <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
@@ -269,7 +269,7 @@ function LandingPagePanel() {
             <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-stretch w-full">
                 {/* Main Chart Card */}
                 <div className="flex-1 min-w-0 flex">
-                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/80 transition-shadow duration-300 hover:shadow-xl flex-1 flex flex-col min-h-0 w-full">
+                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/80 transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-pinkcafe2/10 hover:-translate-y-1 flex-1 flex flex-col min-h-0 w-full">
                         <div className="bg-pinkcafe2 px-6 py-5 flex-shrink-0 min-h-[140px]">
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
@@ -379,10 +379,10 @@ function LandingPagePanel() {
                                 key={key}
                                 type="button"
                                 onClick={() => setMainGraph(key)}
-                                className={`group text-left bg-white rounded-xl overflow-hidden shadow-sm transition-all duration-300 ${
-                                    mainGraph === key
+                                className={`group text-left bg-white rounded-xl overflow-hidden shadow-sm transition-all duration-300 ease-out ${
+                                        mainGraph === key
                                         ? 'ring-2 ring-pinkcafe2 ring-offset-2 shadow-xl scale-[1.02]'
-                                        : 'hover:shadow-lg hover:scale-[1.01]'
+                                        : 'hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1'
                                 }`}
                             >
                                 <div className="flex">
@@ -437,7 +437,7 @@ function LandingPagePanel() {
 
                 {/* Right panel - fills empty space */}
                 <div className="hidden xl:flex flex-col gap-4 w-64 xl:w-72 flex-shrink-0">
-                    <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 flex-1">
+                    <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 flex-1 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
                         <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-3">Insights</h3>
                         <ul className="space-y-2 text-sm text-pinkcafe2/80">
                             <li className="flex gap-2">
@@ -454,7 +454,7 @@ function LandingPagePanel() {
                             </li>
                         </ul>
                     </div>
-                    <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4">
+                    <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
                         <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-2">Model</h3>
                         <p className="text-xs text-pinkcafe2/60">Prophet forecasting • MAE 94%</p>
                     </div>
