@@ -5,10 +5,10 @@ import LandingPagePanel from '../components/LandingPagePanel';
 
 function Home() {
   return (
-<div>
-    <NavBar />
-    <LandingPagePanel />
-</div>
+    <div className="flex min-h-screen bg-dashboard-gradient">
+      <NavBar />
+      <LandingPagePanel />
+    </div>
   );
 }
 export default Home;

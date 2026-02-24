@@ -58,22 +58,25 @@ function Upload() {
   };
 
   return (
-<div className="flex min-h-screen bg-pinkcafe">
+<div className="flex min-h-screen bg-dashboard-gradient">
     <NavBar />
-    <div className="flex-1 md:ml-64 overflow-y-auto">
-      <ForecastCsvUploader onFileSelect={handleFileSelect} />
-      
-      {/* Process button - shown after file selected but before processing */}
-      {selectedFile && !uploadedData && (
-        <div className="w-full md:w-6/12 mx-auto px-6 pb-6">
-          <button
-            onClick={handleProcessFile}
-            className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
-          >
-            Process & Analyze File
-          </button>
+    <div className="flex-1 md:ml-64 overflow-y-auto min-h-screen bg-dashboard-gradient flex flex-col pt-20 md:pt-0">
+      {/* Centered upload area - flex-1 makes it fill available space and center content */}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-full max-w-xl px-6">
+          <ForecastCsvUploader onFileSelect={handleFileSelect} />
+          
+          {/* Process button - shown after file selected but before processing */}
+          {selectedFile && !uploadedData && (
+            <button
+              onClick={handleProcessFile}
+              className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+            >
+              Process & Analyze File
+            </button>
+          )}
         </div>
-      )}
+      </div>
       
       <div className="w-full md:w-10/12 lg:w-8/12 mx-auto p-6 space-y-6">
         {/* <CSVValidator data={uploadedData} /> */}

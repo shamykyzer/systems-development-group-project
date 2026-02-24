@@ -10,7 +10,7 @@ import ProphetSettingsPanel from '../components/ProphetSettingsPanel';
  */
 function Settings() {
   return (
-    <div className="flex min-h-screen bg-pinkcafe">
+    <div className="flex min-h-screen bg-dashboard-gradient">
       <NavBar />
       <ProphetSettingsPanel />
     </div>

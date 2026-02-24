@@ -135,7 +135,7 @@ function LandingPagePanel() {
 
     if (isLoading) {
         return (
-            <div className="ml-0 md:ml-64 min-h-screen bg-[linear-gradient(to_bottom,#f5dce0_0%,#efd2d6_12%,#e8c8cc_25%,#e0bcc0_38%,#d8b0b4_50%,#d0a4a8_62%,#c9989c_75%,#c18c90_88%,#b98084_100%)] p-4 md:p-8">
+            <div className="ml-0 md:ml-64 min-h-screen bg-dashboard-gradient p-4 md:p-8">
                 <div className="h-5 w-32 bg-pinkcafe2/10 rounded animate-pulse mb-6 mt-16 md:mt-0" />
                 <div className="mb-10">
                     <div className="h-4 w-24 bg-pinkcafe2/20 rounded animate-pulse mb-2" />
@@ -164,7 +164,7 @@ function LandingPagePanel() {
 
     if (!hasData) {
         return (
-            <div className="ml-0 md:ml-64 min-h-screen bg-[linear-gradient(to_bottom,#f5dce0_0%,#efd2d6_12%,#e8c8cc_25%,#e0bcc0_38%,#d8b0b4_50%,#d0a4a8_62%,#c9989c_75%,#c18c90_88%,#b98084_100%)] p-4 md:p-8 flex items-center justify-center">
+            <div className="ml-0 md:ml-64 min-h-screen bg-dashboard-gradient p-4 md:p-8 flex items-center justify-center">
                 <div className="text-center max-w-md">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-pinkcafe2/10 flex items-center justify-center">
                         <FaChartLine className="text-4xl text-pinkcafe2/50" />
@@ -185,7 +185,7 @@ function LandingPagePanel() {
     }
 
     return (
-        <div className="ml-0 md:ml-64 min-h-screen bg-[linear-gradient(to_bottom,#f5dce0_0%,#efd2d6_12%,#e8c8cc_25%,#e0bcc0_38%,#d8b0b4_50%,#d0a4a8_62%,#c9989c_75%,#c18c90_88%,#b98084_100%)] p-4 md:p-8 transition-all duration-300">
+        <div className="ml-0 md:ml-64 min-h-screen bg-dashboard-gradient p-4 md:p-8 transition-all duration-300">
             {/* Breadcrumb */}
             <nav className="mb-6 mt-16 md:mt-0 flex items-center gap-2 text-sm text-pinkcafe2/60">
                 <Link to="/home" className="hover:text-pinkcafe2 transition-colors flex items-center gap-1">

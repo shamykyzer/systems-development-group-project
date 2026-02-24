@@ -414,7 +414,7 @@ function ProphetSettingsPanel() {
   };
 
   return (
-    <div className="flex-1 p-4 md:ml-64 md:p-8 transition-all duration-300">
+    <div className="flex-1 min-h-screen bg-dashboard-gradient p-4 md:ml-64 md:p-8 transition-all duration-300">
     <div className="mt-16 md:mt-0">
     <div className="max-w-4xl mx-auto ml-0">
       {/* Page header */}
