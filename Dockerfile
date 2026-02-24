@@ -13,7 +13,7 @@ WORKDIR /app
 
 # Install dependencies (cached)
 COPY src/frontend/package.json src/frontend/package-lock.json ./
-RUN npm ci
+RUN npm install
 
 # Build
 COPY src/frontend/ ./
@@ -59,7 +59,7 @@ CMD ["python", "Prophet.py"]
 FROM node:18-alpine AS frontend
 WORKDIR /app
 COPY src/frontend/package.json src/frontend/package-lock.json ./
-RUN npm ci
+RUN npm install
 COPY src/frontend/ ./
 EXPOSE 3000
 CMD ["npm", "start"]
