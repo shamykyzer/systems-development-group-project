@@ -44,12 +44,12 @@ The dashboard provides interactive visualizations of historical sales data and p
 ## Current Implementation Notes (Pink Cafe)
 
 This repo currently contains:
-- **Frontend**: React app in `src/frontend/` (Create React App).
-- **Backend**: Flask API source in `src/backend/` (Python + SQLite).
+- **Frontend**: React app in `frontend/` (Create React App).
+- **Backend**: Flask API source in `backend/` (Python + SQLite).
 
 ### Backend changes implemented so far
 
-- **Normalized backend path**: the backend directory is now `src/backend/`.
+- **Normalized backend path**: the backend directory is now `backend/`.
 - **Modular Flask backend**: moved from a single monolithic Flask script to a small module layout with an **app factory**, **config**, and **blueprints** under `routes/`.
 - **Normalized SQLite schema**: added tables for `datasets`, `items`, `sales`, forecasting runs, and evaluation metrics (foundation for forecasting/evaluation features).
 - **CSV ingestion API**: upload wide-column CSVs and persist them into the normalized schema. This supports both coffee CSV header styles currently in the repo.
@@ -60,23 +60,23 @@ This repo currently contains:
 
 ### Backend package layout (important files)
 
-- `src/backend/app.py`: **entrypoint** (keeps `python3 app.py` working in Docker/local)
-- `src/backend/api_factory.py`: `create_app()` app factory + blueprint registration
-- `src/backend/config.py`: env-driven config (`DATABASE_PATH`, `CORS_ORIGINS`, etc.)
-- `src/backend/db.py`: SQLite connect + schema init
-- `src/backend/schema.py`: SQLite schema (`datasets/items/sales/model_runs/forecasts/evaluation_*`)
-- `src/backend/routes/`: Flask blueprints (health/auth/datasets/analytics/forecast/evaluation)
-- `src/backend/services/`: CSV parsing, analytics, forecasting (Prophet + baseline), evaluation, passwords (bcrypt)
-- `src/backend/CSV_Files/`: sample datasets used by scripts/tests
+- `backend/app.py`: **entrypoint** (keeps `python3 app.py` working in Docker/local)
+- `backend/api_factory.py`: `create_app()` app factory + blueprint registration
+- `backend/config.py`: env-driven config (`DATABASE_PATH`, `CORS_ORIGINS`, etc.)
+- `backend/db.py`: SQLite connect + schema init
+- `backend/schema.py`: SQLite schema (`datasets/items/sales/model_runs/forecasts/evaluation_*`)
+- `backend/routes/`: Flask blueprints (health/auth/datasets/analytics/forecast/evaluation)
+- `backend/services/`: CSV parsing, analytics, forecasting (Prophet + baseline), evaluation, passwords (bcrypt)
+- `backend/CSV_Files/`: sample datasets used by scripts/tests
 - `tests/`: helper test scripts for local dev + API smoke tests (outside src)
-- `src/backend/csv_import.py`: **local CLI importer** that loads a wide CSV into the normalized schema (`datasets/items/sales`) using the same parsing logic as the API (`services/csv_ingest.py`)
+- `backend/csv_import.py`: **local CLI importer** that loads a wide CSV into the normalized schema (`datasets/items/sales`) using the same parsing logic as the API (`services/csv_ingest.py`)
 
 ### Backend test scripts (what to run and when)
 
 - **Start the backend (local dev)**: `tests/backend_run.sh`
   - Creates `.venv` if missing, installs requirements, then runs `python app.py`.
 - **Smoke test (assumes backend is already running)**: `tests/backend_smoke_test.sh`
-  - Uploads the sample CSVs in `src/backend/CSV_Files/` and calls the analytics endpoints.
+  - Uploads the sample CSVs in `backend/CSV_Files/` and calls the analytics endpoints.
 - **One-command backend test run (start → smoke test → stop)**: `tests/backend_test_run.sh`
   - Starts the backend with an isolated DB (`DB_PATH`, default `data/test_run.db`), runs the smoke test, then stops the backend.
 - **Full “tour” test (includes forecast + zoom + evaluation)**: `tests/test_run.sh`
@@ -87,7 +87,7 @@ This repo currently contains:
 If you want to import a CSV **without** using the API upload endpoint, use the CLI importer:
 
 ```bash
-cd src/backend
+cd backend
 python3 csv_import.py --csv CSV_Files/"Pink CoffeeSales March - Oct 2025.csv" --category coffee --name coffee-sample
 ```
 
@@ -113,7 +113,7 @@ This creates the venv (if missing), installs deps, then starts the API:
 #### Manual start (if you prefer)
 
 ```bash
-cd src/backend
+cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -140,7 +140,7 @@ With the backend running, this uploads the sample coffee + croissant CSVs and hi
 
 What the smoke test does:
 - **Checks backend status**: `GET /api`
-- **Uploads + ingests sample CSVs** from `src/backend/CSV_Files/`:
+- **Uploads + ingests sample CSVs** from `backend/CSV_Files/`:
   - Coffee (`category=coffee`): `Pink CoffeeSales March - Oct 2025.csv`
   - Food (`category=food`): `Pink CroissantSales March - Oct 2025.csv`
 - **Calls analytics** on the uploaded dataset:
@@ -174,7 +174,7 @@ Upload/ingest a coffee CSV:
 curl -s -X POST http://127.0.0.1:5001/api/v1/datasets \
   -F "category=coffee" \
   -F "name=coffee-march-oct-2025" \
-  -F "file=@src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
+  -F "file=@backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
 ```
 
 List datasets:
@@ -236,7 +236,7 @@ curl -s "http://127.0.0.1:5001/api/v1/analytics/fluctuation?dataset_id=1&item_id
 
 ### Backend config (env vars)
 
-- `DATABASE_PATH`: SQLite DB file path (default `data/pinkcafe.db` under `src/backend/`)
+- `DATABASE_PATH`: SQLite DB file path (default `data/pinkcafe.db` under `backend/`)
 - `CORS_ORIGINS`: CORS origins (default `*`)
 - `FLASK_ENV` (or `ENV`): environment (default `development`)
 - `FLASK_DEBUG`: debug flag (`1/true/yes`)
@@ -387,7 +387,7 @@ docker run --rm -p 5001:5001 -e PORT=5001 -e FLASK_ENV=development pinkcafe-back
 
 #### Prophet batch job (PNG output)
 
-The root `Dockerfile` has a `prophet` target that runs `src/backend/Prophet.py` and writes PNGs to `/app/output`.
+The root `Dockerfile` has a `prophet` target that runs `backend/Prophet.py` and writes PNGs to `/app/output`.
 
 ```bash
 docker build --target prophet -t pinkcafe-prophet .
@@ -402,11 +402,10 @@ systems-development-group-project/
 ├── docker-compose.yml
 ├── Dockerfile                  # multi-stage (frontend build, backend, app, prophet)
 ├── README.md
-├── tests/                      # Test scripts (backend smoke, tour, run)
-└── src/
-   ├── backend/                 # Flask API source
-   └── frontend/                # React frontend
-       ├── src/
-       ├── package.json
-       └── package-lock.json
+├── backend/                    # Flask API source
+├── frontend/                   # React frontend
+│   ├── src/
+│   ├── package.json
+│   └── package-lock.json
+└── tests/                      # Test scripts (backend smoke, tour, run)
 ```

@@ -1,2 +1,0 @@
-"""Flask blueprints live here."""
-

@@ -12,11 +12,11 @@ FROM node:18-alpine AS frontend-build
 WORKDIR /app
 
 # Install dependencies (cached)
-COPY src/frontend/package.json src/frontend/package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
 # Build
-COPY src/frontend/ ./
+COPY frontend/ ./
 RUN npm run build
 # ============================================
 # Stage 2: Build Python deps (venv)
@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /tmp
 # Copy requirements first (separate layer) so pip install cache invalidates when requirements change
-COPY src/backend/requirements.txt ./requirements.txt
+COPY backend/requirements.txt ./requirements.txt
 # Pass REBUILD_DEPS=$(date +%s) to force pip install when cache is stale: docker compose build --build-arg REBUILD_DEPS=1
 ARG REBUILD_DEPS=0
 RUN echo "Rebuild deps: $REBUILD_DEPS" \
@@ -47,7 +47,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 # ============================================
 FROM python-deps AS backend
 WORKDIR /app
-COPY src/backend/ ./
+COPY backend/ ./
 EXPOSE 5001
 CMD ["python", "app.py"]
 
@@ -58,9 +58,9 @@ CMD ["python", "Prophet.py"]
 
 FROM node:18-alpine AS frontend
 WORKDIR /app
-COPY src/frontend/package.json src/frontend/package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
-COPY src/frontend/ ./
+COPY frontend/ ./
 EXPOSE 3000
 CMD ["npm", "start"]
 
@@ -81,7 +81,7 @@ WORKDIR /app
 
 # Copy Python deps + backend code
 COPY --from=python-deps /opt/venv /opt/venv
-COPY src/backend/ /app/backend/
+COPY backend/ /app/backend/
 
 # Copy built frontend (CRA outputs to /app/build)
 COPY --from=frontend-build /app/build/ /app/frontend/
@@ -92,5 +92,5 @@ RUN mkdir -p /app/data
 WORKDIR /app/backend
 EXPOSE 5001
 
-# Gunicorn entrypoint (see src/backend/app.py docstring)
+# Gunicorn entrypoint (see backend/app.py docstring)
 CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "2", "--threads", "4", "--access-logfile", "-", "--error-logfile", "-", "app:app"]

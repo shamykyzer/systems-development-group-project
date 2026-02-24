@@ -15,8 +15,8 @@ if command -v git >/dev/null 2>&1; then
 fi
 [[ -z "$repo_root" ]] && repo_root="$(cd "$script_dir/.." && pwd)"
 
-coffee_csv="${COFFEE_CSV:-$repo_root/src/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv}"
-food_csv="${FOOD_CSV:-$repo_root/src/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv}"
+coffee_csv="${COFFEE_CSV:-$repo_root/backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv}"
+food_csv="${FOOD_CSV:-$repo_root/backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv}"
 
 if ! command -v curl >/dev/null 2>&1; then
   echo "curl is required for this smoke test." >&2

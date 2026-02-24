@@ -13,7 +13,7 @@ DB_PATH="${DB_PATH:-data/test_run.db}"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
-backend_dir="$repo_root/src/backend"
+backend_dir="$repo_root/backend"
 
 # shellcheck disable=SC1091
 source "$script_dir/status_marker.sh"
