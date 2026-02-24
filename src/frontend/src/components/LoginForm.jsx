@@ -50,8 +50,8 @@ function LoginForm() {
     <div className="bg-pinkcafe rounded-2xl p-8 space-y-6 w-full max-w-md">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-9xl font-extrabold font-sans text-pinkcafe2 mb-2">Pink</h1>
-        <h1 className="text-9xl font-thin text-pinkcafe2 mb-2 pl-9 pb-10">Cafe</h1>
+        <h1 className="text-9xl font-extrabold font-sans text-black mb-2">Pink</h1>
+        <h1 className="text-9xl font-thin text-black mb-2 pl-9 pb-10">Cafe</h1>
       </div>
 
       {/* Login Form */}

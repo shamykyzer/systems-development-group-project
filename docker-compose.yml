@@ -7,7 +7,7 @@ services:
       target: app
     container_name: pinkcafe-app
     ports:
-      - "5001:5001"
+      - "5002:5001"  # 5002 (5001 often in use on host)
     volumes:
       - backend-db:/app/data
     environment:
@@ -45,8 +45,10 @@ services:
       - testing
     restart: "no"
 
-  # Flask Backend
+  # Flask Backend (dev only; prod uses combined app)
   backend:
+    profiles:
+      - dev
     build:
       context: .
       dockerfile: Dockerfile
@@ -123,8 +125,10 @@ services:
     profiles:
       - testing
 
-  # React Frontend
+  # React Frontend (dev only; prod uses combined app)
   frontend:
+    profiles:
+      - dev
     build:
       context: .
       dockerfile: Dockerfile

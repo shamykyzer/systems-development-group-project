@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt } from 'react-icons/fa';
 
 // API base URL configuration - uses environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
@@ -140,7 +142,7 @@ function ProphetSettingsPanel() {
    */
   const TooltipIcon = ({ text }) => (
     <span className="inline-block group relative cursor-pointer">
-      <svg className="w-4 h-4 inline text-gray-400 hover:text-blue-500 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+      <svg className="w-4 h-4 inline text-pinkcafe2/50 hover:text-pinkcafe2 transition-colors" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
       </svg>
       <span className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out absolute right-[-8px] top-6 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
@@ -414,35 +416,54 @@ function ProphetSettingsPanel() {
   };
 
   return (
-    <div className="flex-1 min-h-screen bg-dashboard-gradient p-4 md:ml-64 md:p-8 transition-all duration-300">
-    <div className="mt-16 md:mt-0">
-    <div className="max-w-4xl mx-auto ml-0">
+    <div className="ml-0 md:ml-64 flex-1 min-w-0 min-h-screen bg-dashboard-gradient p-4 md:p-8 transition-all duration-300">
+      <div className="max-w-4xl mx-auto mt-16 md:mt-0">
+      {/* Breadcrumb */}
+      <nav className="mb-6 flex items-center gap-2 text-sm text-pinkcafe2/60">
+        <Link to="/home" className="hover:text-pinkcafe2 transition-colors flex items-center gap-1">
+          <FaHome className="text-xs" /> Home
+        </Link>
+        <span>/</span>
+        <span className="text-pinkcafe2 font-medium">Settings</span>
+      </nav>
+
       {/* Page header */}
-      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Prophet Preset Settings</h1>
-      <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Create and manage presets for Prophet forecasting</p>
+      <div className="mb-10">
+        <h1 className="font-display text-3xl md:text-4xl font-bold text-black mb-2 tracking-tight">
+          Prophet Preset Settings
+        </h1>
+        <p className="text-black/80 text-base max-w-xl mb-2">
+          Create and manage presets for Prophet forecasting
+        </p>
+      </div>
 
       {/* Status message display - shows success, error, or info messages */}
       {message.text && (
-        <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg text-sm sm:text-base ${
-          message.type === 'success' ? 'bg-green-100 text-green-800 border border-green-300' :
-          message.type === 'error' ? 'bg-red-100 text-red-800 border border-red-300' :
-          'bg-blue-100 text-blue-800 border border-blue-300'
+        <div className={`mb-6 p-4 rounded-xl text-sm sm:text-base border shadow-sm ${
+          message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+          message.type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+          'bg-pinkcafe2/10 text-pinkcafe2 border-pinkcafe2/20'
         }`}>
           {message.text}
         </div>
       )}
 
-      {/* Preset selection and management */}
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+      {/* Preset selection and management - card with landing page style */}
+      <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 mb-6">
+        <div className="bg-pinkcafe2 px-4 md:px-6 py-3 flex items-center gap-2">
+          <FaCog className="text-white text-lg" />
+          <h2 className="font-display text-lg md:text-xl font-bold text-white">Preset Management</h2>
+        </div>
+        <div className="bg-white p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-pinkcafe2/80 mb-2">
               Select Preset
             </label>
             <select
               value={selectedPreset}
               onChange={(e) => handlePresetChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50 bg-white"
               disabled={loading || showCreateDialog}
             >
               {/* Populate dropdown with available presets */}
@@ -453,61 +474,63 @@ function ProphetSettingsPanel() {
           </div>
           
           {/* Preset action buttons */}
-          <div className="flex gap-2 sm:pt-7">
+          <div className="flex flex-wrap gap-3 sm:pt-7">
             <button
               onClick={handleNewPreset}
               disabled={loading}
-              className="flex-1 sm:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
               title="Create new preset with default settings"
             >
-              <img src="/icons/plus-solid-full.svg" alt="" className="w-4 h-4 brightness-0 invert" />
+              <FaPlus className="w-4 h-4" />
               New
             </button>
             
             <button
               onClick={handleDuplicatePreset}
               disabled={loading}
-              className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-pinkcafe2 hover:bg-pinkcafe2/90 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
               title="Duplicate current preset"
             >
-              <img src="/icons/clone-solid-full.svg" alt="" className="w-4 h-4 brightness-0 invert" />
+              <FaCopy className="w-4 h-4" />
               Duplicate
             </button>
             
             <button
               onClick={handleDeletePreset}
               disabled={loading || selectedPreset === 'Default' || showCreateDialog}
-              className="flex-1 sm:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm sm:text-base font-medium rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title={selectedPreset === 'Default' ? 'Cannot delete Default preset' : 'Delete preset'}
             >
-              <img src="/icons/trash-solid-full.svg" alt="" className="w-4 h-4 brightness-0 invert" />
+              <FaTrashAlt className="w-4 h-4" />
               Delete
             </button>
           </div>
         </div>
+        </div>
       </div>
 
-      {/* Main settings configuration form */}
-      <div className={`bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6 ${
-        showCreateDialog ? `border-2 ${creationMode === 'new' ? 'border-green-500' : 'border-blue-500'}` : ''
+      {/* Main settings configuration form - card with landing page style */}
+      <div className={`rounded-xl overflow-hidden shadow-sm border transition-all duration-300 mb-6 ${
+        showCreateDialog ? `border-2 ${creationMode === 'new' ? 'border-emerald-500' : 'border-pinkcafe2'}` : 'border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5'
       }`}>
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+        <div className="bg-pinkcafe2 px-4 md:px-6 py-3 flex items-center justify-between">
+          <h2 className="font-display text-lg md:text-xl font-bold text-white">
             {showCreateDialog 
               ? (creationMode === 'new' ? 'Create New Preset' : 'Duplicate Preset')
               : 'Preset Configuration'}
           </h2>
           {hasUnsavedChanges && (
-            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs sm:text-sm font-semibold rounded-full border border-yellow-300">
+            <span className="px-3 py-1 bg-amber-400/90 text-amber-900 text-xs sm:text-sm font-semibold rounded-full">
               Unsaved Changes
             </span>
           )}
         </div>
+        <div className="bg-white p-4 sm:p-6">
         
         {/* Preset name input - only shown when creating/duplicating a preset */}
         {showCreateDialog && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <div className="mb-6 p-4 bg-pinkcafe2/5 rounded-xl border border-pinkcafe2/10">
+            <label className="block text-sm font-semibold text-pinkcafe2/80 mb-2">
               Preset Name
             </label>
             <input
@@ -515,10 +538,10 @@ function ProphetSettingsPanel() {
               value={newPresetName}
               onChange={(e) => setNewPresetName(e.target.value)}
               placeholder="Enter preset name..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
               onKeyPress={(e) => e.key === 'Enter' && handleCreatePreset()} // Allow Enter key to submit
             />
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-pinkcafe2/60 mt-2">
               {creationMode === 'new' 
                 ? 'The preset will be created with default settings shown below.' 
                 : `The preset will be created with the current settings from '${selectedPreset}'.`}
@@ -531,14 +554,14 @@ function ProphetSettingsPanel() {
           
           {/* Growth Type selector - determines how the trend grows over time */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Growth Type <span className="text-gray-500 text-xs">(Linear or Logistic)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Growth Type <span className="text-pinkcafe2/50 text-xs">(Linear or Logistic)</span></span>
               <TooltipIcon text={"Linear: Assumes unbounded growth. Best for most bakery sales without natural limits.\n\nLogistic: Used when there's a maximum capacity (saturating growth), requires setting cap_multiplier."} />
             </label>
             <select
               value={settings.growth}
               onChange={(e) => handleInputChange('growth', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             >
               <option value="linear">Linear</option>
               <option value="logistic">Logistic</option>
@@ -547,14 +570,14 @@ function ProphetSettingsPanel() {
 
           {/* Seasonality Mode - how seasonal effects combine with trend */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Seasonality Mode <span className="text-gray-500 text-xs">(Multiplicative or Additive)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Seasonality Mode <span className="text-pinkcafe2/50 text-xs">(Multiplicative or Additive)</span></span>
               <TooltipIcon text={"Multiplicative: Seasonal effects scale with the trend (e.g., 20% increase during holidays).\n\nAdditive: Fixed seasonal effect regardless of trend level."} />
             </label>
             <select
               value={settings.seasonality_mode}
               onChange={(e) => handleInputChange('seasonality_mode', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             >
               <option value="multiplicative">Multiplicative</option>
               <option value="additive">Additive</option>
@@ -563,8 +586,8 @@ function ProphetSettingsPanel() {
 
           {/* Changepoint Prior Scale - controls how flexible the trend is */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Changepoint Prior Scale <span className="text-gray-500 text-xs">(0.001 - 0.5)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Changepoint Prior Scale <span className="text-pinkcafe2/50 text-xs">(0.001 - 0.5)</span></span>
               <TooltipIcon text={"Controls how flexible the trend is at changepoints.\n\nLower values (0.001-0.05) create smoother, more conservative trends.\n\nHigher values (0.1-0.5) allow more dramatic trend changes."} />
             </label>
             <input
@@ -575,14 +598,14 @@ function ProphetSettingsPanel() {
               value={settings.changepoint_prior_scale}
               onChange={(e) => handleInputChange('changepoint_prior_scale', parseFloat(e.target.value))}
               onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             />
           </div>
 
           {/* Seasonality Prior Scale - controls strength of seasonal components */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Seasonality Prior Scale <span className="text-gray-500 text-xs">(0.1 - 100)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Seasonality Prior Scale <span className="text-pinkcafe2/50 text-xs">(0.1 - 100)</span></span>
               <TooltipIcon text={"Controls the strength of seasonal patterns (weekly, yearly).\n\nHigher values (20-100) allow stronger seasonal effects.\n\nLower values (0.1-5) dampen seasonality for smoother predictions."} />
             </label>
             <input
@@ -593,14 +616,14 @@ function ProphetSettingsPanel() {
               value={settings.seasonality_prior_scale}
               onChange={(e) => handleInputChange('seasonality_prior_scale', parseFloat(e.target.value))}
               onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             />
           </div>
 
           {/* Forecast Periods - how many days into the future to predict */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Forecast Periods <span className="text-gray-500 text-xs">(1 - 730 days)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Forecast Periods <span className="text-pinkcafe2/50 text-xs">(1 - 730 days)</span></span>
               <TooltipIcon text={"Number of days to forecast into the future.\n\nLonger forecasts have wider uncertainty intervals.\n\nMaximum 730 days (2 years)."} />
             </label>
             <input
@@ -610,14 +633,14 @@ function ProphetSettingsPanel() {
               value={settings.forecast_periods}
               onChange={(e) => handleInputChange('forecast_periods', parseInt(e.target.value))}
               onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             />
           </div>
 
           {/* Interval Width - uncertainty prediction interval */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Interval Width <span className="text-gray-500 text-xs">(0.50 - 0.99)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Interval Width <span className="text-pinkcafe2/50 text-xs">(0.50 - 0.99)</span></span>
               <TooltipIcon text={"Confidence level for prediction intervals.\n\n0.80 (80%) means 80% confidence the actual sales will fall within the predicted range.\n\nDoes not affect the main prediction, only the uncertainty bounds."} />
             </label>
             <input
@@ -628,7 +651,7 @@ function ProphetSettingsPanel() {
               value={settings.interval_width}
               onChange={(e) => handleInputChange('interval_width', parseFloat(e.target.value))}
               onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             />
           </div>
 
@@ -636,8 +659,8 @@ function ProphetSettingsPanel() {
           {/* Conditionally rendered because floor constraint is not applicable to linear growth */}
           {settings.growth === 'logistic' && (
             <div>
-              <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-                <span>Floor Multiplier <span className="text-gray-500 text-xs">(0 - 0.95)</span></span>
+              <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+                <span>Floor Multiplier <span className="text-pinkcafe2/50 text-xs">(0 - 0.95)</span></span>
                 <TooltipIcon text={"Minimum sales constraint as a proportion of historical data. 0.5 means sales won't drop below 50% of baseline.\n\nLower values allow bigger drops; higher values enforce a safety threshold.\n\nNot used with linear growth."} />
               </label>
               <input
@@ -648,7 +671,7 @@ function ProphetSettingsPanel() {
                 value={settings.floor_multiplier}
                 onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
                 onWheel={handleNumberScroll}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
               />
             </div>
           )}
@@ -657,8 +680,8 @@ function ProphetSettingsPanel() {
           {/* Conditionally rendered because cap constraint is not applicable to linear growth */}
           {settings.growth === 'logistic' && (
             <div>
-              <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-                <span>Cap Multiplier <span className="text-gray-500 text-xs">(1.1 - 5.0)</span></span>
+              <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+                <span>Cap Multiplier <span className="text-pinkcafe2/50 text-xs">(1.1 - 5.0)</span></span>
                 <TooltipIcon text={"Maximum sales capacity as a proportion of historical peak. 1.5 means sales can't exceed 150% of historical maximum.\n\nUse 1.2-2.0 for established bakeries with physical constraints. Higher values (2.0-5.0) for growing businesses.\n\nNot used with linear growth."} />
               </label>
               <input
@@ -669,15 +692,15 @@ function ProphetSettingsPanel() {
                 value={settings.cap_multiplier}
                 onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
                 onWheel={handleNumberScroll}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
               />
             </div>
           )}
 
           {/* Number of Changepoints - potential trend breaks */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Number of Changepoints <span className="text-gray-500 text-xs">(5 - 50)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Number of Changepoints <span className="text-pinkcafe2/50 text-xs">(5 - 50)</span></span>
               <TooltipIcon text={"Number of potential points where the trend can change direction.\n\nDefault 25 works for most cases.\n\nUse fewer (10-15) for stable businesses with consistent growth.\n\nUse more (30-50) for volatile periods.\n\nMore changepoints = more flexible but potentially overfits."} />
             </label>
             <input
@@ -687,14 +710,14 @@ function ProphetSettingsPanel() {
               value={settings.n_changepoints}
               onChange={(e) => handleInputChange('n_changepoints', parseInt(e.target.value))}
               onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             />
           </div>
 
           {/* Changepoint Range - proportion of history for fitting changepoints */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Changepoint Range <span className="text-gray-500 text-xs">(0.6 - 0.95)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Changepoint Range <span className="text-pinkcafe2/50 text-xs">(0.6 - 0.95)</span></span>
               <TooltipIcon text={"Proportion of historical data where changepoints can occur.\n\nDefault 0.80 means changepoints only in first 80% of data, preventing overfitting to recent noise.\n\nUse 0.90-0.95 if recent changes are important (new menu, expansion).\n\nUse 0.60-0.75 for more stable, conservative forecasts."} />
             </label>
             <input
@@ -705,14 +728,14 @@ function ProphetSettingsPanel() {
               value={settings.changepoint_range}
               onChange={(e) => handleInputChange('changepoint_range', parseFloat(e.target.value))}
               onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             />
           </div>
 
           {/* Holidays Prior Scale - impact of holidays on predictions */}
           <div>
-            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-              <span>Holidays Prior Scale <span className="text-gray-500 text-xs">(0.1 - 100)</span></span>
+            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+              <span>Holidays Prior Scale <span className="text-pinkcafe2/50 text-xs">(0.1 - 100)</span></span>
               <TooltipIcon text={"Controls how much selected holidays affect predictions.\n\nHigher values (20-100) create larger holiday spikes.\n\nLower values (1-10) give subtle holiday effects.\n\nRequires holidays to be selected below."} />
             </label>
             <input
@@ -723,7 +746,7 @@ function ProphetSettingsPanel() {
               value={settings.holidays_prior_scale}
               onChange={(e) => handleInputChange('holidays_prior_scale', parseFloat(e.target.value))}
               onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
             />
           </div>
         </div>
@@ -731,7 +754,7 @@ function ProphetSettingsPanel() {
         {/* Seasonality component toggles section */}
         <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-base sm:text-lg font-medium text-gray-800">
+            <h3 className="text-base sm:text-lg font-medium text-black">
               Seasonality Components
             </h3>
             <TooltipIcon text={"Enable seasonal patterns in your forecast.\n\nDaily: patterns within a day (peak hours for bakery).\n\nWeekly: day-of-week effects (weekend vs weekday).\n\nYearly: seasonal patterns across the year (summer slump, winter holidays)."} />
@@ -743,9 +766,9 @@ function ProphetSettingsPanel() {
                 type="checkbox"
                 checked={settings.daily_seasonality}
                 onChange={(e) => handleInputChange('daily_seasonality', e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
               />
-              <span className="text-gray-700">Daily Seasonality</span>
+              <span className="text-pinkcafe2/80">Daily Seasonality</span>
             </label>
             
             {/* Weekly seasonality toggle */}
@@ -754,9 +777,9 @@ function ProphetSettingsPanel() {
                 type="checkbox"
                 checked={settings.weekly_seasonality}
                 onChange={(e) => handleInputChange('weekly_seasonality', e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
               />
-              <span className="text-gray-700">Weekly Seasonality</span>
+              <span className="text-pinkcafe2/80">Weekly Seasonality</span>
             </label>
             
             {/* Yearly seasonality toggle */}
@@ -765,9 +788,9 @@ function ProphetSettingsPanel() {
                 type="checkbox"
                 checked={settings.yearly_seasonality}
                 onChange={(e) => handleInputChange('yearly_seasonality', e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
               />
-              <span className="text-gray-700">Yearly Seasonality</span>
+              <span className="text-pinkcafe2/80">Yearly Seasonality</span>
             </label>
           </div>
         </div>
@@ -775,12 +798,12 @@ function ProphetSettingsPanel() {
         {/* Holidays selection section */}
         <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-base sm:text-lg font-medium text-gray-800">
+            <h3 className="text-base sm:text-lg font-medium text-black">
               Holidays & Events
             </h3>
             <TooltipIcon text={"Select holidays that create predictable sales spikes or dips for your bakery. Prophet will learn the typical effect of each holiday from historical data and apply it to future forecasts.\n\nStrength controlled by Holidays Prior Scale above."} />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Select holidays that significantly impact bakery sales</p>
+          <p className="text-sm text-pinkcafe2/60 mb-4">Select holidays that significantly impact bakery sales</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               'New Year\'s Day',
@@ -812,9 +835,9 @@ function ProphetSettingsPanel() {
                       handleInputChange('holidays', currentHolidays.filter(h => h !== holiday));
                     }
                   }}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
                 />
-                <span className="text-gray-700">{holiday}</span>
+                <span className="text-pinkcafe2/80">{holiday}</span>
               </label>
             ))}
           </div>
@@ -829,9 +852,9 @@ function ProphetSettingsPanel() {
                 type="checkbox"
                 checked={settings.custom_seasonality_enabled}
                 onChange={(e) => handleInputChange('custom_seasonality_enabled', e.target.checked)}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
               />
-              <h3 className="text-base sm:text-lg font-medium text-gray-800 ml-3">
+              <h3 className="text-base sm:text-lg font-medium text-black ml-3">
                 Custom Seasonality
               </h3>
             </div>
@@ -843,7 +866,7 @@ function ProphetSettingsPanel() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-8">
               {/* Custom seasonality name input */}
               <div>
-                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
                   <span>Name</span>
                   <TooltipIcon text="Descriptive name for your custom seasonality (e.g., 'monthly_promotion', 'biweekly_payday')." />
                 </label>
@@ -852,14 +875,14 @@ function ProphetSettingsPanel() {
                   value={settings.custom_seasonality_name}
                   onChange={(e) => handleInputChange('custom_seasonality_name', e.target.value)}
                   placeholder="e.g., monthly"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
                 />
               </div>
               
               {/* Custom seasonality period (in days) */}
               <div>
-                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-                  <span>Period <span className="text-gray-500 text-xs">(7 - 365 days)</span></span>
+                <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+                  <span>Period <span className="text-pinkcafe2/50 text-xs">(7 - 365 days)</span></span>
                   <TooltipIcon text={"Length of the recurring cycle in days.\n\nMust be at least 7 days. Should be a pattern you observe repeating consistently in your sales data."} />
                 </label>
                 <input
@@ -870,14 +893,14 @@ function ProphetSettingsPanel() {
                   value={settings.custom_seasonality_period}
                   onChange={(e) => handleInputChange('custom_seasonality_period', parseFloat(e.target.value))}
                   onWheel={handleNumberScroll}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
                 />
               </div>
               
               {/* Fourier order - controls smoothness of custom seasonality */}
               <div>
-                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-                  <span>Fourier Order <span className="text-gray-500 text-xs">(1 - 20)</span></span>
+                <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+                  <span>Fourier Order <span className="text-pinkcafe2/50 text-xs">(1 - 20)</span></span>
                   <TooltipIcon text={"Controls the complexity of the seasonal pattern.\n\nLower values (1-5) create smooth, simple patterns.\n\nHigher values (6-15) allow more complex, irregular patterns.\n\nMaximum 20, but values above 10 rarely needed."} />
                 </label>
                 <input
@@ -887,16 +910,21 @@ function ProphetSettingsPanel() {
                   value={settings.custom_seasonality_fourier_order}
                   onChange={(e) => handleInputChange('custom_seasonality_fourier_order', parseInt(e.target.value))}
                   onWheel={handleNumberScroll}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
                 />
               </div>
             </div>
           )}
         </div>
+        </div>
       </div>
 
-      {/* Action buttons section */}
-      <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+      {/* Action buttons section - card with landing page style */}
+      <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+        <div className="bg-pinkcafe2 px-4 md:px-6 py-3">
+          <h2 className="font-display text-lg font-bold text-white">Actions</h2>
+        </div>
+        <div className="bg-white p-4 sm:p-6">
         <div className="flex flex-wrap gap-4">
           {showCreateDialog ? (
             /* Create/Duplicate mode buttons */
@@ -906,8 +934,8 @@ function ProphetSettingsPanel() {
                 disabled={loading || !newPresetName.trim()}
                 className={`flex-1 min-w-0 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                   creationMode === 'new'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-pinkcafe2 hover:bg-pinkcafe2/90'
                 }`}
               >
                 {loading ? 'Creating...' : (creationMode === 'new' ? 'Create Preset' : 'Duplicate Preset')}
@@ -929,7 +957,7 @@ function ProphetSettingsPanel() {
                 onClick={handleSaveSettings}
                 disabled={loading}
                 className={`flex-1 min-w-0 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  hasUnsavedChanges ? 'bg-pink-600 hover:bg-pink-700' : 'bg-pink-500 hover:bg-pink-600'
+                  hasUnsavedChanges ? 'bg-pinkcafe2 hover:bg-pinkcafe2/90' : 'bg-pinkcafe2/80 hover:bg-pinkcafe2'
                 }`}
               >
                 {loading ? 'Saving...' : (hasUnsavedChanges ? 'Save Changes' : 'Save Preset')}
@@ -949,15 +977,15 @@ function ProphetSettingsPanel() {
         
         {/* Informational note about model retraining - only shown in normal mode */}
         {!showCreateDialog && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-4 p-4 bg-pinkcafe2/10 border border-pinkcafe2/20 rounded-xl">
+            <p className="text-sm text-pinkcafe2/80">
               <strong>Note:</strong> After updating a preset, you'll need to retrain Prophet using that preset for changes to take effect.
             </p>
           </div>
         )}
+        </div>
       </div>
-    </div>
-    </div>  
+      </div>
     </div>
   );
 }

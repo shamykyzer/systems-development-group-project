@@ -5,9 +5,11 @@ import LandingPagePanel from '../components/LandingPagePanel';
 
 function Home() {
   return (
-    <div className="flex min-h-screen bg-dashboard-gradient">
+    <div className="flex min-h-screen w-full bg-dashboard-gradient overflow-x-hidden">
       <NavBar />
-      <LandingPagePanel />
+      <main className="flex-1 min-w-0">
+        <LandingPagePanel />
+      </main>
     </div>
   );
 }

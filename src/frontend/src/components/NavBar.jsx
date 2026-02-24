@@ -41,9 +41,23 @@ function SignOutIcon({ className }) {
   );
 }
 
+const DEFAULT_DISPLAY_NAME = 'Manager';
+const DEFAULT_EMAIL = 'manager@pinkcafe.com';
+
 function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const storedUser = (() => {
+    try {
+      const raw = localStorage.getItem('pinkcafe_user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+  const displayName = storedUser?.name ?? storedUser?.email?.split('@')[0] ?? DEFAULT_DISPLAY_NAME;
+  const email = storedUser?.email ?? DEFAULT_EMAIL;
+  const userInitial = (displayName || email || '?').charAt(0).toUpperCase();
 
   return (
     <>
@@ -81,10 +95,10 @@ function NavBar() {
           {/* Logo - matches LoginForm: stacked, Pink bold, Cafe offset left */}
           <div className="px-6 py-8 mt-12 md:mt-6 flex justify-center">
             <Link to="/home" className="block group text-center">
-              <h1 className="text-4xl md:text-5xl font-black text-pinkcafe2 group-hover:text-pinkcafe2/90 transition-colors leading-tight">
+              <h1 className="text-[2.8125rem] md:text-[3.75rem] font-black text-black group-hover:text-black/90 transition-colors leading-tight">
                 Pink
               </h1>
-              <h1 className="text-4xl md:text-5xl font-thin text-pinkcafe2 group-hover:text-pinkcafe2/90 transition-colors -ml-2 pl-6 leading-tight">
+              <h1 className="text-[2.8125rem] md:text-[3.75rem] font-thin text-black group-hover:text-black/90 transition-colors -ml-2 pl-6 leading-tight">
                 Cafe
               </h1>
             </Link>
@@ -99,10 +113,10 @@ function NavBar() {
                   key={to}
                   to={to}
                   title={label}
-                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-all duration-200 ${
+                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all duration-200 ${
                     isActive
-                      ? 'bg-white/40 text-gray-900'
-                      : 'text-gray-900 hover:bg-white/30 hover:text-gray-900'
+                      ? 'bg-white/40 text-black'
+                      : 'text-black hover:bg-white/30 hover:text-black'
                   }`}
                 >
                   <span
@@ -110,7 +124,7 @@ function NavBar() {
                       isActive ? 'bg-white/50' : 'bg-white/35 group-hover:bg-white/45'
                     }`}
                   >
-                    <Icon className="w-5 h-5 text-gray-900" />
+                    <Icon className="w-5 h-5 text-black" />
                   </span>
                   {label}
                 </Link>
@@ -122,11 +136,11 @@ function NavBar() {
           <div className="p-4 border-t border-[#c4b5ad]">
             <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/25 hover:bg-white/35 transition-colors cursor-pointer">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pinkcafe2 to-pinkcafe2/80 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-sm">
-                U
+                {userInitial}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">User Name</p>
-                <p className="text-xs font-medium text-gray-700 truncate">user@pinkcafe.com</p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+                <p className="text-xs font-medium text-gray-700 truncate">{email}</p>
               </div>
             </div>
           </div>

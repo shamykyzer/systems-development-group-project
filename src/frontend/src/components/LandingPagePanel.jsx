@@ -135,7 +135,7 @@ function LandingPagePanel() {
 
     if (isLoading) {
         return (
-            <div className="ml-0 md:ml-64 min-h-screen bg-dashboard-gradient p-4 md:p-8">
+            <div className="ml-0 md:ml-64 flex-1 min-w-0 min-h-screen bg-dashboard-gradient p-4 md:p-8">
                 <div className="h-5 w-32 bg-pinkcafe2/10 rounded animate-pulse mb-6 mt-16 md:mt-0" />
                 <div className="mb-10">
                     <div className="h-4 w-24 bg-pinkcafe2/20 rounded animate-pulse mb-2" />
@@ -164,7 +164,7 @@ function LandingPagePanel() {
 
     if (!hasData) {
         return (
-            <div className="ml-0 md:ml-64 min-h-screen bg-dashboard-gradient p-4 md:p-8 flex items-center justify-center">
+            <div className="ml-0 md:ml-64 flex-1 min-w-0 min-h-screen bg-dashboard-gradient p-4 md:p-8 flex items-center justify-center">
                 <div className="text-center max-w-md">
                     <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-pinkcafe2/10 flex items-center justify-center">
                         <FaChartLine className="text-4xl text-pinkcafe2/50" />
@@ -185,7 +185,7 @@ function LandingPagePanel() {
     }
 
     return (
-        <div className="ml-0 md:ml-64 min-h-screen bg-dashboard-gradient p-4 md:p-8 transition-all duration-300">
+        <div className="ml-0 md:ml-64 flex-1 min-w-0 min-h-screen bg-dashboard-gradient p-4 md:p-8 transition-all duration-300">
             {/* Breadcrumb */}
             <nav className="mb-6 mt-16 md:mt-0 flex items-center gap-2 text-sm text-pinkcafe2/60">
                 <Link to="/home" className="hover:text-pinkcafe2 transition-colors flex items-center gap-1">
@@ -266,7 +266,7 @@ function LandingPagePanel() {
             </div>
 
             {/* Main Content - main card height matches three side cards */}
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-stretch">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-stretch w-full">
                 {/* Main Chart Card */}
                 <div className="flex-1 min-w-0 flex">
                     <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/80 transition-shadow duration-300 hover:shadow-xl flex-1 flex flex-col min-h-0 w-full">
@@ -370,7 +370,7 @@ function LandingPagePanel() {
                 </div>
 
                 {/* Side Cards */}
-                <div className="w-full lg:w-56 flex flex-col gap-3">
+                <div className="w-full lg:w-64 xl:w-72 flex flex-col gap-3 flex-shrink-0">
                     {Object.keys(graphs).map((key) => {
                         const graph = graphs[key];
                         const sparkData = graph.data.map((d) => ({ v: d.predicted ?? d.units ?? 0 }));
@@ -433,6 +433,31 @@ function LandingPagePanel() {
                             </button>
                         );
                     })}
+                </div>
+
+                {/* Right panel - fills empty space */}
+                <div className="hidden xl:flex flex-col gap-4 w-64 xl:w-72 flex-shrink-0">
+                    <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 flex-1">
+                        <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-3">Insights</h3>
+                        <ul className="space-y-2 text-sm text-pinkcafe2/80">
+                            <li className="flex gap-2">
+                                <span className="text-emerald-600">●</span>
+                                Coffee demand peaks Thu–Sat
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-emerald-600">●</span>
+                                Pastry sales up 8.7% vs last week
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-rose-600">●</span>
+                                Sandwich trend down; review menu
+                            </li>
+                        </ul>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4">
+                        <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-2">Model</h3>
+                        <p className="text-xs text-pinkcafe2/60">Prophet forecasting • MAE 94%</p>
+                    </div>
                 </div>
             </div>
         </div>
