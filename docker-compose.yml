@@ -55,7 +55,7 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./src/backend:/app
+      - ./backend:/app
       - backend-db:/app/data
     environment:
       - FLASK_ENV=development
@@ -79,7 +79,7 @@ services:
     ports:
       - "5002:5001"
     volumes:
-      - ./src/backend:/app
+      - ./backend:/app
       - backend-db:/app/data
     environment:
       - FLASK_ENV=development
@@ -105,7 +105,7 @@ services:
     ports:
       - "5003:5001"
     volumes:
-      - ./src/backend:/app
+      - ./backend:/app
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
@@ -133,12 +133,13 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./pinkcafe/src:/app/src
-      - ./pinkcafe/public:/app/public
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
       - /app/node_modules
     environment:
       - REACT_APP_API_URL=http://localhost:5001
       - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     depends_on:
       - backend
     stdin_open: true
@@ -156,7 +157,7 @@ services:
     container_name: pinkcafe-prophet
     volumes:
       # Optional: mount backend code for quick iteration (no rebuild)
-      - ./src/backend:/app/backend
+      - ./backend:/app/backend
       - prophet-output:/app/output
     environment:
       - MPLBACKEND=Agg

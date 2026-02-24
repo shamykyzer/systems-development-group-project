@@ -6,16 +6,18 @@ on:
     paths:
       - "Dockerfile"
       - "docker-compose.yml"
-      - "src/backend/**"
-      - "pinkcafe/**"
+      - "backend/**"
+      - "frontend/**"
+      - "tests/**"
       - ".github/workflows/docker-image.yml"
   pull_request:
     branches: ["main"]
     paths:
       - "Dockerfile"
       - "docker-compose.yml"
-      - "src/backend/**"
-      - "pinkcafe/**"
+      - "backend/**"
+      - "frontend/**"
+      - "tests/**"
       - ".github/workflows/docker-image.yml"
 
 concurrency:
@@ -54,12 +56,22 @@ jobs:
             curl -fsS http://localhost:8080/api >/dev/null && exit 0
             sleep 1
           done
-          echo "App didn't respond"; docker logs pinkcafe-app || true; exit 1
+          echo "Backend did not respond within 60s"
+          docker logs pinkcafe-app 2>&1 || true
+          exit 1
+
+      - name: Verify smoke test inputs
+        id: verify
+        run: |
+          COFFEE="backend/CSV_Files/Pink CoffeeSales March - Oct 2025.csv"
+          FOOD="backend/CSV_Files/Pink CroissantSales March - Oct 2025.csv"
+          test -f "$COFFEE" || { echo "Missing: $COFFEE"; exit 1; }
+          test -f "$FOOD" || { echo "Missing: $FOOD"; exit 1; }
+          echo "CSV files found"
 
       - name: Backend smoke test (datasets + analytics)
         run: |
-          # Run the same smoke test scripts used locally, but target the container's mapped port.
-          BASE_URL="http://127.0.0.1:8080" bash ./src/backend/tests/backend_smoke_test.sh
+          BASE_URL="http://127.0.0.1:8080" bash ./backend/tests/backend_smoke_test.sh
 
       - name: Cleanup
         if: always()
