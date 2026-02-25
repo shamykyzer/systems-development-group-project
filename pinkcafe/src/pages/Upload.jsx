@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import NavBar from '../components/NavBar';
 import ForecastCsvUploader from '../components/ForecastCsvUploader';
 import DataPreviewTable from '../components/DataPreviewTable';
+import CSVValidator from '../components/CSVValidator';
+import DataStatistics from '../components/DataStatistics';
 
 
 
@@ -25,7 +27,7 @@ function Upload() {
     const mockData = {
       fileName: selectedFile.name,
       dateRange: { start: '01/03/2025', end: '16/10/2025' },
-      products: ['Cappuccino', 'Americano'],
+      products: ['Cappuccino', 'Americano', 'Croissant'],
       rowCount: 229,
       daysOfData: 229,
       monthsOfData: 7.5,
@@ -58,6 +60,17 @@ function Upload() {
     // ========== END MOCK DATA ==========
   };
 
+  const handleGenerateForecast = () => {
+    // TODO: Navigate to forecast results page or trigger forecast generation
+    alert('Generate forecast functionality will be implemented with backend integration');
+  };
+
+  // Check if all validations passed
+  const isDataValid = uploadedData && Object.entries(uploadedData.validationChecks || {}).every(([key, value]) => {
+    if (key === 'productsDetected') return value > 0;
+    return value === true;
+  });
+
   return (
 <div className="flex min-h-screen bg-pinkcafe">
     <NavBar />
@@ -76,18 +89,62 @@ function Upload() {
         </div>
       )}
       
-      <div className="w-full p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+      <div className="w-full p-6 space-y-6">
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto items-start">
           {/* Left column - Data Preview */}
-          <div>
+          <div className="h-full">
             <DataPreviewTable data={uploadedData?.preview} />
           </div>
           
-          {/* Right column - Placeholder for future component */}
-          <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-100 flex items-center justify-center">
-            <p className="text-gray-400 text-center">Future Component Here</p>
+          {/* Right column - CSV Validator */}
+          <div className="h-full">
+            <CSVValidator data={uploadedData} />
           </div>
         </div>
+
+        {/* Data Statistics - Full Width */}
+        <div className="max-w-7xl mx-auto">
+          <DataStatistics data={uploadedData} />
+        </div>
+
+        {/* Generate Forecast Button */}
+        {isDataValid && (
+          <div className="max-w-7xl mx-auto">
+            <button
+              onClick={handleGenerateForecast}
+              className="w-full bg-pinkcafe2 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-3"
+            >
+              <svg 
+                className="w-6 h-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M13 10V3L4 14h7v7l9-11h-7z" 
+                />
+              </svg>
+              Generate Forecast
+              <svg 
+                className="w-5 h-5" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M9 5l7 7-7 7" 
+                />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </div>
 </div>
