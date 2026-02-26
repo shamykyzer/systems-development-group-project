@@ -251,11 +251,24 @@ curl -s "http://127.0.0.1:5001/api/v1/analytics/fluctuation?dataset_id=1&item_id
 
 Docker files live in the `docker/` folder. Run all commands from the repo root using `-f docker/docker-compose.yml`.
 
+#### Makefile shortcuts
+
+From the repo root:
+
+| Command | Description |
+|---------|-------------|
+| `make dev` | Run backend + frontend (dev). Backend: `http://localhost:5001`, Frontend: `http://localhost:3000` |
+| `make prod` | Run combined app (prod). App: `http://localhost:5002` |
+| `make build` | Build the production Docker image only (no containers started) |
+| `make down` | Stop and remove containers |
+
 #### Docker Compose (recommended: frontend + backend)
 
 ```bash
-docker compose -f docker/docker-compose.yml up --build
+docker compose -f docker/docker-compose.yml --profile dev up --build
 ```
+
+Or use `make dev`.
 
 **If `requirements.txt` changed but deps aren’t updating**, force a rebuild without cache:
 
@@ -363,7 +376,8 @@ Open:
 To stop and remove containers:
 
 ```bash
-docker compose -f docker/docker-compose.yml down --remove-orphans
+make down
+# or: docker compose -f docker/docker-compose.yml down --remove-orphans
 ```
 
 #### Production (single container serving API + built frontend)
@@ -371,10 +385,11 @@ docker compose -f docker/docker-compose.yml down --remove-orphans
 This uses the `app` service (behind the `prod` profile) and serves the React build from Flask:
 
 ```bash
-docker compose -f docker/docker-compose.yml --profile prod up --build
+make prod
+# or: docker compose -f docker/docker-compose.yml --profile prod up --build
 ```
 
-- App/API: `http://localhost:5001`
+- App/API: `http://localhost:5002`
 
 #### Backend-only Docker image (without Compose)
 
@@ -433,7 +448,8 @@ ruff check backend/
 
 ```
 systems-development-group-project/
-├── docker/                     # Docker config
+├── Makefile                     # Shortcuts: make dev, make prod, make build, make down
+├── docker/                      # Docker config
 │   ├── Dockerfile             # multi-stage (frontend build, backend, app, prophet)
 │   ├── docker-compose.yml
 │   └── .dockerignore
