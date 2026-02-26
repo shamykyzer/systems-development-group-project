@@ -1,5 +1,5 @@
 # Docker Compose file
-COMPOSE := docker compose -f docker/docker-compose.yml
+COMPOSE := docker compose -p pinkcafe -f docker/docker-compose.yml
 
 .PHONY: dev prod build down
 
