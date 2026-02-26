@@ -55,16 +55,14 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./src/backend:/app
-      - backend-db:/app/data
+      - ./backend:/app
+      - ./backend/data:/app/data
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       - PYTHONUNBUFFERED=1
       - PORT=5001
-      # Persist DB in the named volume mounted at /app/data
       - DATABASE_PATH=/app/data/pinkcafe.db
-      # Allow local dev frontend to call the API (adjust as needed)
       - CORS_ORIGINS=http://localhost:3000
     command: python app.py
     restart: unless-stopped
@@ -79,7 +77,7 @@ services:
     ports:
       - "5002:5001"
     volumes:
-      - ./src/backend:/app
+      - ./backend:/app
       - backend-db:/app/data
     environment:
       - FLASK_ENV=development
@@ -105,7 +103,7 @@ services:
     ports:
       - "5003:5001"
     volumes:
-      - ./src/backend:/app
+      - ./backend:/app
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
@@ -155,8 +153,7 @@ services:
       target: prophet
     container_name: pinkcafe-prophet
     volumes:
-      # Optional: mount backend code for quick iteration (no rebuild)
-      - ./src/backend:/app/backend
+      - ./backend:/app
       - prophet-output:/app/output
     environment:
       - MPLBACKEND=Agg

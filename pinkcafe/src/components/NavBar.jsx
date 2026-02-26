@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 function NavBar(){
     const [isOpen, setIsOpen] = useState(false);
+    const navigate = useNavigate();
+
+    const handleSignOut = () => {
+        localStorage.removeItem('pinkcafe_user');
+        navigate('/login');
+    };
 
     return(
         <>
@@ -72,12 +78,12 @@ function NavBar(){
                             <span className="transition-all duration-300">Settings</span>
                         </Link>
 
-                        <Link to="/login" className="flex items-center px-4 py-3 text-sm font-medium transition-all duration-200 text-gray-700 hover:text-pinkcafe2 hover:bg-pinkcafe rounded-lg group" title="Sign Out">
+                        <button onClick={handleSignOut} className="flex items-center w-full px-4 py-3 text-sm font-medium transition-all duration-200 text-gray-700 hover:text-pinkcafe2 hover:bg-pinkcafe rounded-lg group" title="Sign Out">
                             <svg className="flex-shrink-0 w-5 h-5 mr-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
                             <span className="transition-all duration-300">Sign Out</span>
-                        </Link>
+                        </button>
                     </nav>
                 </div>
 

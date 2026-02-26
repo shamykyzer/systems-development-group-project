@@ -1,0 +1,3 @@
+Ofc delete this Ill update the README once weve pushed everything but login is
+Email Address: admin@pinkcafe.com
+Password: pinkcafe2025

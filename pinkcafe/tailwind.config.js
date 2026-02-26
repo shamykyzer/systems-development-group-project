@@ -13,6 +13,12 @@ module.exports = {
           DEFAULT: '#423b39',
         },
       },
+      fontFamily: {
+        display: ['Georgia', 'serif'],
+      },
+      backgroundImage: {
+        'dashboard-gradient': 'linear-gradient(135deg, #F6D9D2 0%, #f0ccc4 50%, #ede8e7 100%)',
+      },
     },
   },
   plugins: [],
