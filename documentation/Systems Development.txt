@@ -1,0 +1,773 @@
+Systems Development
+Group Project
+Nickolas Greiner - 24018357
+Aaron Agoas Antal-Bento - 23013693
+Oliver Mercer - 24026901
+Oliver Churchley - 23020494
+
+Ahmed Mohamed Mohamed Desoky AlShamy - 24045361
+
+Project Aims The aim of this project is to design and implement a web-based graphical
+application that integrates a machine learning-driven sales forecasting system
+using Meta’s Prophet for five cafés. The system will generate short-term
+demand predictions for food and beverage items to optimise purchasing
+decisions, with the objective of reducing food waste and minimising financial
+loss.
+
+Project Objectives
+➔
+
+Develop and release a web-based sales application using a lightweight framework (React.js) with core features including a
+dashboard, sales history, and parameter tweaking. Target completion: April 2026.
+
+➔
+
+Implement and train a sales forecasting AI model achieving ≥85% accuracy on historical sales data, with inference executed
+within reasonable response times. Deliver a working prototype by April 2026.
+
+➔
+
+Design and deploy an accessible dashboard displaying historical sales data, compliant with WCAG 2.1 AA accessibility
+standards. Completion target: April 2026.
+
+➔
+
+Conduct structured application testing, including invalid input handling and stress testing, ensuring ≥95% of test cases pass
+with no critical defects. Complete testing by April 2026.
+
+➔
+
+Maintain code readability and version control standards, requiring descriptive comments on all functions and complex logic.
+All pull requests must be reviewed and approved by at least two team members before merging.
+
+Project S.M.A.R.T Objective Summary
+#
+
+SMART Objective
+
+Metric
+
+Target Completion
+
+1
+
+Develop and release a mobile‑first
+sales application.
+
+Have a MVP(Minimum Viable Product) ready for testing.
+
+March 2026
+
+2
+
+Implement and train a lightweight,
+efficient and accurate AI algorithm
+for sales forecast.
+
+Ensure the algorithm hits internal accuracy benchmarks
+
+April 2026
+
+3
+
+Interactive Dashboard that meets
+accessibility standards.
+
+Meet the WCAG 2.1 AA accessibility standards.
+
+April 2026
+
+4
+
+Model Evaluation including stress
+testing and input handling.
+
+Ensure 95% test cases pass with no critical defects
+
+April 2026
+
+5
+
+Maintain readability and ease of
+access throughout produced code.
+
+All comments are readable and in a clear format
+
+April 2026
+
+Technology Stack
+
+-
+
+Frontend: React.js with Tailwind CSS for a responsive, lightweight user
+interface.
+Backend: Python with SQLite for handling application logic and data storage.
+Deployment: Docker used to containerised components for consistent
+execution.
+Version Control: GitHub used to manage collaboration and prevent conflicts.
+
+This stack was selected to enable rapid development, modular design, and
+reproducible deployment.
+
+AI Model Implementation
+-
+
+Implement Meta’s Prophet to develop a lightweight and efficient time-series
+forecasting model for sales prediction.
+Utilise Pandas and NumPy for data preprocessing, transformation, and forecast
+visualisation.
+Enable structured access to project .csv datasets, allowing the model to ingest,
+train, and generate accurate predictions.
+Refine and standardise forecast visualisations to ensure consistent styling and
+colour schemes across the application.
+
+Dashboard Design
+-
+
+Design an accessible, easy-to-read dashboard for displaying historical sales
+data.
+Standardise colour schemes, fonts, and text sizes for visual consistency and
+ethical accessibility.
+Ensure use of open-source fonts and compliant styling to address copyright
+concerns.
+Provide quick access to historical sales, e.g., a dedicated folder of
+charts/images.
+Implement concise, consistent charts and filtering options to allow users to
+focus on relevant data.
+
+Testing & Quality Assurance
+-
+
+Implement GitHub Actions to prevent broken code from being merged into the
+main branch.
+Develop a structured testing plan to maintain a consistent, bug-free
+application.
+Maintain a testing log to track test execution and reproduce bugs effectively.
+Generate varied datasets to verify proper error handling and full functionality.
+Conduct UI testing across different screen sizes to prevent layout or boundary
+issues.
+
+Code Readability & Version Control
+
+-
+
+-
+
+Maintain regular GitHub commits with a review rule requiring approval from at
+least two team members before merging.
+Write clear, descriptive comments and follow consistent spacing and
+indentation, especially in HTML and frontend code, to improve readability and
+ease debugging.
+Schedule regular code audits and team check-ins to ensure everyone
+understands the codebase and changes are properly tracked.
+Enforce coding standards and documentation practices to keep the project
+maintainable as it grows.
+
+Requirements - Functional
+-
+
+Development of a basic frontend that provides a simple yet elegant GUI
+allowing the end user to interact with and understand the information.
+Use of an algorithm that can predict the sales of croissants, Cappuccinos, and
+Americanos over the upcoming weeks.
+Use of graphs to display current and predicted sales.
+Allow the user to change training periods and explore predictions with
+different lengths of training data.
+Basic login system for data security to prevent others from accessing the
+sensitive data.
+
+Requirements - Non-Functional
+-
+
+-
+
+Easy to use and access application, with well organised graphics and the
+ability to function on multiple screen sizes, and a consistent theme throughout.
+After use, the algorithm should provide well designed and laid out graphs that
+are easy to understand and interpret, and should display correctly on multiple
+screen sizes.
+Predicted sales should be output in a well laid out, easy to read manner that
+makes it easier to understand for the company using the algorithm.
+App can also have extra security features to help protect against data leaks
+and protect the sales information of the company.
+Algorithm should work in a reasonable time scale, so that it can be used easily
+to bring up the sales predictions that are needed.
+
+Gantt Chart
+
+Risk Register
+ID
+
+Risk Description
+
+Likelihood
+
+Impact
+
+Mitigation / Prevention
+
+Contingency Plan
+
+R1
+
+Team member(s) missing workshops
+or meetings, causing delays in
+planning and development.
+
+Medium
+
+Medium
+
+Agree clear attendance expectations
+and maintain shared communication
+channels
+
+Reassign tasks temporarily and
+adjust timeline
+
+R2
+
+Requirements misunderstood or
+incorrectly validated with tutor
+
+Low
+
+High
+
+Regular check-ins with tutor and team
+discussions about what the
+requirements are
+
+Re-scope features, prioritise
+essential requirements first
+
+R3
+
+Skills gaps in the group slowing
+implementation
+
+Low
+
+Low
+
+Early skills assessment using CVs
+and allocate tasks based on strengths
+
+Reallocate tasks and simplify
+features if needed
+
+R4
+
+Version control issues (merge
+conflicts, lost work)
+
+Low
+
+High
+
+Use Git branches for each feature and
+commit regularly with clear messages
+
+Revert to stable branch
+
+R5
+
+Integration problems between
+different modules of the system
+
+Medium
+
+High
+
+Set consistent coding standards and
+run integration tests early
+
+Delay advanced features and
+merge minimal working version
+
+R6
+
+Conflicts or communication
+breakdown within the team
+
+Low
+
+High
+
+Rotate roles and resolve issues
+quickly in workshops
+
+Escalate to tutor for mediation
+
+R7
+
+Major issues discovered late during
+testing
+
+Medium
+
+High
+
+Test regularly and after each new
+feature addition, fix issues
+immediately to avoid build up
+
+Prioritise defects based on
+severity and temporarily pause
+new feature development
+
+R8
+
+Presentation not running smoothly
+
+Low
+
+High
+
+Rehearse full demo multiple times,
+and ensure all group members
+understand all the features
+
+Let another group member take
+over to keep the delivery clear
+and structured
+
+Class Diagram
+
+Sequence Diagrams
+
+Use Case Diagram
+
+Figma Design
+
+Test Plan - Function and Usability
+Test No.
+
+Function
+
+Input Provided
+
+Expected Outcome
+
+Actual Outcome
+
+Corrective Action
+
+Result of Corrective
+Action
+
+Further
+Development
+Required
+
+1
+
+Web Page Opens
+and displays
+correctly
+
+Running web page
+through docker
+
+Localhost should
+open in browser
+and display login
+page
+
+Web page opened
+correctly in browser.
+
+n/a
+
+n/a
+
+No
+
+2
+
+Login page renders
+and works correctly
+
+Move through to the
+login page url for
+the web page
+
+Different
+components should
+appear in the
+correct locations,
+and the login should
+take input, allowing
+the user to continue
+
+Components
+appear correctly,
+login does not
+function as it should
+and user cannot
+access further
+pages
+
+Configuring the
+docker file to
+correctly include
+backend that allows
+password and
+username to be
+detected
+
+Login page now
+works correctly,
+using the
+information in the
+database to allow
+the user to login
+
+No
+
+3
+
+Main Page renders
+and displays graphs
+
+Moving onto the
+/main page through
+the app
+
+The main page
+should open,
+displaying graphs
+predicting upcoming
+sales for the cafe
+
+The general
+structure for the
+page is there but
+the graphs are not
+created
+
+Implementing
+prophet to create
+the prediction
+graphs, and
+rendering these to
+the home screen
+
+n/a
+
+Yes
+
+4
+
+Database is
+accessible from the
+main program
+
+Entering .csv file
+into database and
+accessing it through
+temporary webpage
+
+The temp page
+should open, simply
+displaying all of the
+data in the .csv file
+
+The csv file is
+correctly displayed
+across the screen showing the
+database is
+connected
+
+n/a
+
+n/a
+
+No
+
+Test Plan - Function and Usability cont.
+Test No.
+
+Function
+
+Input Provided
+
+Expected Outcome
+
+Actual Outcome
+
+Corrective Action
+
+Result of Corrective
+Action
+
+Further
+Development
+Required
+
+5
+
+Functional Navbar
+that can be hidden
+or shown
+
+Rendering main
+page in desktop
+mode
+
+The navbar should
+correctly render,
+and have the option
+to be hidden, with
+functional buttons
+with different
+functions
+
+The navbar is
+displayed when the
+page is opened, but
+has no function and
+cannot be
+hidden/shown
+
+The buttons need to
+be updated with
+links to have
+function, and the
+navbar needs to be
+able to be hidden
+and shown
+
+Button works when
+on smaller screen
+sizes but doesn’t
+correctly function on
+the desktop screen
+
+Yes
+
+6
+
+Settings page that
+allows user to
+customise the
+algorithm
+
+Opening settings
+page through
+navbar
+
+Should bring up
+settings page, with
+a variety of options
+available to change
+by the user
+
+Settings page
+appears with most
+options available,
+no backend
+implementation yet
+so currently nonfunctional
+
+Backend connection
+needs to be
+established so the
+settings can be
+stored before
+loading into the
+algorithm
+
+Settings are now
+saved into the
+database, ready to
+be applied to the
+algorithm when it is
+implemented.
+
+No
+
+7
+
+Graphs Update with
+data changes
+
+Change data in the
+database.
+
+The graphs should
+change according to
+the new input data.
+
+The graphs
+correctly change
+when the data is
+changed.
+
+N/A
+
+N/A
+
+No
+
+8
+
+Database read/write
+operations using
+CRUD
+
+Data saved to the
+database,
+
+The entered data is
+successfully stored
+in the database and
+remains available
+after page refresh or
+system restart, with
+no errors displayed.
+
+Database is saved
+correctly.
+
+N/A
+
+N/A
+
+No
+
+Test Plan - Security
+Test No.
+
+Function
+
+Input Provided
+
+Expected Outcome
+
+Actual Outcome
+
+Corrective Action
+
+Result of Corrective
+Action
+
+Further
+Development
+Required
+
+1
+
+Password Hashing
+and Encryption
+
+New user created
+with a new
+password
+
+The password
+stored in the
+database should be
+encrypted and
+unreadable
+
+The password is
+correctly hashed
+and stored
+
+N/A
+
+N/A
+
+No
+
+2
+
+Role protected url
+and web pages
+
+Entering the url to a
+different page
+without signing in
+on the browser and
+seeing if it allows
+you to enter the
+page without
+signing in
+
+The web page
+should redirect you
+to a login page and
+tell the user that
+they don’t have
+permission to
+access the page.
+
+Not implemented
+yet so the user can
+access the page
+without signing in.
+
+N/A
+
+N/A
+
+Yes
+
+3
+
+Session
+Management
+
+Refresh the
+application or close
+and re open
+application.
+
+User should not
+stay logged in
+unless we
+implement session
+management at a
+later stage.
+
+The user is not
+logged in when
+refreshing the
+application.
+
+N/A
+
+N/A
+
+Yes - If we decide to
+add a session
+management
+system e.g. cookies
+
+4
+
+Error Handling
+
+Enter fake login
+details,
+
+When entering
+incorrect information
+Should show:
+“Invalid credentials”
+Not: “Password
+incorrect for user
+admin”
+
+It works as it should.
+Shows the correct
+error.
+
+N/A
+
+N/A
+
+No
+
+
