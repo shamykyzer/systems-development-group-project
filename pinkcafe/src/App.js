@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import Upload from './pages/Upload.jsx';
-import Settings from './pages/Settings.jsx';
 import './App.css';
 
 /**
