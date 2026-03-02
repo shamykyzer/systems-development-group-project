@@ -6,7 +6,7 @@ on:
     paths:
       - "Dockerfile"
       - "docker-compose.yml"
-      - "src/backend/**"
+      - "backend/**"
       - "pinkcafe/**"
       - ".github/workflows/docker-image.yml"
   pull_request:
@@ -14,7 +14,7 @@ on:
     paths:
       - "Dockerfile"
       - "docker-compose.yml"
-      - "src/backend/**"
+      - "backend/**"
       - "pinkcafe/**"
       - ".github/workflows/docker-image.yml"
 
@@ -58,8 +58,8 @@ jobs:
 
       - name: Backend smoke test (datasets + analytics)
         run: |
-          # Run the same smoke test scripts used locally, but target the container's mapped port.
-          BASE_URL="http://127.0.0.1:8080" bash ./src/backend/tests/backend_smoke_test.sh
+          chmod +x ./backend/tests/backend_smoke_test.sh
+          BASE_URL="http://127.0.0.1:8080" ./backend/tests/backend_smoke_test.sh
 
       - name: Cleanup
         if: always()

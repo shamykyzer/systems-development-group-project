@@ -25,11 +25,11 @@ function BusinessPromoPanel() {
           className="object-cover w-full h-full transition-all duration-700"
         />
       </div>
-      <h2 className="text-3xl font-extrabold text-pinkcafe2 mb-4 text-center">Welcome to Pink Café Admin Portal</h2>
-      <p className="text-lg text-gray-800 mb-8 text-center max-w-md">
+      <h2 className="text-3xl font-extrabold text-black mb-4 text-center">Welcome to Pink Café Admin Portal</h2>
+      <p className="text-lg text-black mb-8 text-center max-w-md">
         Empower your business and staff with seamless management tools, smart analytics, and automated forecasting—all in one place.
       </p>
-      <ul className="space-y-4 text-lg text-gray-700 pl-2 w-full">
+      <ul className="space-y-4 text-lg text-black pl-2 w-full">
         <li className="flex items-center">
           <span className="mr-2 text-pinkcafe2 text-xl">•</span> Real-time sales analytics
         </li>
