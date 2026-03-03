@@ -47,10 +47,10 @@ function NavBar(){
             >
                 {/* Logo Section */}
                 <div className="flex items-center gap-1 px-6 py-8 border-b border-gray-200 mt-12 md:mt-0">
-                    <h1 className="text-4xl font-extrabold font-sans text-pinkcafe2 transition-all duration-300">
+                    <h1 className="text-4xl font-extrabold font-sans text-pinkcafe transition-all duration-300">
                         Pink
                     </h1>
-                    <h1 className="text-4xl font-extrabold font-sans text-rose-400">Cafe</h1>
+                    <h1 className="text-4xl font-extrabold font-sans text-black">Cafe</h1>
                 </div>
 
                 {/* Navigation Links */}

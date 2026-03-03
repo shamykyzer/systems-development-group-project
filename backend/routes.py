@@ -262,8 +262,8 @@ def register_routes(app: Flask) -> None:
             # Parse dates
             try:
                 df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
-            except:
-                return _err("Dates must be in dd/mm/yyyy format", 400)
+            except Exception as e:
+                return _err(f"Dates must be in dd/mm/yyyy format. Error: {str(e)}", 400)
             
             # Get product columns (everything except Date)
             product_cols = [col for col in df.columns if col != 'Date']
@@ -350,6 +350,34 @@ def register_routes(app: Flask) -> None:
         except Exception as e:
             import traceback
             return _err(f"Failed to process CSV: {str(e)}\n{traceback.format_exc()}", 500)
+
+    @app.delete("/api/upload/dataset/<int:dataset_id>")
+    def delete_dataset(dataset_id: int):
+        """
+        Delete a dataset and all its associated sales records.
+        """
+        try:
+            with connect(_db()) as conn:
+                # Check if dataset exists
+                dataset = conn.execute(
+                    "SELECT id, name FROM datasets WHERE id = ?",
+                    (dataset_id,)
+                ).fetchone()
+                
+                if not dataset:
+                    return _err("Dataset not found", 404)
+                
+                # Delete dataset (sales will cascade delete due to foreign key)
+                conn.execute("DELETE FROM datasets WHERE id = ?", (dataset_id,))
+                conn.commit()
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Dataset '{dataset['name']}' and all associated data deleted successfully"
+                })
+        except Exception as e:
+            import traceback
+            return _err(f"Failed to delete dataset: {str(e)}\n{traceback.format_exc()}", 500)
 
     # --- Prophet Test (Hardcoded CSV) --------------------------------------
 

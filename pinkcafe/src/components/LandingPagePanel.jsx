@@ -81,6 +81,90 @@ function SimpleLineChart({ data, dataKey = 'predicted' }) {
     );
 }
 
+// ---------------------------------------------------------------------------
+// Multi-line chart for multiple products
+// ---------------------------------------------------------------------------
+function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
+    const colors = ['#423b39', '#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+    const w = 400, h = 220;
+    const pad = { top: 20, right: 30, bottom: 38, left: 32 }; // Increased top padding for legend
+    const iw = w - pad.left - pad.right;
+    const ih = h - pad.top - pad.bottom;
+
+    // Get all values across all products to determine scale
+    const allVals = dataByProduct.flatMap(series => series.data.map(d => d[dataKey] ?? 0));
+    const min = Math.min(...allVals);
+    const max = Math.max(...allVals);
+    const range = max - min || 1;
+
+    const px = (i, length) => pad.left + (i / (length - 1)) * iw;
+    const py = (v) => pad.top + ih - ((v - min) / range) * ih;
+
+    // Y-axis ticks
+    const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => min + t * range);
+
+    // Use first product's data for X-axis labels
+    const xLabels = dataByProduct[0]?.data || [];
+
+    return (
+        <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '100%' }}>
+            {/* Grid lines */}
+            {yTicks.map((v, i) => (
+                <g key={i}>
+                    <line
+                        x1={pad.left} y1={py(v)} x2={pad.left + iw} y2={py(v)}
+                        stroke="rgba(0,0,0,0.06)" strokeDasharray="3 3"
+                    />
+                    <text x={pad.left - 4} y={py(v) + 4} textAnchor="end" fontSize="9" fill="#423b3980">
+                        {Math.round(v)}
+                    </text>
+                </g>
+            ))}
+            
+            {/* Lines for each product */}
+            {dataByProduct.map((series, seriesIdx) => {
+                const vals = series.data.map(d => d[dataKey] ?? 0);
+                const points = vals.map((v, i) => `${px(i, series.data.length)},${py(v)}`).join(' ');
+                const color = colors[seriesIdx % colors.length];
+                
+                return (
+                    <g key={seriesIdx}>
+                        {/* Line */}
+                        <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+                        {/* Dots */}
+                        {vals.map((v, i) => (
+                            <circle key={i} cx={px(i, series.data.length)} cy={py(v)} r="3" fill={color} />
+                        ))}
+                    </g>
+                );
+            })}
+            
+            {/* X labels - day name */}
+            {xLabels.map((d, i) => (
+                <text key={`day-${i}`} x={px(i, xLabels.length)} y={h - 16} textAnchor="middle" fontSize="10" fill="#423b39" fontWeight="600">
+                    {d.day}
+                </text>
+            ))}
+            {/* X labels - date */}
+            {xLabels.map((d, i) => (
+                <text key={`date-${i}`} x={px(i, xLabels.length)} y={h - 4} textAnchor="middle" fontSize="8" fill="#423b3980">
+                    {d.date}
+                </text>
+            ))}
+            
+            {/* Legend */}
+            {dataByProduct.map((series, idx) => (
+                <g key={`legend-${idx}`}>
+                    <circle cx={pad.left + idx * 80} cy={8} r="3" fill={colors[idx % colors.length]} />
+                    <text x={pad.left + idx * 80 + 6} y={11} fontSize="8" fill="#423b39">
+                        {series.productName}
+                    </text>
+                </g>
+            ))}
+        </svg>
+    );
+}
+
 const FORECAST_RANGE_OPTIONS = [
     { value: '7days', label: 'Next 7 days' },
     { value: 'upcomingMonth', label: 'Next 4 weeks' },
@@ -94,14 +178,85 @@ function LandingPagePanel() {
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
 
-    // Prophet forecast data - store separate forecasts for each range
-    const [forecast7Days, setForecast7Days] = useState(null);
-    const [forecastMonth, setForecastMonth] = useState(null);
-    const [forecastYear, setForecastYear] = useState(null);
-    const [forecastCustom, setForecastCustom] = useState(null);
+    // Prophet forecast data - store arrays of forecasts (one per product) for each range
+    const [forecast7Days, setForecast7Days] = useState([]);
+    const [forecastMonth, setForecastMonth] = useState([]);
+    const [forecastYear, setForecastYear] = useState([]);
+    const [forecastCustom, setForecastCustom] = useState([]);
     const [forecastError, setForecastError] = useState(null);
     const [hasGenerated, setHasGenerated] = useState(false);
     const [lastGenerated, setLastGenerated] = useState(null);
+
+    // Uploaded CSV data state
+    const [allDatasets, setAllDatasets] = useState([]);
+    const [selectedDatasetId, setSelectedDatasetId] = useState(null);
+    const [uploadedData, setUploadedData] = useState(null);
+
+    // Check for uploaded data on component mount
+    useEffect(() => {
+        const storedData = localStorage.getItem('uploadedForecastData');
+        if (storedData) {
+            try {
+                const data = JSON.parse(storedData);
+                console.log('📦 Found uploaded data:', data);
+                
+                // Handle both old single dataset format and new array format
+                if (Array.isArray(data)) {
+                    setAllDatasets(data);
+                    
+                    // Try to restore selected dataset
+                    const selectedId = localStorage.getItem('selectedDatasetId');
+                    if (selectedId) {
+                        const dataset = data.find(d => d.datasetId.toString() === selectedId);
+                        if (dataset) {
+                            setSelectedDatasetId(parseInt(selectedId));
+                            setUploadedData(dataset);
+                        } else if (data.length > 0) {
+                            // If selected dataset not found, use first one
+                            setSelectedDatasetId(data[0].datasetId);
+                            setUploadedData(data[0]);
+                            localStorage.setItem('selectedDatasetId', data[0].datasetId.toString());
+                        }
+                    } else if (data.length > 0) {
+                        // No selection, use first dataset
+                        setSelectedDatasetId(data[0].datasetId);
+                        setUploadedData(data[0]);
+                        localStorage.setItem('selectedDatasetId', data[0].datasetId.toString());
+                    }
+                } else {
+                    // Old format - single dataset object
+                    // Convert to array format
+                    const dataArray = [data];
+                    setAllDatasets(dataArray);
+                    setSelectedDatasetId(data.datasetId);
+                    setUploadedData(data);
+                    localStorage.setItem('uploadedForecastData', JSON.stringify(dataArray));
+                    localStorage.setItem('selectedDatasetId', data.datasetId.toString());
+                }
+            } catch (err) {
+                console.error('Failed to parse uploaded data:', err);
+            }
+        }
+    }, []);
+
+    // Handle dataset selection change
+    const handleDatasetChange = (datasetId) => {
+        const dataset = allDatasets.find(d => d.datasetId === datasetId);
+        if (dataset) {
+            setSelectedDatasetId(datasetId);
+            setUploadedData(dataset);
+            localStorage.setItem('selectedDatasetId', datasetId.toString());
+            
+            // Clear forecasts when switching datasets
+            setForecast7Days([]);
+            setForecastMonth([]);
+            setForecastYear([]);
+            setForecastCustom([]);
+            setHasGenerated(false);
+            
+            console.log('📊 Switched to dataset:', dataset.displayName);
+        }
+    };
 
     // Helper function to transform Prophet forecast to chart format
     const transformProphetData = (forecast, range) => {
@@ -293,130 +448,180 @@ function LandingPagePanel() {
         };
     };
 
-    // Generate all forecasts at once (7 days + 1 month + 1 year from today)
+    // Generate all forecasts at once (7 days + 1 month + 1 year from today) for all products
     const generateAllForecasts = async () => {
-        console.log('🔄 Generating new forecasts...');
+        if (!uploadedData) {
+            setForecastError('Please upload data first');
+            return;
+        }
+
+        console.log('🔄 Generating forecasts for all products...');
         setIsLoading(true);
         setForecastError(null);
         
         // Clear existing forecasts to show regeneration is happening
-        setForecast7Days(null);
-        setForecastMonth(null);
-        setForecastYear(null);
+        setForecast7Days([]);
+        setForecastMonth([]);
+        setForecastYear([]);
 
         try {
-            // Calculate weeks from last data point (Oct 16, 2025) to today (March 3, 2026)
-            // This is approximately 20 weeks. We need to forecast beyond today.
-            const lastDataDate = new Date('2025-10-16');
+            console.log('📦 Using uploaded data:', uploadedData.fileName);
+            console.log('📊 Products:', uploadedData.products);
+            
+            const datasetId = uploadedData.datasetId;
+            
+            // Calculate weeks from last data point to today
+            const lastDataDate = new Date(uploadedData.dateRange.end.split('/').reverse().join('-'));
             const today = new Date();
             const weeksFromLastData = Math.ceil((today - lastDataDate) / (7 * 24 * 60 * 60 * 1000));
             
-            console.log(`📅 Last training data: Oct 16, 2025 (${weeksFromLastData} weeks ago)`);
+            console.log(`📅 Last training data: ${uploadedData.dateRange.end} (${weeksFromLastData} weeks ago)`);
             console.log(`📅 Today: ${today.toDateString()}`);
             
-            // Backend limit is 52 weeks max, so cap all horizons
-            // Fetch 7-day forecast (from last data point, enough to cover today + 1 week)
+            // Calculate horizons
             const horizon7Days = Math.min(52, weeksFromLastData + 1);
-            console.log(`📊 Fetching forecast for ${horizon7Days} weeks to cover today + 7 days...`);
-            const response7Days = await fetch(`http://localhost:5001/api/prophet/test?horizon_weeks=${horizon7Days}&_t=${Date.now()}`);
-            const data7Days = await response7Days.json();
-            
-            if (!response7Days.ok) {
-                throw new Error(data7Days.message || 'Failed to load 7-day forecast');
-            }
-            console.log('✅ 7-day forecast received:', data7Days);
-            
-            // Fetch 1-month forecast (from last data point, enough to cover today + 4 weeks)
             const horizonMonth = Math.min(52, weeksFromLastData + 4);
-            console.log(`📊 Fetching forecast for ${horizonMonth} weeks to cover today + 1 month...`);
-            const responseMonth = await fetch(`http://localhost:5001/api/prophet/test?horizon_weeks=${horizonMonth}&_t=${Date.now()}`);
-            const dataMonth = await responseMonth.json();
+            const horizonYear = 52;
             
-            if (!responseMonth.ok) {
-                throw new Error(dataMonth.message || 'Failed to load month forecast');
+            // Fetch forecasts for all products
+            const forecasts7Days = [];
+            const forecastsMonth = [];
+            const forecastsYear = [];
+            
+            for (const productName of uploadedData.products) {
+                const itemId = uploadedData.itemIds[productName];
+                console.log(`📊 Fetching forecasts for ${productName}...`);
+                
+                try {
+                    // Fetch 7-day forecast
+                    const response7Days = await fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`);
+                    const data7Days = await response7Days.json();
+                    if (response7Days.ok) {
+                        const displayName = uploadedData.displayName || productName;
+                        forecasts7Days.push({
+                            ...filterForecastFromToday(data7Days),
+                            item_name: displayName,
+                            product_name: productName
+                        });
+                    }
+                    
+                    // Fetch 1-month forecast
+                    const responseMonth = await fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`);
+                    const dataMonth = await responseMonth.json();
+                    if (responseMonth.ok) {
+                        const displayName = uploadedData.displayName || productName;
+                        forecastsMonth.push({
+                            ...filterForecastFromToday(dataMonth),
+                            item_name: displayName,
+                            product_name: productName
+                        });
+                    }
+                    
+                    // Fetch year forecast
+                    const responseYear = await fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`);
+                    const dataYear = await responseYear.json();
+                    if (responseYear.ok) {
+                        const displayName = uploadedData.displayName || productName;
+                        forecastsYear.push({
+                            ...filterForecastFromToday(dataYear),
+                            item_name: displayName,
+                            product_name: productName
+                        });
+                    }
+                    
+                    console.log(`✅ Forecasts received for ${productName}`);
+                } catch (error) {
+                    console.error(`❌ Error fetching forecast for ${productName}:`, error);
+                }
             }
-            console.log('✅ 1-month forecast received:', dataMonth);
             
-            // Fetch maximum forecast (52 weeks from last data point)
-            // Note: Due to data gap (~20 weeks), this will only cover ~32 weeks from today
-            const horizonYear = 52; // Use max allowed
-            console.log(`📊 Fetching forecast for ${horizonYear} weeks (max allowed)...`);
-            const responseYear = await fetch(`http://localhost:5001/api/prophet/test?horizon_weeks=${horizonYear}&_t=${Date.now()}`);
-            const dataYear = await responseYear.json();
-            
-            if (!responseYear.ok) {
-                throw new Error(dataYear.message || 'Failed to load year forecast');
-            }
-            console.log('✅ Year forecast received:', dataYear);
-            
-            // Filter all forecasts to only include dates from today onwards
-            setForecast7Days(filterForecastFromToday(data7Days));
-            setForecastMonth(filterForecastFromToday(dataMonth));
-            setForecastYear(filterForecastFromToday(dataYear));
+            setForecast7Days(forecasts7Days);
+            setForecastMonth(forecastsMonth);
+            setForecastYear(forecastsYear);
             setHasGenerated(true);
             setLastGenerated(new Date());
-            console.log('✨ Forecasts generated successfully at', new Date().toLocaleTimeString());
+            console.log('✨ All forecasts generated successfully at', new Date().toLocaleTimeString());
         } catch (error) {
             console.error('❌ Forecast error:', error);
             setForecastError(error.message);
-            setForecast7Days(null);
-            setForecastMonth(null);
-            setForecastYear(null);
+            setForecast7Days([]);
+            setForecastMonth([]);
+            setForecastYear([]);
             setHasGenerated(false);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Generate custom range forecast
+    // Generate custom range forecast for all products
     const generateCustomForecast = async () => {
         if (!customStart || !customEnd) return;
+        if (!uploadedData) {
+            setForecastError('Please upload data first');
+            return;
+        }
         
         setIsLoading(true);
         setForecastError(null);
 
         try {
-            // Calculate from last training data to custom end date
-            const lastDataDate = new Date('2025-10-16');
+            const datasetId = uploadedData.datasetId;
             const customEndDate = new Date(customEnd);
             const customStartDate = new Date(customStart);
+            
+            // Get the last date from the uploaded data range
+            const lastDataDate = new Date(uploadedData.dateRange.end.split('/').reverse().join('-'));
             
             // Calculate weeks needed from last data point to cover the custom end date
             const weeksToCustomEnd = Math.ceil((customEndDate - lastDataDate) / (7 * 24 * 60 * 60 * 1000));
             const horizon_weeks = Math.min(52, Math.max(1, weeksToCustomEnd));
             
             console.log(`📊 Custom forecast: ${customStart} to ${customEnd}`);
-            console.log(`📊 Requesting ${horizon_weeks} weeks forecast (capped at 52)...`);
+            console.log(`📊 Requesting ${horizon_weeks} weeks forecast for all products...`);
             
-            const response = await fetch(`http://localhost:5001/api/prophet/test?horizon_weeks=${horizon_weeks}&_t=${Date.now()}`);
-            const data = await response.json();
+            const forecastsCustom = [];
             
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to load custom forecast');
-            }
-            
-            // Filter to only show the custom date range
-            if (data && data.forecast) {
-                const filteredForecast = data.forecast.filter(f => {
-                    const forecastDate = new Date(f.date);
-                    forecastDate.setHours(0, 0, 0, 0);
-                    customStartDate.setHours(0, 0, 0, 0);
-                    customEndDate.setHours(0, 0, 0, 0);
-                    return forecastDate >= customStartDate && forecastDate <= customEndDate;
-                });
+            for (const productName of uploadedData.products) {
+                const itemId = uploadedData.itemIds[productName];
                 
-                setForecastCustom({
-                    ...data,
-                    forecast: filteredForecast
-                });
-                console.log(`✅ Custom forecast filtered to ${filteredForecast.length} days`);
-            } else {
-                setForecastCustom(data);
+                try {
+                    const response = await fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon_weeks}&train_weeks=20&_t=${Date.now()}`);
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        console.error(`Failed to load custom forecast for ${productName}`);
+                        continue;
+                    }
+                    
+                    // Filter to only show the custom date range
+                    if (data && data.forecast) {
+                        const filteredForecast = data.forecast.filter(f => {
+                            const forecastDate = new Date(f.date);
+                            forecastDate.setHours(0, 0, 0, 0);
+                            customStartDate.setHours(0, 0, 0, 0);
+                            customEndDate.setHours(0, 0, 0, 0);
+                            return forecastDate >= customStartDate && forecastDate <= customEndDate;
+                        });
+                        
+                        const displayName = uploadedData.displayName || productName;
+                        forecastsCustom.push({
+                            ...data,
+                            forecast: filteredForecast,
+                            item_name: displayName,
+                            product_name: productName
+                        });
+                        console.log(`✅ Custom forecast for ${productName}: ${filteredForecast.length} days`);
+                    }
+                } catch (error) {
+                    console.error(`Error fetching custom forecast for ${productName}:`, error);
+                }
             }
+            
+            setForecastCustom(forecastsCustom);
         } catch (error) {
             console.error('Custom forecast error:', error);
             setForecastError(error.message);
-            setForecastCustom(null);
+            setForecastCustom([]);
         } finally {
             setIsLoading(false);
         }
@@ -449,11 +654,14 @@ function LandingPagePanel() {
     // Delete MOCK_getChartData and SPARKLINE_* above once this is wired up.
     // -------------------------------------------------------------------------
 
-    const currentForecast = getCurrentForecast();
+    const currentForecasts = getCurrentForecast(); // Now returns an array
 
-    // Calculate total forecast value
-    const totalForecast = currentForecast?.forecast
-        ? currentForecast.forecast.reduce((sum, f) => sum + f.yhat, 0)
+    // Calculate total forecast value across all products
+    const totalForecast = currentForecasts && currentForecasts.length > 0
+        ? currentForecasts.reduce((sum, forecast) => {
+            const forecastSum = forecast.forecast ? forecast.forecast.reduce((s, f) => s + f.yhat, 0) : 0;
+            return sum + forecastSum;
+        }, 0)
         : null;
 
     const getRangeLabel = () => {
@@ -462,56 +670,75 @@ function LandingPagePanel() {
         return FORECAST_RANGE_OPTIONS.find((o) => o.value === forecastRange)?.label || 'Next 7 days';
     };
 
-    // Get chart data directly (no animation)
-    const chartData = currentForecast?.forecast 
-        ? transformProphetData(currentForecast.forecast, forecastRange) 
+    // Get chart data for all products
+    const chartDataByProduct = currentForecasts && currentForecasts.length > 0
+        ? currentForecasts.map(forecast => ({
+            productName: forecast.product_name || forecast.item_name,
+            data: forecast.forecast ? transformProphetData(forecast.forecast, forecastRange) : []
+        }))
         : [];
 
-    // Graph metadata - using real Prophet data only
+    // Graph metadata - using real Prophet data for all products
     const graphs = {
         graph1: {
-            title: currentForecast ? `${currentForecast.item_name} Forecast` : 'Generate forecast to view predictions',
+            title: currentForecasts && currentForecasts.length > 0 
+                ? `${uploadedData?.displayName || 'Products'} Forecast` 
+                : 'Generate forecast to view predictions',
             value: totalForecast ? `${Math.round(totalForecast)} units` : 'N/A',
-            change: currentForecast ? `${currentForecast.horizon_weeks}w forecast` : 'N/A',
+            change: currentForecasts && currentForecasts.length > 0 && currentForecasts[0]
+                ? `${currentForecasts[0].horizon_weeks}w forecast` 
+                : 'N/A',
             isPositive: true,
-            icon: '☕',
+            icon: '📊',
             color: 'from-stone-100 to-stone-200',
-            data: chartData,
+            data: chartDataByProduct,
         },
     };
 
-    const quickStats = currentForecast ? [
+    // Calculate training days from uploaded data date range
+    const getTrainingDays = () => {
+        if (!uploadedData?.dateRange) return 'N/A';
+        const [startDay, startMonth, startYear] = uploadedData.dateRange.start.split('/');
+        const [endDay, endMonth, endYear] = uploadedData.dateRange.end.split('/');
+        const startDate = new Date(startYear, startMonth - 1, startDay);
+        const endDate = new Date(endYear, endMonth - 1, endDay);
+        const diffTime = Math.abs(endDate - startDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
+
+    const quickStats = currentForecasts && currentForecasts.length > 0 ? [
         { 
             label: 'Total Forecast', 
             value: `${Math.round(totalForecast)} units`,
-            change: `${currentForecast.horizon_weeks}w`,
+            change: `${currentForecasts[0].horizon_weeks}w`,
             positive: true,  
             icon: FaChartLine,   
-            spark: currentForecast.forecast.slice(0, 7).map(f => ({ v: f.yhat }))
+            spark: currentForecasts[0].forecast.slice(0, 7).map(f => ({ v: f.yhat }))
         },
         { 
             label: 'Training Data',
-            value: `${currentForecast.training_data_points} days`,
-            change: `${currentForecast.train_weeks}w`,
+            value: `${getTrainingDays()} days`,
+            change: `${currentForecasts[0].train_weeks || 20}w`,
             positive: null,
             icon: FaCheckDouble,
-            spark: currentForecast.forecast.slice(0, 7).map(f => ({ v: f.yhat }))
+            spark: currentForecasts[0].forecast.slice(0, 7).map(f => ({ v: f.yhat }))
         },
         {
-            label: 'Item',
-            value: currentForecast.item_name,
+            label: 'Products',
+            value: `${currentForecasts.length}`,
             change: 'Prophet',
             positive: null,
             icon: FaPoundSign,
-            spark: currentForecast.forecast.slice(0, 7).map(f => ({ v: f.yhat }))
+            spark: currentForecasts[0].forecast.slice(0, 7).map(f => ({ v: f.yhat }))
         },
         {
             label: 'Predictions',
-            value: `${currentForecast.forecast.length}`,
+            value: `${currentForecasts[0].forecast.length}`,
             change: 'days',
             positive: null,
             icon: FaShoppingBag,
-            spark: currentForecast.forecast.slice(0, 7).map(f => ({ v: f.yhat }))
+            spark: currentForecasts[0].forecast.slice(0, 7).map(f => ({ v: f.yhat }))
         },
     ] : [];
 
@@ -719,14 +946,20 @@ function LandingPagePanel() {
                             )}
                         </div>
                         <div className={`bg-gradient-to-br ${graphs.graph1.color} flex-1 min-h-[280px] p-4 md:p-6 flex flex-col transition-all duration-500`}>
-                            <SimpleLineChart data={graphs.graph1.data} dataKey="predicted" />
+                            {graphs.graph1.data && graphs.graph1.data.length > 0 ? (
+                                <MultiLineChart dataByProduct={graphs.graph1.data} dataKey="predicted" />
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-pinkcafe2/40 text-sm">
+                                    No forecast data available
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {/* Side Cards */}
                 <div className="w-full lg:w-64 xl:w-72 flex flex-col gap-3 flex-shrink-0">
-                    {currentForecast && (
+                    {currentForecasts && currentForecasts.length > 0 && (
                         <div className="bg-white rounded-xl overflow-hidden shadow-sm border-2 border-pinkcafe2 ring-2 ring-pinkcafe2 ring-offset-2">
                             <div className="flex">
                                 <div className="w-1 flex-shrink-0 bg-pinkcafe2" />
@@ -741,7 +974,9 @@ function LandingPagePanel() {
                                     <p className="text-[10px] text-pinkcafe2/50 mb-2">{getRangeLabel()}</p>
                                     <p className="text-base font-bold text-pinkcafe2 font-display mb-2">{graphs.graph1.value}</p>
                                     <div className="h-7 -mx-1 opacity-60">
-                                        <Sparkline data={graphs.graph1.data.map(d => ({ v: d.predicted }))} color="#10b981" />
+                                        {graphs.graph1.data && graphs.graph1.data.length > 0 && graphs.graph1.data[0].data && (
+                                            <Sparkline data={graphs.graph1.data[0].data.slice(0, 7).map(d => ({ v: d.predicted }))} color="#10b981" />
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -751,30 +986,133 @@ function LandingPagePanel() {
 
                 {/* Right Insights Panel (xl only) */}
                 <div className="hidden xl:flex flex-col gap-4 w-64 xl:w-72 flex-shrink-0">
+                    {/* Dataset Selector - only show when there are multiple datasets */}
+                    {allDatasets.length > 1 && (
+                        <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
+                            <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-3">Select Dataset</h3>
+                            <select
+                                value={selectedDatasetId || ''}
+                                onChange={(e) => handleDatasetChange(parseInt(e.target.value))}
+                                className="w-full px-3 py-2 border border-pinkcafe2/20 rounded-lg text-sm text-pinkcafe2 focus:outline-none focus:ring-2 focus:ring-pinkcafe2/50"
+                            >
+                                {allDatasets.map(dataset => (
+                                    <option key={dataset.datasetId} value={dataset.datasetId}>
+                                        {dataset.displayName || dataset.fileName}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-pinkcafe2/60 mt-2">
+                                {allDatasets.length} dataset{allDatasets.length > 1 ? 's' : ''} available
+                            </p>
+                        </div>
+                    )}
+                    
+                    {/* Data Source Selector */}
+                    {uploadedData ? (
+                        <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
+                            <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-3">Uploaded Dataset</h3>
+                            <div className="space-y-3">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-sm text-pinkcafe2 font-semibold">
+                                        {uploadedData.displayName || uploadedData.products[0] || 'Uploaded Data'}
+                                    </span>
+                                    <p className="text-xs text-pinkcafe2/60">
+                                        {uploadedData.dateRange.start} - {uploadedData.dateRange.end}
+                                    </p>
+                                </div>
+                                
+                                <button
+                                    onClick={async () => {
+                                        if (!window.confirm(`Delete "${uploadedData.displayName || uploadedData.fileName}" and all associated data from the database?`)) {
+                                            return;
+                                        }
+                                        
+                                        try {
+                                            // Delete from database
+                                            const response = await fetch(`http://localhost:5001/api/upload/dataset/${uploadedData.datasetId}`, {
+                                                method: 'DELETE'
+                                            });
+                                            
+                                            if (!response.ok) {
+                                                const error = await response.json();
+                                                throw new Error(error.message || 'Failed to delete dataset');
+                                            }
+                                            
+                                            console.log('✅ Dataset deleted from database');
+                                            
+                                            // Remove from datasets array
+                                            const updatedDatasets = allDatasets.filter(d => d.datasetId !== uploadedData.datasetId);
+                                            setAllDatasets(updatedDatasets);
+                                            
+                                            // Update localStorage
+                                            localStorage.setItem('uploadedForecastData', JSON.stringify(updatedDatasets));
+                                            
+                                            // If there are other datasets, switch to the first one
+                                            if (updatedDatasets.length > 0) {
+                                                const nextDataset = updatedDatasets[0];
+                                                setSelectedDatasetId(nextDataset.datasetId);
+                                                setUploadedData(nextDataset);
+                                                localStorage.setItem('selectedDatasetId', nextDataset.datasetId.toString());
+                                            } else {
+                                                // No datasets left
+                                                setUploadedData(null);
+                                                setSelectedDatasetId(null);
+                                                localStorage.removeItem('selectedDatasetId');
+                                            }
+                                            
+                                            // Clear forecasts
+                                            setForecast7Days([]);
+                                            setForecastMonth([]);
+                                            setForecastYear([]);
+                                            setHasGenerated(false);
+                                        } catch (error) {
+                                            console.error('Failed to delete dataset:', error);
+                                            alert(`Failed to delete dataset: ${error.message}`);
+                                        }
+                                    }}
+                                    className="w-full px-3 py-2 text-xs text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors font-semibold"
+                                >
+                                    🗑️ Delete Dataset
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
+                            <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-3">No Data</h3>
+                            <p className="text-xs text-pinkcafe2/60 mb-3">Please upload a CSV file to generate forecasts.</p>
+                            <Link to="/upload" className="block w-full text-center px-3 py-2 text-xs text-white bg-pinkcafe2 hover:bg-pinkcafe2/90 rounded-lg transition-colors font-semibold">
+                                Go to Upload Page
+                            </Link>
+                        </div>
+                    )}
+
                     {/* Generate/Regenerate Button */}
                     <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
                         <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-3">Forecast Control</h3>
                         <button
                             onClick={generateAllForecasts}
-                            disabled={isLoading}
+                            disabled={isLoading || !uploadedData}
                             className="w-full bg-pinkcafe2 text-white px-4 py-3 rounded-lg font-semibold text-sm hover:bg-pinkcafe2/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg">
                             {isLoading ? 'Generating...' : (hasGenerated ? 'Regenerate Forecast' : 'Generate Forecast')}
                         </button>
                         <p className="text-xs text-pinkcafe2/60 mt-2 text-center">
-                            {hasGenerated ? 'Update predictions' : 'Generate forecasts from today'}
+                            {!uploadedData ? 'Upload data first' : (hasGenerated ? 'Update predictions' : 'Generate forecasts for all products')}
                         </p>
                     </div>
 
                     {/* Insights */}
                     <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
                         <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-3">Insights</h3>
-                        {currentForecast ? (
+                        {currentForecasts && currentForecasts.length > 0 ? (
                             <ul className="space-y-2 text-xs text-pinkcafe2/80">
                                 <li className="flex gap-2"><span className="text-emerald-600">●</span>Forecast generated successfully</li>
-                                <li className="flex gap-2"><span className="text-emerald-600">●</span>{currentForecast.item_name} - predictions from today</li>
-                                <li className="flex gap-2"><span className="text-amber-600">●</span>Training data: Mar-Oct 2025</li>
-                                <li className="flex gap-2"><span className="text-amber-600">●</span>Long-term view: ~7 months (to Oct 2026)</li>
-                                <li className="flex gap-2"><span className="text-blue-600">●</span>Predictions extrapolated from old data</li>
+                                <li className="flex gap-2"><span className="text-emerald-600">●</span>{currentForecasts.length} product{currentForecasts.length > 1 ? 's' : ''} forecasted</li>
+                                {uploadedData && (
+                                    <>
+                                        <li className="flex gap-2"><span className="text-blue-600">●</span>Using uploaded data</li>
+                                        <li className="flex gap-2"><span className="text-amber-600">●</span>Training: {uploadedData.dateRange.start} - {uploadedData.dateRange.end}</li>
+                                    </>
+                                )}
                             </ul>
                         ) : (
                             <div className="text-center py-6">
@@ -788,8 +1126,8 @@ function LandingPagePanel() {
                     <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
                         <h3 className="font-display font-bold text-pinkcafe2 text-sm mb-2">Model</h3>
                         <p className="text-xs text-pinkcafe2/60">
-                            {currentForecast 
-                                ? `Prophet forecasting • ${currentForecast.forecast.length} predictions`
+                            {currentForecasts && currentForecasts.length > 0
+                                ? `Prophet forecasting • ${currentForecasts[0].forecast.length} predictions per product`
                                 : 'Prophet forecasting • Awaiting data'
                             }
                         </p>

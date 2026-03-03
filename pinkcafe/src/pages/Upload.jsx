@@ -12,6 +12,7 @@ function Upload() {
   const [uploadedData, setUploadedData] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [displayName, setDisplayName] = useState('');
 
   const handleFileSelect = (file) => {
     setSelectedFile(file);
@@ -26,15 +27,27 @@ function Upload() {
     setError(null);
 
     try {
+      console.log('Processing file:', selectedFile.name, selectedFile.type, selectedFile.size);
+      
       const formData = new FormData();
       formData.append('file', selectedFile);
 
+      console.log('Sending request to backend...');
       const response = await fetch('http://localhost:5001/api/upload/csv', {
         method: 'POST',
         body: formData
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status, response.statusText);
+
+      let data;
+      try {
+        data = await response.json();
+        console.log('Response data:', data);
+      } catch (jsonErr) {
+        console.error('JSON parse error:', jsonErr);
+        throw new Error(`Failed to parse response: ${response.statusText}`);
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to process file');
@@ -51,7 +64,8 @@ function Upload() {
 
       setUploadedData(formattedData);
     } catch (err) {
-      setError(err.message);
+      console.error('Upload error details:', err);
+      setError(err.message || 'An unknown error occurred');
       console.error('Upload error:', err);
     } finally {
       setIsProcessing(false);
@@ -59,6 +73,42 @@ function Upload() {
   };
 
   const handleGenerateForecast = () => {
+    if (!uploadedData) return;
+    
+    // Store uploaded dataset info for the forecast page
+    const forecastData = {
+      datasetId: uploadedData.dataset_id,
+      itemIds: uploadedData.item_ids,
+      products: uploadedData.products,
+      fileName: uploadedData.fileName,
+      dateRange: uploadedData.dateRange,
+      displayName: displayName || uploadedData.products[0] || 'Sales',
+      uploadedAt: new Date().toISOString()
+    };
+    
+    // Get existing datasets or create new array
+    const existingDatasets = JSON.parse(localStorage.getItem('uploadedForecastData') || '[]');
+    
+    // Check if this dataset already exists (by dataset_id)
+    const existingIndex = existingDatasets.findIndex(d => d.datasetId === forecastData.datasetId);
+    
+    if (existingIndex >= 0) {
+      // Update existing dataset
+      existingDatasets[existingIndex] = forecastData;
+    } else {
+      // Add new dataset
+      existingDatasets.push(forecastData);
+    }
+    
+    // Store array of datasets
+    localStorage.setItem('uploadedForecastData', JSON.stringify(existingDatasets));
+    
+    // Set this as the selected dataset
+    localStorage.setItem('selectedDatasetId', forecastData.datasetId.toString());
+    
+    console.log('Stored forecast data:', forecastData);
+    console.log('All datasets:', existingDatasets);
+    
     // Navigate to home page to see forecast
     window.location.href = '/home';
   };
@@ -123,6 +173,23 @@ function Upload() {
         <div className="max-w-7xl mx-auto">
           <DataStatistics data={uploadedData} />
         </div>
+
+        {/* Display Name Input */}
+        {isDataValid && (
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-bold text-pinkcafe2 mb-2">Forecast Display Name</h3>
+              <p className="text-sm text-gray-600 mb-4">Give your forecast a friendly name (e.g., "Croissant Sales", "Coffee Sales")</p>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder={`e.g., ${uploadedData.products[0]} Sales`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pinkcafe2 focus:border-transparent"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Generate Forecast Button */}
         {isDataValid && (
