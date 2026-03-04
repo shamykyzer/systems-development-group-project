@@ -50,7 +50,7 @@ function NavBar(){
                     <h1 className="text-4xl font-extrabold font-sans text-pinkcafe transition-all duration-300">
                         Pink
                     </h1>
-                    <h1 className="text-4xl font-extrabold font-sans text-black">Cafe</h1>
+                    <h1 className="text-4xl font-extrabold font-sans text-black">Café</h1>
                 </div>
 
                 {/* Navigation Links */}

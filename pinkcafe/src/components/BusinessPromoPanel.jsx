@@ -25,19 +25,19 @@ function BusinessPromoPanel() {
           className="object-cover w-full h-full transition-all duration-700"
         />
       </div>
-      <h2 className="text-3xl font-extrabold text-black mb-4 text-center">Welcome to Pink Café Admin Portal</h2>
+      <h2 className="text-3xl font-extrabold text-black mb-4 text-center">AI-Powered Sales Forecasting</h2>
       <p className="text-lg text-black mb-8 text-center max-w-md">
-        Empower your business and staff with seamless management tools, smart analytics, and automated forecasting—all in one place.
+        Predict product demand with machine learning to reduce waste, optimize inventory, and maximize profitability.
       </p>
       <ul className="space-y-4 text-lg text-black pl-2 w-full">
         <li className="flex items-center">
-          <span className="mr-2 text-pinkcafe2 text-xl">•</span> Real-time sales analytics
+          <span className="mr-2 text-pinkcafe2 text-xl">•</span> Prophet algorithm predictions
         </li>
         <li className="flex items-center">
-          <span className="mr-2 text-pinkcafe2 text-xl">•</span> Automated forecasting
+          <span className="mr-2 text-pinkcafe2 text-xl">•</span> Multiple time horizons (7 days to 12 months)
         </li>
         <li className="flex items-center">
-          <span className="mr-2 text-pinkcafe2 text-xl">•</span> Staff management tools
+          <span className="mr-2 text-pinkcafe2 text-xl">•</span> Upload custom sales data
         </li>
       </ul>
     </div>

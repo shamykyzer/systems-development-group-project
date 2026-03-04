@@ -149,6 +149,11 @@ def _prophet_forecast(history: pd.DataFrame, horizon_days: int, conn) -> pd.Data
     
     forecast = m.predict(future)
     
+    # Clamp predictions to non-negative values (sales can't be negative)
+    forecast["yhat"] = forecast["yhat"].clip(lower=0)
+    forecast["yhat_lower"] = forecast["yhat_lower"].clip(lower=0)
+    forecast["yhat_upper"] = forecast["yhat_upper"].clip(lower=0)
+    
     # Return required 4 columns
     return forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].rename(
         columns={"ds": "date"}

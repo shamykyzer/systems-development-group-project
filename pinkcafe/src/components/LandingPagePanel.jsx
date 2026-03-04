@@ -156,13 +156,6 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
     );
 }
 
-const FORECAST_RANGE_OPTIONS = [
-    { value: '7days', label: 'Next 7 days' },
-    { value: 'upcomingMonth', label: 'Next 4 weeks' },
-    { value: 'upcomingYear', label: 'Long-term (7 months)' },
-    { value: 'custom', label: 'Custom dates' },
-];
-
 function LandingPagePanel() {
     const [isLoading, setIsLoading] = useState(false);
     const [forecastRange, setForecastRange] = useState('7days');
@@ -183,6 +176,35 @@ function LandingPagePanel() {
     const [allDatasets, setAllDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(null);
     const [uploadedData, setUploadedData] = useState(null);
+    
+    // Calculate maximum forecast horizon based on data availability
+    const getMaxForecastMonths = () => {
+        if (!uploadedData?.dateRange?.end) return 7;
+        
+        const lastDataDate = new Date(uploadedData.dateRange.end.split('/').reverse().join('-'));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Prophet can forecast up to 52 weeks (1 year) from last training data point
+        const maxForecastDate = new Date(lastDataDate);
+        maxForecastDate.setDate(maxForecastDate.getDate() + (52 * 7));
+        
+        // Calculate months from today to max forecast date
+        const monthsAvailable = Math.round((maxForecastDate - today) / (30.44 * 24 * 60 * 60 * 1000));
+        
+        // Cap at 12 months and ensure at least 1 month
+        return Math.max(1, Math.min(12, monthsAvailable));
+    };
+    
+    const maxForecastMonths = getMaxForecastMonths();
+    
+    // Dynamic forecast range options
+    const FORECAST_RANGE_OPTIONS = [
+        { value: '7days', label: 'Next 7 days' },
+        { value: 'upcomingMonth', label: 'Next 4 weeks' },
+        { value: 'upcomingYear', label: `Long-term (${maxForecastMonths} month${maxForecastMonths !== 1 ? 's' : ''})` },
+        { value: 'custom', label: 'Custom dates' },
+    ];
 
     // Check for uploaded data on component mount
     useEffect(() => {
@@ -315,7 +337,7 @@ function LandingPagePanel() {
                 
                 forecast.forEach(f => {
                     const date = new Date(f.date);
-                    const monthKey = `${date.getFullYear()}-${date.getMonth()}`; // e.g., "2026-2" for March 2026
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`; // e.g., "2026-02" for March 2026
                     
                     if (!monthlyData[monthKey]) {
                         monthlyData[monthKey] = {
@@ -354,7 +376,7 @@ function LandingPagePanel() {
                         
                         forecast.forEach(f => {
                             const date = new Date(f.date);
-                            const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+                            const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
                             
                             if (!monthlyData[monthKey]) {
                                 monthlyData[monthKey] = {
@@ -470,10 +492,20 @@ function LandingPagePanel() {
             console.log(`📅 Last training data: ${uploadedData.dateRange.end} (${weeksFromLastData} weeks ago)`);
             console.log(`📅 Today: ${today.toDateString()}`);
             
-            // Calculate horizons
+            // Calculate horizons dynamically
             const horizon7Days = Math.min(52, weeksFromLastData + 1);
             const horizonMonth = Math.min(52, weeksFromLastData + 4);
-            const horizonYear = 52;
+            
+            // Calculate maximum horizon based on data - use up to 12 months if available
+            const maxMonthsFromToday = getMaxForecastMonths();
+            // Calculate target end date (today + months)
+            const targetEndDate = new Date(today);
+            targetEndDate.setDate(targetEndDate.getDate() + Math.ceil(maxMonthsFromToday * 30.44));
+            // Calculate weeks from LAST DATA POINT to target end date (this is what Prophet needs)
+            const weeksToTargetDate = Math.ceil((targetEndDate - lastDataDate) / (7 * 24 * 60 * 60 * 1000));
+            const horizonYear = Math.min(52, Math.max(1, weeksToTargetDate));
+            
+            console.log(`📊 Dynamic forecast range: ${maxMonthsFromToday} months from today (${horizonYear} weeks from last data point)`);
             
             // Fetch forecasts for all products
             const forecasts7Days = [];
