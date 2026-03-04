@@ -84,10 +84,11 @@ function SimpleLineChart({ data, dataKey = 'predicted' }) {
 // ---------------------------------------------------------------------------
 // Multi-line chart for multiple products
 // ---------------------------------------------------------------------------
+const CHART_COLORS = ['#423b39', '#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+
 function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
-    const colors = ['#423b39', '#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
     const w = 400, h = 220;
-    const pad = { top: 20, right: 30, bottom: 38, left: 32 }; // Increased top padding for legend
+    const pad = { top: 10, right: 30, bottom: 38, left: 32 };
     const iw = w - pad.left - pad.right;
     const ih = h - pad.top - pad.bottom;
 
@@ -125,7 +126,7 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
             {dataByProduct.map((series, seriesIdx) => {
                 const vals = series.data.map(d => d[dataKey] ?? 0);
                 const points = vals.map((v, i) => `${px(i, series.data.length)},${py(v)}`).join(' ');
-                const color = colors[seriesIdx % colors.length];
+                const color = CHART_COLORS[seriesIdx % CHART_COLORS.length];
                 
                 return (
                     <g key={seriesIdx}>
@@ -151,16 +152,6 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
                     {d.date}
                 </text>
             ))}
-            
-            {/* Legend */}
-            {dataByProduct.map((series, idx) => (
-                <g key={`legend-${idx}`}>
-                    <circle cx={pad.left + idx * 80} cy={8} r="3" fill={colors[idx % colors.length]} />
-                    <text x={pad.left + idx * 80 + 6} y={11} fontSize="8" fill="#423b39">
-                        {series.productName}
-                    </text>
-                </g>
-            ))}
         </svg>
     );
 }
@@ -177,6 +168,7 @@ function LandingPagePanel() {
     const [forecastRange, setForecastRange] = useState('7days');
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState('all'); // 'all' or specific product name
 
     // Prophet forecast data - store arrays of forecasts (one per product) for each range
     const [forecast7Days, setForecast7Days] = useState([]);
@@ -677,6 +669,14 @@ function LandingPagePanel() {
             data: forecast.forecast ? transformProphetData(forecast.forecast, forecastRange) : []
         }))
         : [];
+    
+    // Filter chart data based on selected product
+    const filteredChartData = selectedProduct === 'all' 
+        ? chartDataByProduct 
+        : chartDataByProduct.filter(item => item.productName === selectedProduct);
+    
+    // Get list of available products for dropdown
+    const availableProducts = chartDataByProduct.map(item => item.productName);
 
     // Graph metadata - using real Prophet data for all products
     const graphs = {
@@ -691,7 +691,7 @@ function LandingPagePanel() {
             isPositive: true,
             icon: '📊',
             color: 'from-stone-100 to-stone-200',
-            data: chartDataByProduct,
+            data: filteredChartData,
         },
     };
 
@@ -782,6 +782,7 @@ function LandingPagePanel() {
 
     return (
         <div className="ml-0 md:ml-64 flex-1 min-w-0 min-h-screen bg-dashboard-gradient p-4 md:p-8 transition-all duration-300">
+            <div className="max-w-[1600px] mx-auto">
             {/* Breadcrumb */}
             <nav className="mb-6 mt-16 md:mt-0 flex items-center gap-2 text-sm text-pinkcafe2/60">
                 <Link to="/home" className="hover:text-pinkcafe2 transition-colors flex items-center gap-1">
@@ -792,14 +793,14 @@ function LandingPagePanel() {
             </nav>
 
             {/* Header */}
-            <div className="mb-10">
+            <div className="mb-10 text-center">
                 <h1 className="font-display text-3xl md:text-4xl font-bold text-black mb-2 tracking-tight">
                     Sales Forecasting
                 </h1>
-                <p className="text-black/80 text-base max-w-xl mb-2">
+                <p className="text-black/80 text-base max-w-xl mb-2 mx-auto">
                     AI-powered product demand predictions to reduce waste and optimize inventory
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center gap-4">
                     <p className="text-xs text-black/60">{getLastUpdatedText()}</p>
                     {hasGenerated && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
@@ -879,7 +880,7 @@ function LandingPagePanel() {
             </div>
 
             {/* Main content */}
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-stretch w-full">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
                 {/* Main Chart Card */}
                 <div className="flex-1 min-w-0 flex">
                     <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/80 transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-pinkcafe2/10 hover:-translate-y-1 flex-1 flex flex-col min-h-0 w-full">
@@ -895,7 +896,7 @@ function LandingPagePanel() {
                                     {graphs.graph1.change}
                                 </span>
                             </div>
-                            {/* Range buttons */}
+                            {/* Range buttons and product selector */}
                             <div className="mt-4 flex flex-wrap items-center gap-2">
                                 {FORECAST_RANGE_OPTIONS.filter((o) => o.value !== 'custom').map((opt) => (
                                     <button 
@@ -917,6 +918,25 @@ function LandingPagePanel() {
                                     }`}>
                                     Custom
                                 </button>
+                                
+                                {/* Product selector */}
+                                {hasGenerated && availableProducts.length > 0 && (
+                                    <>
+                                        <span className="text-white/60 text-xs mx-1">|</span>
+                                        <select
+                                            value={selectedProduct}
+                                            onChange={(e) => setSelectedProduct(e.target.value)}
+                                            className="rounded-md px-3 py-1.5 text-xs font-medium bg-white/10 text-white border-0 focus:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/50 cursor-pointer"
+                                        >
+                                            <option value="all" className="bg-pinkcafe2 text-white">All Products</option>
+                                            {availableProducts.map(productName => (
+                                                <option key={productName} value={productName} className="bg-pinkcafe2 text-white">
+                                                    {productName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </>
+                                )}
                             </div>
                             {forecastRange === 'custom' && (
                                 <div className="mt-3 flex items-center gap-2 flex-wrap">
@@ -947,7 +967,23 @@ function LandingPagePanel() {
                         </div>
                         <div className={`bg-gradient-to-br ${graphs.graph1.color} flex-1 min-h-[280px] p-4 md:p-6 flex flex-col transition-all duration-500`}>
                             {graphs.graph1.data && graphs.graph1.data.length > 0 ? (
-                                <MultiLineChart dataByProduct={graphs.graph1.data} dataKey="predicted" />
+                                <>
+                                    <MultiLineChart dataByProduct={graphs.graph1.data} dataKey="predicted" />
+                                    {/* Legend below chart */}
+                                    <div className="flex flex-wrap gap-3 justify-center mt-4 px-2">
+                                        {graphs.graph1.data.map((series, idx) => (
+                                            <div key={idx} className="flex items-center gap-1.5">
+                                                <div 
+                                                    className="w-3 h-3 rounded-full flex-shrink-0" 
+                                                    style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
+                                                />
+                                                <span className="text-xs text-pinkcafe2 font-medium">
+                                                    {series.productName}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-pinkcafe2/40 text-sm">
                                     No forecast data available
@@ -957,35 +993,8 @@ function LandingPagePanel() {
                     </div>
                 </div>
 
-                {/* Side Cards */}
-                <div className="w-full lg:w-64 xl:w-72 flex flex-col gap-3 flex-shrink-0">
-                    {currentForecasts && currentForecasts.length > 0 && (
-                        <div className="bg-white rounded-xl overflow-hidden shadow-sm border-2 border-pinkcafe2 ring-2 ring-pinkcafe2 ring-offset-2">
-                            <div className="flex">
-                                <div className="w-1 flex-shrink-0 bg-pinkcafe2" />
-                                <div className="flex-1 min-w-0 p-3">
-                                    <div className="flex items-start justify-between gap-2 mb-2">
-                                        <span className="text-lg">{graphs.graph1.icon}</span>
-                                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 bg-emerald-700 text-emerald-100">
-                                            {graphs.graph1.change}
-                                        </span>
-                                    </div>
-                                    <h3 className="font-display font-bold text-pinkcafe2 text-sm leading-tight mb-0.5">{graphs.graph1.title}</h3>
-                                    <p className="text-[10px] text-pinkcafe2/50 mb-2">{getRangeLabel()}</p>
-                                    <p className="text-base font-bold text-pinkcafe2 font-display mb-2">{graphs.graph1.value}</p>
-                                    <div className="h-7 -mx-1 opacity-60">
-                                        {graphs.graph1.data && graphs.graph1.data.length > 0 && graphs.graph1.data[0].data && (
-                                            <Sparkline data={graphs.graph1.data[0].data.slice(0, 7).map(d => ({ v: d.predicted }))} color="#10b981" />
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Insights Panel (xl only) */}
-                <div className="hidden xl:flex flex-col gap-4 w-64 xl:w-72 flex-shrink-0">
+                {/* Right Insights Panel */}
+                <div className="w-full lg:w-64 xl:w-72 flex flex-col gap-4 flex-shrink-0">
                     {/* Dataset Selector - only show when there are multiple datasets */}
                     {allDatasets.length > 1 && (
                         <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
@@ -1133,6 +1142,7 @@ function LandingPagePanel() {
                         </p>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     );
