@@ -26,7 +26,12 @@ export function DataPreviewTable({ data }) {
   }
 
   // Get column headers from the first row
-  const columns = Object.keys(data[0]);
+  const allColumns = Object.keys(data[0]);
+  
+  // Ensure Date column appears first
+  const dateColumn = allColumns.find(col => col.toLowerCase() === 'date');
+  const otherColumns = allColumns.filter(col => col.toLowerCase() !== 'date');
+  const columns = dateColumn ? [dateColumn, ...otherColumns] : allColumns;
   
   // Show first 5 rows or all rows if expanded
   const displayData = isExpanded ? data : data.slice(0, 5);

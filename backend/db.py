@@ -56,12 +56,12 @@ CREATE TABLE IF NOT EXISTS prophet_presets (
   id                               INTEGER PRIMARY KEY AUTOINCREMENT,
   preset_name                      TEXT UNIQUE NOT NULL,
   growth                           TEXT    NOT NULL DEFAULT 'linear',
-  changepoint_prior_scale          REAL    NOT NULL DEFAULT 0.05,
-  seasonality_prior_scale          REAL    NOT NULL DEFAULT 10.0,
-  seasonality_mode                 TEXT    NOT NULL DEFAULT 'multiplicative',
+  changepoint_prior_scale          REAL    NOT NULL DEFAULT 0.15,
+  seasonality_prior_scale          REAL    NOT NULL DEFAULT 15.0,
+  seasonality_mode                 TEXT    NOT NULL DEFAULT 'additive',
   daily_seasonality                INTEGER NOT NULL DEFAULT 0,
   weekly_seasonality               INTEGER NOT NULL DEFAULT 1,
-  yearly_seasonality               INTEGER NOT NULL DEFAULT 1,
+  yearly_seasonality               INTEGER NOT NULL DEFAULT 0,
   forecast_periods                 INTEGER NOT NULL DEFAULT 365,
   floor_multiplier                 REAL    NOT NULL DEFAULT 0.5,
   cap_multiplier                   REAL    NOT NULL DEFAULT 1.5,
@@ -111,6 +111,17 @@ def init_db(db_path: str) -> None:
         conn.execute(
             "INSERT OR IGNORE INTO prophet_presets (preset_name) VALUES ('Default')"
         )
+        
+        # Update Default preset to use optimized settings for short-term forecasting
+        conn.execute("""
+            UPDATE prophet_presets 
+            SET 
+                changepoint_prior_scale = 0.15,
+                seasonality_prior_scale = 15.0,
+                seasonality_mode = 'additive',
+                yearly_seasonality = 0
+            WHERE preset_name = 'Default'
+        """)
 
         # Seed the active_preset singleton row (id=1 always)
         conn.execute(

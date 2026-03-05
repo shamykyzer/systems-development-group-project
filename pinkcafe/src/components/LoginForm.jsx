@@ -51,7 +51,7 @@ function LoginForm() {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-9xl font-extrabold font-sans text-blackbrown mb-2">Pink</h1>
-        <h1 className="text-9xl font-thin text-blackbrown mb-2 pl-9 pb-10">Cafe</h1>
+        <h1 className="text-9xl font-thin text-blackbrown mb-2 pl-9 pb-10">Café</h1>
       </div>
 
       {/* Login Form */}
@@ -109,18 +109,6 @@ function LoginForm() {
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="text-sm text-black font-bold pb-10 hover:underline"
-              onClick={() =>
-                setError('Password reset is not implemented yet. Please contact an administrator.')
-              }
-            >
-              Forgot password?
-            </button>
-          </div>
-
           <button
             type="submit"
             disabled={loading}
@@ -129,20 +117,6 @@ function LoginForm() {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-
-        {/* Sign Up Link */}
-      <p className="text-center text-sm text-gray-600">
-        Don't have an account?{' '}
-        <button
-          type="button"
-          className="text-black font-bold hover:underline"
-          onClick={() =>
-            setError('Sign up is not implemented yet. Please contact an administrator.')
-          }
-        >
-          Sign up
-        </button>
-      </p>
     </div>
   );
 }

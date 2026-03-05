@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Prophet'))
 from flask import Flask, jsonify, request, current_app
 from db import connect
 from services import hash_password, verify_password
-from prophet import ForecastError, run_forecast
+from forecasting import ForecastError, run_forecast
 from prophet_settings import (
     list_presets,
     get_preset,
@@ -226,3 +226,236 @@ def register_routes(app: Flask) -> None:
                 return jsonify({"success": True, "preset_name": name})
             except ValueError as e:
                 return _err(str(e), 404)
+
+
+    # --- Prophet Test (Hardcoded CSV) --------------------------------------
+
+    @app.post("/api/upload/csv")
+    def upload_csv():
+        """
+        Upload and process a CSV file containing sales data.
+        Stores data in database and returns validation/preview info.
+        """
+        import pandas as pd
+        import os
+        from werkzeug.utils import secure_filename
+        
+        if 'file' not in request.files:
+            return _err("No file uploaded", 400)
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return _err("No file selected", 400)
+        
+        if not file.filename.endswith('.csv'):
+            return _err("File must be a CSV", 400)
+        
+        try:
+            # Read CSV
+            df = pd.read_csv(file)
+            
+            # Validate CSV structure
+            if 'Date' not in df.columns:
+                return _err("CSV must have a 'Date' column", 400)
+            
+            # Parse dates
+            try:
+                df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+            except Exception as e:
+                return _err(f"Dates must be in dd/mm/yyyy format. Error: {str(e)}", 400)
+            
+            # Get product columns (everything except Date)
+            product_cols = [col for col in df.columns if col != 'Date']
+            
+            if not product_cols:
+                return _err("CSV must have at least one product column", 400)
+            
+            # Validation checks
+            has_negatives = (df[product_cols] < 0).any().any()
+            has_missing = df[product_cols].isnull().any().any()
+            is_chronological = df['Date'].is_monotonic_increasing
+            
+            # Store in database
+            with connect(_db()) as conn:
+                # Create dataset entry
+                cursor = conn.execute(
+                    "INSERT INTO datasets (name, source_filename) VALUES (?, ?)",
+                    (secure_filename(file.filename), file.filename)
+                )
+                dataset_id = cursor.lastrowid
+                
+                # Create/get item entries
+                item_ids = {}
+                for col in product_cols:
+                    # Try to categorize (simple heuristic)
+                    category = 'coffee' if 'coffee' in col.lower() or 'cappuccino' in col.lower() or 'americano' in col.lower() else 'food'
+                    
+                    cursor = conn.execute(
+                        "INSERT OR IGNORE INTO items (name, category) VALUES (?, ?)",
+                        (col, category)
+                    )
+                    
+                    item_row = conn.execute(
+                        "SELECT id FROM items WHERE name = ?", (col,)
+                    ).fetchone()
+                    item_ids[col] = item_row['id']
+                
+                # Insert sales data
+                for _, row in df.iterrows():
+                    date_str = row['Date'].strftime('%Y-%m-%d')
+                    for col in product_cols:
+                        quantity = int(row[col]) if pd.notna(row[col]) else 0
+                        conn.execute(
+                            "INSERT INTO sales (dataset_id, date, item_id, quantity) VALUES (?, ?, ?, ?)",
+                            (dataset_id, date_str, item_ids[col], quantity)
+                        )
+                
+                conn.commit()
+            
+            # Calculate statistics
+            stats = {}
+            for col in product_cols:
+                stats[col] = {
+                    'avg': float(df[col].mean()),
+                    'min': float(df[col].min()),
+                    'max': float(df[col].max())
+                }
+            
+            # Return validation and preview data
+            return jsonify({
+                "success": True,
+                "dataset_id": dataset_id,
+                "fileName": file.filename,
+                "dateRange": {
+                    "start": df['Date'].min().strftime('%d/%m/%Y'),
+                    "end": df['Date'].max().strftime('%d/%m/%Y')
+                },
+                "products": product_cols,
+                "rowCount": len(df),
+                "daysOfData": len(df),
+                "monthsOfData": round(len(df) / 30.4, 1),
+                "stats": stats,
+                "preview": df.head(10).to_dict(orient='records'),
+                "validationChecks": {
+                    "validDates": True,
+                    "noMissingValues": not has_missing,
+                    "noNegatives": not has_negatives,
+                    "chronological": is_chronological,
+                    "productsDetected": len(product_cols)
+                },
+                "item_ids": item_ids
+            })
+            
+        except Exception as e:
+            import traceback
+            return _err(f"Failed to process CSV: {str(e)}\n{traceback.format_exc()}", 500)
+
+    @app.delete("/api/upload/dataset/<int:dataset_id>")
+    def delete_dataset(dataset_id: int):
+        """
+        Delete a dataset and all its associated sales records.
+        """
+        try:
+            with connect(_db()) as conn:
+                # Check if dataset exists
+                dataset = conn.execute(
+                    "SELECT id, name FROM datasets WHERE id = ?",
+                    (dataset_id,)
+                ).fetchone()
+                
+                if not dataset:
+                    return _err("Dataset not found", 404)
+                
+                # Delete dataset (sales will cascade delete due to foreign key)
+                conn.execute("DELETE FROM datasets WHERE id = ?", (dataset_id,))
+                conn.commit()
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Dataset '{dataset['name']}' and all associated data deleted successfully"
+                })
+        except Exception as e:
+            import traceback
+            return _err(f"Failed to delete dataset: {str(e)}\n{traceback.format_exc()}", 500)
+
+    # --- Prophet Test (Hardcoded CSV) --------------------------------------
+
+    @app.get("/api/prophet/test")
+    def prophet_test():
+        """
+        TEST ENDPOINT: Load hardcoded CSV data and run Prophet forecast.
+        Query params:
+          - horizon_weeks: Number of weeks to forecast (default: 4)
+          - train_weeks:  Number of weeks to train on (default: 20)
+        Returns forecast data as JSON for dashboard testing.
+        """
+        import pandas as pd
+        import os
+        from forecasting import _prophet_forecast
+        
+        try:
+            # Get query parameters
+            horizon_weeks = request.args.get('horizon_weeks', '4')
+            train_weeks = request.args.get('train_weeks', '20')
+            
+            try:
+                horizon_weeks = int(horizon_weeks)
+                train_weeks = int(train_weeks)
+            except ValueError:
+                return _err("horizon_weeks and train_weeks must be integers", 400)
+            
+            if not (1 <= horizon_weeks <= 52):
+                return _err("horizon_weeks must be between 1 and 52", 400)
+            
+            if not (4 <= train_weeks <= 52):
+                return _err("train_weeks must be between 4 and 52", 400)
+            
+            # Load hardcoded CSV file
+            csv_path = os.path.join(os.path.dirname(__file__), "CSV_Files", "Pink CoffeeSales March - Oct 2025.csv")
+            
+            if not os.path.exists(csv_path):
+                return _err(f"CSV file not found at {csv_path}", 404)
+            
+            # Load CSV
+            df = pd.read_csv(csv_path)
+            df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+            
+            # Get first item column (skip 'Date')
+            item_columns = [col for col in df.columns if col != 'Date']
+            if not item_columns:
+                return _err("No sales columns found in CSV", 400)
+            
+            item_name = item_columns[0]
+            
+            # Prepare Prophet format
+            history = pd.DataFrame({
+                'ds': df['Date'],
+                'y': df[item_name]
+            })
+            
+            # Use last N weeks for training
+            cutoff_date = history["ds"].max() - pd.Timedelta(weeks=train_weeks)
+            history = history[history["ds"] >= cutoff_date].copy()
+            
+            # Run forecast
+            horizon_days = horizon_weeks * 7
+            
+            with connect(_db()) as conn:
+                forecast_df = _prophet_forecast(history, horizon_days, conn)
+            
+            # Convert to JSON-serializable format
+            forecast_df["date"] = forecast_df["date"].astype(str)
+            
+            return jsonify({
+                "success": True,
+                "item_name": item_name,
+                "train_weeks": train_weeks,
+                "horizon_weeks": horizon_weeks,
+                "training_data_points": len(history),
+                "forecast": forecast_df.to_dict(orient="records")
+            })
+            
+        except Exception as e:
+            import traceback
+            return _err(f"Prophet test failed: {str(e)}\n{traceback.format_exc()}", 500)

@@ -47,10 +47,10 @@ function NavBar(){
             >
                 {/* Logo Section */}
                 <div className="flex items-center gap-1 px-6 py-8 border-b border-gray-200 mt-12 md:mt-0">
-                    <h1 className="text-4xl font-extrabold font-sans text-pinkcafe2 transition-all duration-300">
+                    <h1 className="text-4xl font-extrabold font-sans text-pinkcafe transition-all duration-300">
                         Pink
                     </h1>
-                    <h1 className="text-4xl font-extrabold font-sans text-rose-400">Cafe</h1>
+                    <h1 className="text-4xl font-extrabold font-sans text-black">Café</h1>
                 </div>
 
                 {/* Navigation Links */}
@@ -70,7 +70,7 @@ function NavBar(){
                             <span className="transition-all duration-300">Upload</span>
                         </Link>
 
-                        <Link to="/home" className="flex items-center px-4 py-3 text-sm font-medium transition-all duration-200 text-gray-700 hover:text-pinkcafe2 hover:bg-pinkcafe rounded-lg group" title="Settings">
+                        <Link to="/settings" className="flex items-center px-4 py-3 text-sm font-medium transition-all duration-200 text-gray-700 hover:text-pinkcafe2 hover:bg-pinkcafe rounded-lg group" title="Settings">
                             <svg className="flex-shrink-0 w-5 h-5 mr-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -85,19 +85,6 @@ function NavBar(){
                             <span className="transition-all duration-300">Sign Out</span>
                         </button>
                     </nav>
-                </div>
-
-                {/* Footer/User Section */}
-                <div className="px-4 py-4 border-t border-gray-200">
-                    <div className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pinkcafe flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
-                            U
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-medium text-gray-900 truncate">User Name</p>
-                            <p className="text-xs text-gray-500 truncate">user@pinkcafe.com</p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </>
