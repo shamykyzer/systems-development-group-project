@@ -10,9 +10,11 @@ import ProphetSettingsPanel from '../components/ProphetSettingsPanel';
  */
 function Settings() {
   return (
-    <div className="flex min-h-screen bg-pinkcafe">
+    <div className="flex min-h-screen w-full bg-dashboard-gradient overflow-x-hidden">
       <NavBar />
-      <ProphetSettingsPanel />
+      <main className="flex-1 min-w-0">
+        <ProphetSettingsPanel />
+      </main>
     </div>
   );
 }

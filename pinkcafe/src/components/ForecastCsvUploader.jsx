@@ -26,7 +26,7 @@ function ForecastCsvUploader({ onFileSelect }) {
   };
 
   return (
-    <div className="w-full md:w-6/12 mx-auto p-6 pt-20 md:pt-6">
+    <div className="w-full">
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-bold mb-4">Upload Forecast CSV</h2>
         
@@ -58,7 +58,7 @@ function ForecastCsvUploader({ onFileSelect }) {
             <button
               type="button"
               onClick={() => document.getElementById('csv-file-input').click()}
-              className="bg-pinkcafe2 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
+              className="bg-black hover:bg-gray-800 text-white font-semibold py-2 px-6 rounded-lg transition duration-200"
             >
               Select CSV File
             </button>
