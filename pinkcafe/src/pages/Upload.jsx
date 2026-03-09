@@ -1,88 +1,184 @@
 import React, { useState } from 'react';
 import NavBar from '../components/NavBar';
 import ForecastCsvUploader from '../components/ForecastCsvUploader';
+import DataPreviewTable from '../components/DataPreviewTable';
+import CSVValidator from '../components/CSVValidator';
+import DataStatistics from '../components/DataStatistics';
 
-
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 function Upload() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadedData, setUploadedData] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const [displayName, setDisplayName] = useState('');
 
   const handleFileSelect = (file) => {
     setSelectedFile(file);
-    setUploadedData(null); // Reset data when new file selected
+    setUploadedData(null);
+    setError(null);
   };
 
-  const handleProcessFile = () => {
+  const handleProcessFile = async () => {
     if (!selectedFile) return;
 
-    // Backend integration will go here
+    setIsProcessing(true);
+    setError(null);
 
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-    // ========== DELETE MOCK DATA WHEN BACKEND READY ==========
-    // Mock data that simulates backend response
-    const mockData = {
-      fileName: selectedFile.name,
-      dateRange: { start: '01/03/2025', end: '16/10/2025' },
-      products: ['Cappuccino', 'Americano'],
-      rowCount: 229,
-      daysOfData: 229,
-      monthsOfData: 7.5,
-      stats: {
-        Cappuccino: { avg: 75, min: 40, max: 111 },
-        Americano: { avg: 92, min: 68, max: 127 }
-      },
-      preview: [
-        { Date: '01/03/2025', Cappuccino: 82, Americano: 100 },
-        { Date: '02/03/2025', Cappuccino: 67, Americano: 103 },
-        { Date: '03/03/2025', Cappuccino: 75, Americano: 91 },
-        { Date: '04/03/2025', Cappuccino: 87, Americano: 92 },
-        { Date: '05/03/2025', Cappuccino: 58, Americano: 89 },
-        { Date: '06/03/2025', Cappuccino: 85, Americano: 70 },
-        { Date: '07/03/2025', Cappuccino: 70, Americano: 71 },
-        { Date: '08/03/2025', Cappuccino: 72, Americano: 73 },
-        { Date: '09/03/2025', Cappuccino: 69, Americano: 77 },
-        { Date: '10/03/2025', Cappuccino: 77, Americano: 82 }
-      ],
-      validationChecks: {
-        validDates: true,
-        noMissingValues: true,
-        noNegatives: true,
-        chronological: true,
-        productsDetected: 2
+      const response = await fetch(`${API_URL}/api/upload/csv`, {
+        method: 'POST',
+        body: formData
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        throw new Error(`Failed to parse response: ${response.statusText}`);
       }
-    };
-    
-    setUploadedData(mockData);
-    // ========== END MOCK DATA ==========
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to process file');
+      }
+
+      const formattedData = {
+        ...data,
+        preview: data.preview.map(row => ({
+          ...row,
+          Date: new Date(row.Date).toLocaleDateString('en-GB')
+        }))
+      };
+
+      setUploadedData(formattedData);
+    } catch (err) {
+      setError(err.message || 'An unknown error occurred');
+      console.error('Upload error:', err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
+  const handleGenerateForecast = () => {
+    if (!uploadedData) return;
+    
+    const forecastData = {
+      datasetId: uploadedData.dataset_id,
+      itemIds: uploadedData.item_ids,
+      products: uploadedData.products,
+      fileName: uploadedData.fileName,
+      dateRange: uploadedData.dateRange,
+      displayName: displayName || uploadedData.products[0] || 'Sales',
+      uploadedAt: new Date().toISOString()
+    };
+    
+    const existingDatasets = JSON.parse(localStorage.getItem('uploadedForecastData') || '[]');
+    const existingIndex = existingDatasets.findIndex(d => d.datasetId === forecastData.datasetId);
+    
+    if (existingIndex >= 0) {
+      existingDatasets[existingIndex] = forecastData;
+    } else {
+      existingDatasets.push(forecastData);
+    }
+    
+    localStorage.setItem('uploadedForecastData', JSON.stringify(existingDatasets));
+    localStorage.setItem('selectedDatasetId', forecastData.datasetId.toString());
+    
+    window.location.href = '/home';
+  };
+
+  const isDataValid = uploadedData && Object.entries(uploadedData.validationChecks || {}).every(([key, value]) => {
+    if (key === 'productsDetected') return value > 0;
+    return value === true;
+  });
+
   return (
-<div className="flex min-h-screen bg-dashboard-gradient">
+<div className="flex min-h-screen w-full bg-dashboard-gradient overflow-x-hidden">
     <NavBar />
-    <div className="flex-1 md:ml-64 overflow-y-auto min-h-screen bg-dashboard-gradient flex flex-col pt-20 md:pt-0">
-      {/* Centered upload area - flex-1 makes it fill available space and center content */}
-      <div className="flex-1 flex items-center justify-center">
+    <main className="flex-1 min-w-0 md:ml-64 overflow-y-auto min-h-screen flex flex-col pt-20 md:pt-0">
+      {/* Centered upload area */}
+      <div className="flex items-center justify-center pt-8">
         <div className="w-full max-w-xl px-6">
           <ForecastCsvUploader onFileSelect={handleFileSelect} />
           
-          {/* Process button - shown after file selected but before processing */}
+          {error && (
+            <div className="mt-4 bg-rose-50 border border-rose-200 rounded-lg p-4">
+              <p className="text-rose-700 font-semibold mb-1">Error</p>
+              <p className="text-rose-600 text-sm">{error}</p>
+            </div>
+          )}
+
           {selectedFile && !uploadedData && (
             <button
               onClick={handleProcessFile}
-              className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"
+              disabled={isProcessing}
+              className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Process & Analyze File
+              {isProcessing ? (
+                <>
+                  <span className="animate-spin">&#9203;</span>
+                  Processing...
+                </>
+              ) : (
+                'Process & Analyze File'
+              )}
             </button>
           )}
         </div>
       </div>
       
-      <div className="w-full md:w-10/12 lg:w-8/12 mx-auto p-6 space-y-6">
-        {/* <CSVValidator data={uploadedData} /> */}
-        {/* <DataPreviewTable data={uploadedData} /> */}
+      <div className="w-full p-6 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto items-start">
+          <div className="h-full">
+            <DataPreviewTable data={uploadedData?.preview} />
+          </div>
+          <div className="h-full">
+            <CSVValidator data={uploadedData} />
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto">
+          <DataStatistics data={uploadedData} />
+        </div>
+
+        {isDataValid && (
+          <div className="max-w-7xl mx-auto">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-bold text-pinkcafe2 mb-2">Forecast Display Name</h3>
+              <p className="text-sm text-gray-600 mb-4">Give your forecast a friendly name (e.g., "Croissant Sales", "Coffee Sales")</p>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder={`e.g., ${uploadedData.products[0]} Sales`}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pinkcafe2 focus:border-transparent"
+              />
+            </div>
+          </div>
+        )}
+
+        {isDataValid && (
+          <div className="max-w-7xl mx-auto">
+            <button
+              onClick={handleGenerateForecast}
+              className="w-full bg-pinkcafe2 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-3"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Generate Forecast
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+    </main>
 </div>
   );
 }
