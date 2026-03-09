@@ -101,39 +101,38 @@ function Upload() {
 <div className="flex min-h-screen w-full bg-dashboard-gradient overflow-x-hidden">
     <NavBar />
     <main className="flex-1 min-w-0 md:ml-64 overflow-y-auto min-h-screen flex flex-col pt-20 md:pt-0">
-      {/* Centered upload area */}
-      <div className="flex items-center justify-center pt-8">
-        <div className="w-full max-w-xl px-6">
-          <ForecastCsvUploader onFileSelect={handleFileSelect} />
-          
-          {error && (
-            <div className="mt-4 bg-rose-50 border border-rose-200 rounded-lg p-4">
-              <p className="text-rose-700 font-semibold mb-1">Error</p>
-              <p className="text-rose-600 text-sm">{error}</p>
-            </div>
-          )}
+      {/* Centered upload area and cards in the middle of the viewport */}
+      <div className="flex-1 flex flex-col items-center justify-center w-full p-6">
+        <div className="w-full max-w-4xl space-y-6">
+          <div className="max-w-xl mx-auto">
+            <ForecastCsvUploader onFileSelect={handleFileSelect} />
+            
+            {error && (
+              <div className="mt-4 bg-rose-50 border border-rose-200 rounded-lg p-4">
+                <p className="text-rose-700 font-semibold mb-1">Error</p>
+                <p className="text-rose-600 text-sm">{error}</p>
+              </div>
+            )}
 
-          {selectedFile && !uploadedData && (
-            <button
-              onClick={handleProcessFile}
-              disabled={isProcessing}
-              className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {isProcessing ? (
-                <>
-                  <span className="animate-spin">&#9203;</span>
-                  Processing...
-                </>
-              ) : (
-                'Process & Analyze File'
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-      
-      <div className="w-full p-6 space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto items-start">
+            {selectedFile && !uploadedData && (
+              <button
+                onClick={handleProcessFile}
+                disabled={isProcessing}
+                className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isProcessing ? (
+                  <>
+                    <span className="animate-spin">&#9203;</span>
+                    Processing...
+                  </>
+                ) : (
+                  'Process & Analyze File'
+                )}
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="h-full">
             <DataPreviewTable data={uploadedData?.preview} />
           </div>
@@ -178,6 +177,7 @@ function Upload() {
             </button>
           </div>
         )}
+        </div>
       </div>
     </main>
 </div>

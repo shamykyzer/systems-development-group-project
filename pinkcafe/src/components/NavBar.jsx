@@ -94,25 +94,50 @@ function NavBar() {
           <nav className="flex-1 px-3 pt-10 md:pt-14 pb-6 space-y-1 overflow-y-auto">
             {navItems.map(({ to, label, icon: Icon }) => {
               const isActive = location.pathname === to;
+              const isSettings = label === 'Settings';
               return (
                 <Link
                   key={to}
                   to={to}
                   title={label}
-                  className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ease-out ${
+                  className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ease-out overflow-hidden ${
                     isActive
-                      ? 'bg-white/40 text-black shadow-sm'
-                      : 'text-black hover:bg-white/40 hover:shadow-md hover:scale-[1.02] hover:-translate-x-0.5 active:scale-[0.98]'
+                      ? 'bg-pinkcafe/40 text-black shadow-sm border-l-2 border-pinkcafe2'
+                      : 'text-black hover:shadow-md hover:scale-[1.02] active:scale-[0.98]'
                   }`}
                 >
+                  {/* Hover background sweep - ClaudeRevamp style */}
+                  {!isActive && (
+                    <div
+                      className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ background: 'linear-gradient(135deg, rgba(246,217,210,0.5) 0%, rgba(66,59,57,0.08) 100%)' }}
+                    />
+                  )}
+                  {/* Left accent bar on hover - ClaudeRevamp style */}
+                  {!isActive && (
+                    <div
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-8 rounded-r-full transition-all duration-300"
+                      style={{ background: 'linear-gradient(180deg, transparent, rgba(66,59,57,0.5), transparent)' }}
+                    />
+                  )}
                   <span
-                    className={`flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-all duration-300 ease-out ${
-                      isActive ? 'bg-white/50' : 'bg-white/35 group-hover:bg-white/55 group-hover:scale-110'
+                    className={`relative z-10 flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-all duration-300 ease-out ${
+                      isActive ? 'bg-pinkcafe2/10' : 'bg-gray-100 group-hover:bg-pinkcafe/60 group-hover:scale-110'
                     }`}
                   >
-                    <Icon className="w-5 h-5 text-black transition-transform duration-300 group-hover:scale-110" />
+                    <Icon
+                      className={`w-5 h-5 text-black transition-all duration-300 ${
+                        isSettings ? 'group-hover:rotate-90' : 'group-hover:scale-110'
+                      }`}
+                    />
                   </span>
-                  {label}
+                  <span className="relative z-10 flex-1">{label}</span>
+                  {/* Hover arrow - ClaudeRevamp style */}
+                  {!isActive && (
+                    <span className="relative z-10 opacity-0 group-hover:opacity-70 transition-all duration-300 group-hover:translate-x-0.5 text-pinkcafe2 text-lg font-bold">
+                      ›
+                    </span>
+                  )}
                 </Link>
               );
             })}
