@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # Bristol-Pink Cafe
 ## AI-Powered Sales Forecasting System
@@ -144,7 +144,7 @@ Traces the full pipeline from a CSV upload through parsing and date-grouping to 
 
 | Layer | Technology | Justification |
 |-------|-----------|---------------|
-| **Frontend** | React.js + Tailwind CSS | Component-based; responsive layout utilities; fast development cycle |
+| **Frontend** | React.js + Tailwind CSS + Recharts | Component-based; responsive layout utilities; Recharts for interactive, composable chart components |
 | **Backend** | Python 3 + Flask | Lightweight REST API; best-in-class ML library ecosystem |
 | **Database** | SQLite | Zero-configuration; embedded; well-suited to single-instance deployment |
 | **AI / ML** | Meta's Prophet + Pandas + NumPy | Purpose-built additive time-series model; excels at weekly seasonality |
