@@ -429,7 +429,7 @@ function ProphetSettingsPanel() {
 
       {/* Page header */}
       <div className="mb-10">
-        <h1 className="font-display text-3xl md:text-4xl font-bold text-black mb-2 tracking-tight">
+        <h1 className="text-3xl md:text-4xl font-bold text-black mb-2 tracking-tight">
           Prophet Preset Settings
         </h1>
         <p className="text-black/80 text-base max-w-xl mb-2">
@@ -452,7 +452,7 @@ function ProphetSettingsPanel() {
       <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 mb-6">
         <div className="bg-pinkcafe2 px-4 md:px-6 py-3 flex items-center gap-2">
           <FaCog className="text-white text-lg" />
-          <h2 className="font-display text-lg md:text-xl font-bold text-white">Preset Management</h2>
+          <h2 className="text-lg md:text-xl font-bold text-white">Preset Management</h2>
         </div>
         <div className="bg-white p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -514,7 +514,7 @@ function ProphetSettingsPanel() {
         showCreateDialog ? `border-2 ${creationMode === 'new' ? 'border-emerald-500' : 'border-pinkcafe2'}` : 'border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5'
       }`}>
         <div className="bg-pinkcafe2 px-4 md:px-6 py-3 flex items-center justify-between">
-          <h2 className="font-display text-lg md:text-xl font-bold text-white">
+          <h2 className="text-lg md:text-xl font-bold text-white">
             {showCreateDialog 
               ? (creationMode === 'new' ? 'Create New Preset' : 'Duplicate Preset')
               : 'Preset Configuration'}
@@ -922,7 +922,7 @@ function ProphetSettingsPanel() {
       {/* Action buttons section - card with landing page style */}
       <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
         <div className="bg-pinkcafe2 px-4 md:px-6 py-3">
-          <h2 className="font-display text-lg font-bold text-white">Actions</h2>
+          <h2 className="text-lg font-bold text-white">Actions</h2>
         </div>
         <div className="bg-white p-4 sm:p-6">
         <div className="flex flex-wrap gap-4">

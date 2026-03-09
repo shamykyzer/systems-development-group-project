@@ -87,6 +87,7 @@ function Upload() {
     
     localStorage.setItem('uploadedForecastData', JSON.stringify(existingDatasets));
     localStorage.setItem('selectedDatasetId', forecastData.datasetId.toString());
+    localStorage.setItem('autoGenerateForecast', 'true');
     
     window.location.href = '/home';
   };
