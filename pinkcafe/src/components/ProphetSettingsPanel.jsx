@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt } from 'react-icons/fa';
+import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt, FaChartLine, FaChartBar, FaCalendarAlt } from 'react-icons/fa';
 
 // API base URL configuration - uses environment variable
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS = {
   forecast_periods: 365,                     // Number of days to forecast (1-730)
   floor_multiplier: 0.5,                     // Minimum constraint (0-0.95)
   cap_multiplier: 1.5,                       // Maximum constraint (1.1-5.0)
+  enable_cap: true,                          // Toggle cap constraint (logistic)
+  enable_floor: true,                        // Toggle floor constraint (logistic)
   custom_seasonality_enabled: false,         // Toggle custom seasonality
   custom_seasonality_name: '',               // Name of custom seasonality
   custom_seasonality_period: 30.5,           // Period in days for custom seasonality (7-365)
@@ -25,8 +27,56 @@ const DEFAULT_SETTINGS = {
   changepoint_range: 0.8,                    // Proportion of history for changepoints (0.6-0.95)
   interval_width: 0.80,                      // Prediction interval width (0.50-0.99)
   holidays_prior_scale: 10.0,                // How much holidays affect predictions (0.1-100)
+  include_public_holidays: true,              // Master toggle for holiday effects
+  country: 'United Kingdom',                  // Country for national holidays
   holidays: []                               // Selected holidays for the model
 };
+
+const HOLIDAY_OPTIONS = [
+  'New Year\'s Day', 'Valentine\'s Day', 'Easter', 'Bank Holiday', 'Mother\'s Day', 'Father\'s Day',
+  'Summer Solstice', 'Halloween', 'Diwali', 'Christmas Eve', 'Christmas', 'Christmas Day', 'Boxing Day', 'New Year\'s Eve',
+  'Memorial Day', 'Independence Day', 'Labor Day', 'Thanksgiving', 'Super Bowl Sunday', 'Graduation Season', 'Black Friday'
+];
+
+const COUNTRY_OPTIONS = ['United Kingdom', 'United States', 'Canada', 'Australia', 'Germany', 'France', 'Ireland'];
+
+/** Toggle switch - ClaudeRevamp style */
+function Toggle({ checked, onChange, label, desc, disabled = false }) {
+  return (
+    <label className={`flex items-start gap-3 cursor-pointer group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+      <div
+        className="relative flex-shrink-0 mt-0.5"
+        onClick={disabled ? undefined : () => onChange(!checked)}
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={e => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onChange(!checked); } }}
+      >
+        <div
+          className="toggle-track"
+          style={{
+            background: checked ? 'rgba(66,59,57,0.2)' : 'rgba(0,0,0,0.06)',
+            border: `1px solid ${checked ? 'rgba(66,59,57,0.4)' : 'rgba(0,0,0,0.1)'}`,
+          }}
+        >
+          <div
+            className="toggle-thumb"
+            style={{
+              transform: checked ? 'translateX(22px)' : 'translateX(0)',
+              background: checked ? '#423b39' : 'rgba(255,255,255,0.9)',
+              boxShadow: checked ? '0 0 8px rgba(66,59,57,0.4)' : 'none',
+            }}
+          />
+        </div>
+      </div>
+      <div>
+        <p className={`text-sm font-semibold transition-colors duration-200 ${checked ? 'text-pinkcafe2' : 'text-gray-600'}`}>
+          {label}
+        </p>
+        {desc && <p className="text-xs mt-0.5 text-gray-500">{desc}</p>}
+      </div>
+    </label>
+  );
+}
 
 /**
  * ProphetSettingsPanel Component
@@ -139,13 +189,16 @@ function ProphetSettingsPanel() {
    * Supports multi-line text by splitting on \n characters and rendering as separate lines
    * 
    * @param {string} text - The tooltip text to display (supports \n for line breaks)
+   * @param {string} placement - 'top' | 'bottom' - where the tooltip appears relative to the icon (default: 'bottom')
    */
-  const TooltipIcon = ({ text }) => (
+  const TooltipIcon = ({ text, placement = 'bottom' }) => (
     <span className="inline-block group relative cursor-pointer">
       <svg className="w-4 h-4 inline text-pinkcafe2/50 hover:text-pinkcafe2 transition-colors" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
       </svg>
-      <span className="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out absolute right-[-8px] top-6 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+      <span className={`invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out absolute right-0 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-20 ${
+        placement === 'top' ? 'bottom-full mb-2' : 'top-6'
+      }`}>
         {text.split('\n').map((line, i) => (
           <React.Fragment key={i}>
             {i > 0 && <br />}
@@ -180,6 +233,8 @@ function ProphetSettingsPanel() {
           forecast_periods: data.forecast_periods,
           floor_multiplier: data.floor_multiplier,
           cap_multiplier: data.cap_multiplier,
+          enable_cap: data.enable_cap ?? true,
+          enable_floor: data.enable_floor ?? true,
           custom_seasonality_enabled: Boolean(data.custom_seasonality_enabled),
           custom_seasonality_name: data.custom_seasonality_name,
           custom_seasonality_period: data.custom_seasonality_period,
@@ -188,6 +243,8 @@ function ProphetSettingsPanel() {
           changepoint_range: data.changepoint_range ?? 0.8,
           interval_width: data.interval_width ?? 0.80,
           holidays_prior_scale: data.holidays_prior_scale ?? 10.0,
+          include_public_holidays: data.include_public_holidays ?? true,
+          country: data.country ?? 'United Kingdom',
           holidays: data.holidays ?? []
         };
         setSettings(loadedSettings);
@@ -226,6 +283,12 @@ function ProphetSettingsPanel() {
   const handleSaveSettings = async () => {
     setLoading(true);
     setMessage({ type: '', text: '' });
+    const payload = { ...settings };
+    if (!payload.include_public_holidays) payload.holidays = [];
+    if (payload.growth === 'logistic') {
+      if (!payload.enable_cap) payload.cap_multiplier = 5.0;
+      if (!payload.enable_floor) payload.floor_multiplier = 0;
+    }
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
@@ -233,7 +296,7 @@ function ProphetSettingsPanel() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(settings)
+        body: JSON.stringify(payload)
       });
       
       const data = await response.json();
@@ -299,16 +362,18 @@ function ProphetSettingsPanel() {
     setMessage({ type: '', text: '' });
     
     try {
-      // Use current settings (default or duplicated) for the new preset
+      const createPayload = { preset_name: newPresetName, ...settings };
+      if (!createPayload.include_public_holidays) createPayload.holidays = [];
+      if (createPayload.growth === 'logistic') {
+        if (!createPayload.enable_cap) createPayload.cap_multiplier = 5.0;
+        if (!createPayload.enable_floor) createPayload.floor_multiplier = 0;
+      }
       const response = await fetch(`${API_BASE_URL}/api/prophet/presets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          preset_name: newPresetName,
-          ...settings
-        })
+        body: JSON.stringify(createPayload)
       });
       
       const data = await response.json();
@@ -419,23 +484,13 @@ function ProphetSettingsPanel() {
     <div className="ml-0 md:ml-64 flex-1 min-w-0 min-h-screen bg-dashboard-gradient p-4 md:p-8 transition-all duration-300">
       <div className="max-w-4xl mx-auto mt-16 md:mt-0">
       {/* Breadcrumb */}
-      <nav className="mb-6 flex items-center gap-2 text-sm text-pinkcafe2/60">
+      <nav className="mb-6 flex items-center gap-2 text-sm text-pinkcafe2/60 animate-fade-in">
         <Link to="/home" className="hover:text-pinkcafe2 transition-colors flex items-center gap-1">
           <FaHome className="text-xs" /> Home
         </Link>
         <span>/</span>
         <span className="text-pinkcafe2 font-medium">Settings</span>
       </nav>
-
-      {/* Page header */}
-      <div className="mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold text-black mb-2 tracking-tight">
-          Prophet Preset Settings
-        </h1>
-        <p className="text-black/80 text-base max-w-xl mb-2">
-          Create and manage presets for Prophet forecasting
-        </p>
-      </div>
 
       {/* Status message display - shows success, error, or info messages */}
       {message.text && (
@@ -449,7 +504,7 @@ function ProphetSettingsPanel() {
       )}
 
       {/* Preset selection and management - card with landing page style */}
-      <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 mb-6">
+      <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 mb-6 animate-fade-in-up animate-delay-75">
         <div className="bg-pinkcafe2 px-4 md:px-6 py-3 flex items-center gap-2">
           <FaCog className="text-white text-lg" />
           <h2 className="text-lg md:text-xl font-bold text-white">Preset Management</h2>
@@ -510,7 +565,7 @@ function ProphetSettingsPanel() {
       </div>
 
       {/* Main settings configuration form - card with landing page style */}
-      <div className={`rounded-xl overflow-hidden shadow-sm border transition-all duration-300 mb-6 ${
+      <div className={`rounded-xl overflow-hidden shadow-sm border transition-all duration-300 mb-6 animate-scale-in animate-delay-150 ${
         showCreateDialog ? `border-2 ${creationMode === 'new' ? 'border-emerald-500' : 'border-pinkcafe2'}` : 'border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5'
       }`}>
         <div className="bg-pinkcafe2 px-4 md:px-6 py-3 flex items-center justify-between">
@@ -520,7 +575,7 @@ function ProphetSettingsPanel() {
               : 'Preset Configuration'}
           </h2>
           {hasUnsavedChanges && (
-            <span className="px-3 py-1 bg-amber-400/90 text-amber-900 text-xs sm:text-sm font-semibold rounded-full">
+            <span className="px-3 py-1 bg-pinkcafe2/20 text-pinkcafe2 text-xs sm:text-sm font-semibold rounded-full border border-pinkcafe2/40">
               Unsaved Changes
             </span>
           )}
@@ -552,20 +607,39 @@ function ProphetSettingsPanel() {
         {/* Two-column grid layout for configuration inputs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           
-          {/* Growth Type selector - determines how the trend grows over time */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Growth Type <span className="text-pinkcafe2/50 text-xs">(Linear or Logistic)</span></span>
-              <TooltipIcon text={"Linear: Assumes unbounded growth. Best for most bakery sales without natural limits.\n\nLogistic: Used when there's a maximum capacity (saturating growth), requires setting cap_multiplier."} />
-            </label>
-            <select
-              value={settings.growth}
-              onChange={(e) => handleInputChange('growth', e.target.value)}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            >
-              <option value="linear">Linear</option>
-              <option value="logistic">Logistic</option>
-            </select>
+          {/* Growth Model - ClaudeRevamp 2-card layout */}
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2 mb-3">
+              <p className="text-sm font-medium text-pinkcafe2/80 flex items-center gap-1">
+                How should the overall trend of your data grow over time?
+                <TooltipIcon text={"Linear: Assumes unbounded growth. Best for most bakery sales without natural limits.\n\nLogistic: Used when there's a maximum capacity (saturating growth), requires setting cap_multiplier."} />
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                ['linear', FaChartLine, 'Uncapped growth — trend can rise or fall without limit'],
+                ['logistic', FaChartBar, 'S-curve growth — levels off at a cap value. Requires setting a maximum'],
+              ].map(([val, Icon, desc]) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => handleInputChange('growth', val)}
+                  className={`p-4 rounded-xl text-left transition-all duration-200 ${
+                    settings.growth === val
+                      ? 'bg-pinkcafe/50 border-2 border-pinkcafe2 shadow-md scale-[1.02]'
+                      : 'bg-white border border-gray-200 hover:border-pinkcafe2/40 hover:shadow-sm hover:scale-[1.01]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <Icon className={`text-lg flex-shrink-0 ${settings.growth === val ? 'text-pinkcafe2' : 'text-gray-500'}`} />
+                    <p className={`font-bold text-sm capitalize ${settings.growth === val ? 'text-pinkcafe2' : 'text-gray-700'}`}>
+                      {val}
+                    </p>
+                  </div>
+                  <p className="text-xs pl-9 text-gray-500">{desc}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Seasonality Mode - how seasonal effects combine with trend */}
@@ -655,45 +729,53 @@ function ProphetSettingsPanel() {
             />
           </div>
 
-          {/* Floor Multiplier - only shown for logistic growth */}
-          {/* Conditionally rendered because floor constraint is not applicable to linear growth */}
+          {/* Enable Cap / Enable Floor - ClaudeRevamp 2-column toggle layout (logistic only) */}
           {settings.growth === 'logistic' && (
-            <div>
-              <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-                <span>Floor Multiplier <span className="text-pinkcafe2/50 text-xs">(0 - 0.95)</span></span>
-                <TooltipIcon text={"Minimum sales constraint as a proportion of historical data. 0.5 means sales won't drop below 50% of baseline.\n\nLower values allow bigger drops; higher values enforce a safety threshold.\n\nNot used with linear growth."} />
-              </label>
-              <input
-                type="number"
-                step="0.05"
-                min="0"
-                max="0.95"
-                value={settings.floor_multiplier}
-                onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
-                onWheel={handleNumberScroll}
-                className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-              />
-            </div>
-          )}
-
-          {/* Cap Multiplier - only shown for logistic growth */}
-          {/* Conditionally rendered because cap constraint is not applicable to linear growth */}
-          {settings.growth === 'logistic' && (
-            <div>
-              <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-                <span>Cap Multiplier <span className="text-pinkcafe2/50 text-xs">(1.1 - 5.0)</span></span>
-                <TooltipIcon text={"Maximum sales capacity as a proportion of historical peak. 1.5 means sales can't exceed 150% of historical maximum.\n\nUse 1.2-2.0 for established bakeries with physical constraints. Higher values (2.0-5.0) for growing businesses.\n\nNot used with linear growth."} />
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                min="1.1"
-                max="5.0"
-                value={settings.cap_multiplier}
-                onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
-                onWheel={handleNumberScroll}
-                className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-              />
+            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-white border border-gray-200">
+                <Toggle
+                  checked={settings.enable_cap}
+                  onChange={(v) => handleInputChange('enable_cap', v)}
+                  label="Enable Cap"
+                  desc="Maximum saturation value"
+                />
+                {settings.enable_cap && (
+                  <div className="mt-3">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="1.1"
+                      max="5.0"
+                      value={settings.cap_multiplier}
+                      onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
+                      onWheel={handleNumberScroll}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="p-4 rounded-xl bg-white border border-gray-200">
+                <Toggle
+                  checked={settings.enable_floor}
+                  onChange={(v) => handleInputChange('enable_floor', v)}
+                  label="Enable Floor"
+                  desc="Minimum saturation value"
+                />
+                {settings.enable_floor && (
+                  <div className="mt-3">
+                    <input
+                      type="number"
+                      step="0.05"
+                      min="0"
+                      max="0.95"
+                      value={settings.floor_multiplier}
+                      onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
+                      onWheel={handleNumberScroll}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -751,114 +833,120 @@ function ProphetSettingsPanel() {
           </div>
         </div>
 
-        {/* Seasonality component toggles section */}
+        {/* Seasonality Components - ClaudeRevamp toggle style */}
         <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-3">
             <h3 className="text-base sm:text-lg font-bold text-black">
               Seasonality Components
             </h3>
             <TooltipIcon text={"Enable seasonal patterns in your forecast.\n\nDaily: patterns within a day (peak hours for bakery).\n\nWeekly: day-of-week effects (weekend vs weekday).\n\nYearly: seasonal patterns across the year (summer slump, winter holidays)."} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Daily seasonality toggle */}
-            <label className="flex items-center space-x-3">
-              <input
-                type="checkbox"
+            <div className="p-4 rounded-xl bg-white border border-gray-200">
+              <Toggle
                 checked={settings.daily_seasonality}
-                onChange={(e) => handleInputChange('daily_seasonality', e.target.checked)}
-                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
+                onChange={(v) => handleInputChange('daily_seasonality', v)}
+                label="Daily Seasonality"
+                desc="Intraday patterns"
               />
-              <span className="text-pinkcafe2/80">Daily Seasonality</span>
-            </label>
-            
-            {/* Weekly seasonality toggle */}
-            <label className="flex items-center space-x-3">
-              <input
-                type="checkbox"
+            </div>
+            <div className="p-4 rounded-xl bg-white border border-gray-200">
+              <Toggle
                 checked={settings.weekly_seasonality}
-                onChange={(e) => handleInputChange('weekly_seasonality', e.target.checked)}
-                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
+                onChange={(v) => handleInputChange('weekly_seasonality', v)}
+                label="Weekly Seasonality"
+                desc="Day-of-week patterns"
               />
-              <span className="text-pinkcafe2/80">Weekly Seasonality</span>
-            </label>
-            
-            {/* Yearly seasonality toggle */}
-            <label className="flex items-center space-x-3">
-              <input
-                type="checkbox"
+            </div>
+            <div className="p-4 rounded-xl bg-white border border-gray-200">
+              <Toggle
                 checked={settings.yearly_seasonality}
-                onChange={(e) => handleInputChange('yearly_seasonality', e.target.checked)}
-                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
+                onChange={(v) => handleInputChange('yearly_seasonality', v)}
+                label="Yearly Seasonality"
+                desc="Annual patterns"
               />
-              <span className="text-pinkcafe2/80">Yearly Seasonality</span>
-            </label>
+            </div>
           </div>
         </div>
 
-        {/* Holidays selection section */}
+        {/* Public Holidays - ClaudeRevamp layout */}
         <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <FaCalendarAlt className="text-pinkcafe2/80 text-lg flex-shrink-0" />
             <h3 className="text-base sm:text-lg font-bold text-black">
-              Holidays & Events
+              Public Holidays
             </h3>
-            <TooltipIcon text={"Select holidays that create predictable sales spikes or dips for your bakery. Prophet will learn the typical effect of each holiday from historical data and apply it to future forecasts.\n\nStrength controlled by Holidays Prior Scale above."} />
+            <TooltipIcon text={"Select holidays that create predictable sales spikes or dips for your bakery. Prophet will learn the typical effect of each holiday from historical data and apply it to future forecasts.\n\nStrength controlled by Holidays Prior Scale above."} placement="top" />
           </div>
-          <p className="text-sm text-pinkcafe2/60 mb-4">Select holidays that significantly impact bakery sales</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              'New Year\'s Day',
-              'Valentine\'s Day',
-              'Easter',
-              'Mother\'s Day',
-              'Memorial Day',
-              'Father\'s Day',
-              'Independence Day',
-              'Labor Day',
-              'Halloween',
-              'Thanksgiving',
-              'Christmas Eve',
-              'Christmas',
-              'New Year\'s Eve',
-              'Super Bowl Sunday',
-              'Graduation Season',
-              'Black Friday'
-            ].map(holiday => (
-              <label key={holiday} className="flex items-center space-x-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={settings.holidays?.includes(holiday) || false}
-                  onChange={(e) => {
-                    const currentHolidays = settings.holidays || [];
-                    if (e.target.checked) {
-                      handleInputChange('holidays', [...currentHolidays, holiday]);
-                    } else {
-                      handleInputChange('holidays', currentHolidays.filter(h => h !== holiday));
-                    }
-                  }}
-                  className="w-4 h-4 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
-                />
-                <span className="text-pinkcafe2/80">{holiday}</span>
-              </label>
-            ))}
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-gray-200">
+              <Toggle
+                checked={settings.include_public_holidays}
+                onChange={(v) => handleInputChange('include_public_holidays', v)}
+                label="Include Public Holidays"
+                desc="Model the effect of national holidays"
+              />
+            </div>
+            {settings.include_public_holidays && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium uppercase tracking-wider text-pinkcafe2/70 mb-2">Country</label>
+                  <select
+                    value={settings.country}
+                    onChange={(e) => handleInputChange('country', e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-white focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50 transition duration-200"
+                  >
+                    {COUNTRY_OPTIONS.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <p className="text-sm text-pinkcafe2/70 mb-3">Select additional specific holidays to model:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {HOLIDAY_OPTIONS.map(holiday => {
+                      const selected = settings.holidays?.includes(holiday) || false;
+                      return (
+                        <button
+                          key={holiday}
+                          type="button"
+                          onClick={() => {
+                            const current = settings.holidays || [];
+                            if (selected) {
+                              handleInputChange('holidays', current.filter(h => h !== holiday));
+                            } else {
+                              handleInputChange('holidays', [...current, holiday]);
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
+                            selected
+                              ? 'bg-pinkcafe/30 border-pinkcafe2/50 text-pinkcafe2 shadow-sm'
+                              : 'bg-white border-gray-200 text-gray-600 hover:border-pinkcafe2/40 hover:shadow-sm'
+                          }`}
+                        >
+                          {holiday}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Custom seasonality configuration section */}
         <div className="mt-4 sm:mt-6 border-t pt-4 sm:pt-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              {/* Toggle to enable/disable custom seasonality */}
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-white border border-gray-200 flex-1">
+              <Toggle
                 checked={settings.custom_seasonality_enabled}
-                onChange={(e) => handleInputChange('custom_seasonality_enabled', e.target.checked)}
-                className="w-5 h-5 text-pinkcafe2 rounded focus:ring-pinkcafe2/50"
+                onChange={(v) => handleInputChange('custom_seasonality_enabled', v)}
+                label="Custom Seasonality"
+                desc="Add patterns beyond daily/weekly/yearly"
               />
-              <h3 className="text-base sm:text-lg font-bold text-black ml-3">
-                Custom Seasonality
-              </h3>
             </div>
-            <TooltipIcon text={"Add custom seasonal patterns beyond daily/weekly/yearly.\n\nOnly enable if you have a specific recurring pattern not covered by standard seasonality."} />
+            <TooltipIcon text={"Add custom seasonal patterns beyond daily/weekly/yearly.\n\nOnly enable if you have a specific recurring pattern not covered by standard seasonality."} placement="top" />
           </div>
           
           {/* Custom seasonality fields - only shown when enabled */}
@@ -920,7 +1008,7 @@ function ProphetSettingsPanel() {
       </div>
 
       {/* Action buttons section - card with landing page style */}
-      <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+      <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-slide-in-right animate-delay-225">
         <div className="bg-pinkcafe2 px-4 md:px-6 py-3">
           <h2 className="text-lg font-bold text-white">Actions</h2>
         </div>

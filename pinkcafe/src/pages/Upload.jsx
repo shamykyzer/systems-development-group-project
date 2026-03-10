@@ -104,11 +104,11 @@ function Upload() {
       {/* Centered upload area and cards in the middle of the viewport */}
       <div className="flex-1 flex flex-col items-center justify-center w-full p-6">
         <div className="w-full max-w-4xl space-y-6">
-          <div className="max-w-xl mx-auto">
+          <div className="w-full animate-fade-in-up">
             <ForecastCsvUploader onFileSelect={handleFileSelect} />
             
             {error && (
-              <div className="mt-4 bg-rose-50 border border-rose-200 rounded-lg p-4">
+              <div className="mt-4 bg-rose-50 border border-rose-200 rounded-lg p-4 animate-fade-in">
                 <p className="text-rose-700 font-semibold mb-1">Error</p>
                 <p className="text-rose-600 text-sm">{error}</p>
               </div>
@@ -133,20 +133,20 @@ function Upload() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          <div className="h-full">
+          <div className="h-full animate-scale-in animate-delay-150">
             <DataPreviewTable data={uploadedData?.preview} />
           </div>
-          <div className="h-full">
+          <div className="h-full animate-scale-in animate-delay-225">
             <CSVValidator data={uploadedData} />
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto animate-fade-in-up animate-delay-300">
           <DataStatistics data={uploadedData} />
         </div>
 
         {isDataValid && (
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto animate-slide-in-right animate-delay-150">
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-bold text-pinkcafe2 mb-2">Forecast Display Name</h3>
               <p className="text-sm text-gray-600 mb-4">Give your forecast a friendly name (e.g., "Croissant Sales", "Coffee Sales")</p>
@@ -162,10 +162,10 @@ function Upload() {
         )}
 
         {isDataValid && (
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto animate-fade-in-up animate-delay-225">
             <button
               onClick={handleGenerateForecast}
-              className="w-full bg-pinkcafe2 hover:bg-gray-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-3"
+              className="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-3"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />

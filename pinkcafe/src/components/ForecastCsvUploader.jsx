@@ -27,7 +27,7 @@ function ForecastCsvUploader({ onFileSelect }) {
 
   return (
     <div className="w-full">
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
         <h2 className="text-2xl font-bold mb-4">Upload Forecast CSV</h2>
         
         {/* Hidden file input */}

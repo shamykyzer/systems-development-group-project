@@ -8,7 +8,7 @@ export function DataStatistics({ data }) {
   const { stats, products, daysOfData, monthsOfData } = data;
 
   return (
-    <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100">
+    <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5">
       {/* Header */}
       <div className="bg-gradient-to-r from-sky-200 to-blue-200 px-6 py-4">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">

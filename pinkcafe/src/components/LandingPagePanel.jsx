@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPoundSign, FaChartLine, FaShoppingBag, FaCheckDouble, FaHome, FaTrashAlt, FaDatabase, FaSyncAlt, FaLightbulb, FaCog } from 'react-icons/fa';
+import { FaPoundSign, FaChartLine, FaShoppingBag, FaCheckDouble, FaHome, FaTrashAlt, FaDatabase, FaFolderOpen, FaSyncAlt, FaLightbulb, FaCog } from 'react-icons/fa';
 
 // ---------------------------------------------------------------------------
 // Catmull-Rom spline for smooth curves
@@ -41,7 +41,7 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
     const [tooltip, setTooltip] = useState(null);
     const svgRef = useRef(null);
     const w = 480, h = 260;
-    const pad = { top: 16, right: 12, bottom: 44, left: 40 };
+    const pad = { top: 16, right: 24, bottom: 40, left: 40 };
     const iw = w - pad.left - pad.right;
     const ih = h - pad.top - pad.bottom;
 
@@ -140,7 +140,7 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
                             strokeLinecap="round" strokeLinejoin="round" />
                         {vals.map((v, i) => (
                             <circle key={i} cx={px(i, series.data.length)} cy={py(v)}
-                                r={tooltip?.idx === i ? 4.5 : 3} fill={color}
+                                r={tooltip?.idx === i ? 3.5 : 3} fill={color}
                                 stroke="white" strokeWidth="1.5"
                                 style={{ transition: 'r 0.15s ease' }} />
                         ))}
@@ -150,12 +150,12 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
 
             {xLabels.map((d, i) => (
                 <g key={`x-${i}`}>
-                    <text x={px(i, xLabels.length)} y={h - 18} textAnchor="middle"
-                        fontSize="9.5" fill="#423b39" fontWeight="500" fontFamily="system-ui, sans-serif">
+                    <text x={px(i, xLabels.length)} y={h - 16} textAnchor="middle"
+                        fontSize="8" fill="#423b39" fontWeight="500" fontFamily="system-ui, sans-serif">
                         {d.day}
                     </text>
-                    <text x={px(i, xLabels.length)} y={h - 6} textAnchor="middle"
-                        fontSize="7.5" fill="#8a807c" fontFamily="system-ui, sans-serif">
+                    <text x={px(i, xLabels.length)} y={h - 5} textAnchor="middle"
+                        fontSize="6.5" fill="#8a807c" fontFamily="system-ui, sans-serif">
                         {d.date}
                     </text>
                 </g>
@@ -382,20 +382,21 @@ const PLACEHOLDER_STATS = [
 function QuickStatsBar({ stats }) {
     if (stats.length > 0) {
         return (
-            <div className="grid grid-cols-3 gap-3 mb-8">
+            <div className="grid grid-cols-3 gap-4 mb-6">
                 {stats.map((stat, i) => {
                     const Icon = stat.icon;
+                    const delayClass = i === 0 ? 'animate-delay-75' : i === 1 ? 'animate-delay-150' : 'animate-delay-225';
                     return (
-                        <div key={i} className="bg-white rounded-lg shadow-sm border border-pinkcafe2/8 px-4 py-3 flex items-center gap-3 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-                            <div className="w-8 h-8 rounded-lg bg-pinkcafe2/8 flex items-center justify-center shrink-0">
-                                <Icon className="text-pinkcafe2/60 text-xs" />
+                        <div key={i} className={`bg-white rounded-xl shadow-sm border border-pinkcafe2/10 px-4 py-4 flex items-center gap-3.5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 animate-fade-in-up ${delayClass}`}>
+                            <div className="w-10 h-10 rounded-xl bg-pinkcafe2/10 flex items-center justify-center shrink-0">
+                                <Icon className="text-pinkcafe2 text-sm" />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[11px] text-pinkcafe2/50 font-medium uppercase tracking-wider">{stat.label}</p>
-                                <p className="text-lg font-bold text-pinkcafe2 leading-tight">{stat.value}</p>
+                                <p className="text-[11px] text-pinkcafe2/50 font-semibold uppercase tracking-wider">{stat.label}</p>
+                                <p className="text-xl font-bold text-pinkcafe2 leading-tight">{stat.value}</p>
                             </div>
                             {stat.change && (
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full shrink-0 ${
                                     stat.positive === true  ? 'bg-emerald-100 text-emerald-700' :
                                     stat.positive === false ? 'bg-rose-100 text-rose-700' :
                                                               'bg-pinkcafe2/8 text-pinkcafe2/60'
@@ -411,17 +412,18 @@ function QuickStatsBar({ stats }) {
     }
 
     return (
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-3 gap-4 mb-6">
             {PLACEHOLDER_STATS.map((placeholder, i) => {
                 const Icon = placeholder.icon;
+                const delayClass = i === 0 ? 'animate-delay-75' : i === 1 ? 'animate-delay-150' : 'animate-delay-225';
                 return (
-                    <div key={i} className="bg-white/60 rounded-lg border border-pinkcafe2/8 px-4 py-3 flex items-center gap-3 opacity-50">
-                        <div className="w-8 h-8 rounded-lg bg-pinkcafe2/8 flex items-center justify-center shrink-0">
-                            <Icon className="text-pinkcafe2/40 text-xs" />
+                    <div key={i} className={`bg-white/60 rounded-xl border border-pinkcafe2/8 px-4 py-4 flex items-center gap-3.5 opacity-50 animate-fade-in-up ${delayClass}`}>
+                        <div className="w-10 h-10 rounded-xl bg-pinkcafe2/8 flex items-center justify-center shrink-0">
+                            <Icon className="text-pinkcafe2/40 text-sm" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-[11px] text-pinkcafe2/40 font-medium uppercase tracking-wider">{placeholder.label}</p>
-                            <p className="text-lg font-bold text-pinkcafe2/30 leading-tight">—</p>
+                            <p className="text-[11px] text-pinkcafe2/40 font-semibold uppercase tracking-wider">{placeholder.label}</p>
+                            <p className="text-xl font-bold text-pinkcafe2/30 leading-tight">—</p>
                         </div>
                     </div>
                 );
@@ -436,7 +438,7 @@ function ChartLegend({ data }) {
             {data.map((series, idx) => {
                 const ci = series.colorIndex ?? idx;
                 return (
-                    <div key={idx} className="flex items-center gap-2">
+                    <div key={idx} className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: `${idx * 60}ms` }}>
                         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                             style={{ backgroundColor: CHART_COLORS[ci % CHART_COLORS.length] }} />
                         <span className="text-xs text-pinkcafe2/80 font-medium tracking-wide">
@@ -451,10 +453,12 @@ function ChartLegend({ data }) {
 
 function InsightsPanel({ currentForecasts, uploadedData }) {
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
-            <h3 className="font-bold text-pinkcafe2 text-sm mb-3 flex items-center gap-2">
-                <FaLightbulb className="text-xs text-pinkcafe2/50" /> Insights
-            </h3>
+        <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-md">
+            <div className="bg-pinkcafe2 px-4 py-2.5 flex items-center gap-2">
+                <FaLightbulb className="text-white/80 text-xs" />
+                <h3 className="font-bold text-white text-sm">Insights</h3>
+            </div>
+            <div className="bg-white p-4">
             {currentForecasts && currentForecasts.length > 0 ? (
                 <ul className="space-y-2 text-xs text-pinkcafe2/80">
                     <li className="flex gap-2"><span className="text-emerald-600">●</span>Forecast generated successfully</li>
@@ -472,6 +476,7 @@ function InsightsPanel({ currentForecasts, uploadedData }) {
                     <p className="text-xs text-pinkcafe2/60">Generate forecast to view insights</p>
                 </div>
             )}
+            </div>
         </div>
     );
 }
@@ -483,10 +488,15 @@ function ModelPanel({ currentForecasts }) {
                 <FaCog className="text-xs text-pinkcafe2/50" /> Model
             </h3>
             <p className="text-xs text-pinkcafe2/60">
-                {currentForecasts && currentForecasts.length > 0
-                    ? `Prophet forecasting • ${currentForecasts[0].forecast.length} predictions per product`
-                    : 'Prophet forecasting • Awaiting data'
-                }
+                {currentForecasts && currentForecasts.length > 0 ? (
+                    <>
+                        Prophet forecasting<br />• {currentForecasts[0].forecast.length} predictions per product
+                    </>
+                ) : (
+                    <>
+                        Prophet forecasting<br />• Awaiting data
+                    </>
+                )}
             </p>
         </div>
     );
@@ -495,13 +505,11 @@ function ModelPanel({ currentForecasts }) {
 function ForecastControlPanel({ isLoading, hasGenerated, uploadedData, onGenerate }) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
-            <h3 className="font-bold text-pinkcafe2 text-sm mb-3 flex items-center gap-2">
-                <FaSyncAlt className="text-xs text-pinkcafe2/50" /> Forecast Control
-            </h3>
             <button
                 onClick={onGenerate}
                 disabled={isLoading || !uploadedData}
-                className="w-full bg-pinkcafe2 text-white px-4 py-3 rounded-lg font-semibold text-sm hover:bg-pinkcafe2/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg">
+                className="w-full bg-pinkcafe2 text-white px-4 py-3 rounded-lg font-semibold text-sm hover:bg-pinkcafe2/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                <FaSyncAlt className="w-4 h-4 flex-shrink-0" />
                 {isLoading ? 'Generating...' : (hasGenerated ? 'Regenerate Forecast' : 'Generate Forecast')}
             </button>
             <p className="text-xs text-pinkcafe2/60 mt-2 text-center">
@@ -556,7 +564,7 @@ function DatasetSelector({ allDatasets, selectedDatasetId, onDatasetChange }) {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-4 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-pinkcafe2/10 hover:border-pinkcafe2/20">
             <h3 className="font-bold text-pinkcafe2 text-sm mb-3 flex items-center gap-2">
-                <FaDatabase className="text-xs text-pinkcafe2/50" /> Select Dataset
+                <FaFolderOpen className="text-xs text-pinkcafe2/50" /> Select Dataset
             </h3>
             <select
                 value={selectedDatasetId || ''}
@@ -826,7 +834,7 @@ function LandingPagePanel() {
         <div className="ml-0 md:ml-64 flex-1 min-w-0 min-h-screen bg-dashboard-gradient p-4 md:p-8 transition-all duration-300 relative">
             {isLoading && <LoadingOverlay />}
 
-            <nav className="mb-6 mt-16 md:mt-0 flex items-center gap-2 text-sm text-pinkcafe2/60">
+            <nav className="mb-6 mt-16 md:mt-0 flex items-center gap-2 text-sm text-pinkcafe2/60 animate-fade-in">
                 <Link to="/home" className="hover:text-pinkcafe2 transition-colors flex items-center gap-1">
                     <FaHome className="text-xs" /> Home
                 </Link>
@@ -834,7 +842,7 @@ function LandingPagePanel() {
                 <span className="text-pinkcafe2 font-medium">Dashboard</span>
             </nav>
 
-            <div className="mb-10">
+            <div className="mb-10 animate-fade-in-up">
                 <h1 className="text-3xl md:text-4xl font-bold text-black mb-2 tracking-tight">Sales Forecasting</h1>
                 <p className="text-black/80 text-base max-w-xl mb-2">AI-powered product demand predictions to reduce waste and optimize inventory</p>
                 <div className="flex items-center gap-4">
@@ -859,14 +867,14 @@ function LandingPagePanel() {
 
             <QuickStatsBar stats={quickStats} />
 
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full">
+            <div className="flex flex-col lg:flex-row gap-5 lg:gap-6 w-full">
                 {/* Main Chart Card */}
-                <div className="flex-1 min-w-0 flex">
-                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-white/80 transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-pinkcafe2/10 hover:-translate-y-1 flex-1 flex flex-col min-h-0 w-full">
-                        <div className="bg-pinkcafe2 px-6 py-5 flex-shrink-0">
+                <div className="flex-1 min-w-0 flex animate-scale-in animate-delay-150">
+                    <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 transition-all duration-300 ease-out hover:shadow-md hover:-translate-y-0.5 flex-1 flex flex-col min-h-0 w-full">
+                        <div className="bg-pinkcafe2 px-5 md:px-6 py-4 flex-shrink-0">
                             <div className="flex items-center gap-2.5 mb-1">
-                                <FaChartLine className="text-white/90 text-xl" />
-                                <h2 className="text-xl md:text-2xl font-bold text-white">{graphTitle}</h2>
+                                <FaChartLine className="text-white/90 text-lg" />
+                                <h2 className="text-lg md:text-xl font-bold text-white">{graphTitle}</h2>
                             </div>
                             <p className="text-white/80 text-sm mb-1">{getRangeLabel()}</p>
                             <div className="flex items-baseline gap-2 mt-1">
@@ -921,10 +929,10 @@ function LandingPagePanel() {
                                 </div>
                             )}
                         </div>
-                        <div className="bg-white flex-1 min-h-[280px] p-5 md:p-7 flex flex-col transition-all duration-500">
+                        <div className="bg-white flex-1 min-h-[280px] p-4 md:p-6 flex flex-col transition-all duration-500 overflow-hidden">
                             {filteredChartData.length > 0 ? (
                                 <>
-                                    <div className="flex-1 min-h-0">
+                                    <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
                                         <MultiLineChart dataByProduct={filteredChartData} dataKey="predicted" />
                                     </div>
                                     <ChartLegend data={filteredChartData} />
@@ -940,11 +948,21 @@ function LandingPagePanel() {
 
                 {/* Right Sidebar */}
                 <div className="w-full lg:w-64 xl:w-72 flex flex-col gap-4 flex-shrink-0">
-                    <DatasetSelector allDatasets={allDatasets} selectedDatasetId={selectedDatasetId} onDatasetChange={handleDatasetChange} />
-                    <DatasetPanel uploadedData={uploadedData} onDelete={handleDeleteDataset} />
-                    <ForecastControlPanel isLoading={isLoading} hasGenerated={hasGenerated} uploadedData={uploadedData} onGenerate={generateAllForecasts} />
-                    <InsightsPanel currentForecasts={currentForecasts} uploadedData={uploadedData} />
-                    <ModelPanel currentForecasts={currentForecasts} />
+                    <div className="animate-slide-in-right animate-delay-300">
+                        <DatasetSelector allDatasets={allDatasets} selectedDatasetId={selectedDatasetId} onDatasetChange={handleDatasetChange} />
+                    </div>
+                    <div className="animate-slide-in-right animate-delay-400">
+                        <DatasetPanel uploadedData={uploadedData} onDelete={handleDeleteDataset} />
+                    </div>
+                    <div className="animate-slide-in-right animate-delay-500">
+                        <ForecastControlPanel isLoading={isLoading} hasGenerated={hasGenerated} uploadedData={uploadedData} onGenerate={generateAllForecasts} />
+                    </div>
+                    <div className="animate-slide-in-right animate-delay-600">
+                        <InsightsPanel currentForecasts={currentForecasts} uploadedData={uploadedData} />
+                    </div>
+                    <div className="animate-slide-in-right animate-delay-700">
+                        <ModelPanel currentForecasts={currentForecasts} />
+                    </div>
                 </div>
             </div>
         </div>

@@ -17,7 +17,7 @@ module.exports = {
         },
       },
       backgroundImage: {
-        'dashboard-gradient': 'linear-gradient(to bottom, #f5dce0 0%, #efd2d6 12%, #e8c8cc 25%, #e0bcc0 38%, #d8b0b4 50%, #d0a4a8 62%, #c9989c 75%, #c18c90 88%, #b98084 100%)',
+        'dashboard-gradient': 'linear-gradient(to bottom, #fed8d4 0%, #f8cecc 12%, #f2c4c2 25%, #ecb8b6 38%, #e4acaa 50%, #dca09e 62%, #d49492 75%, #cd8886 88%, #c57c7a 100%)',
       },
     },
   },
