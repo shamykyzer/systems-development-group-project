@@ -47,7 +47,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-pinkcafe to-pink-100 rounded-2xl p-8 space-y-6 w-full max-w-md animate-scale-in">
+    <div className="bg-dashboard-gradient rounded-2xl p-8 space-y-6 w-full max-w-md animate-scale-in">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-9xl font-extrabold font-sans text-blackbrown mb-2">Pink</h1>

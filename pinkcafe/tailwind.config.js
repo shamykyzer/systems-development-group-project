@@ -7,7 +7,7 @@ module.exports = {
     extend: {
       colors: {
         pinkcafe: {
-          DEFAULT: '#F6D9D2',
+          DEFAULT: '#FFD1DC',
         },
         pinkcafe2: {
           DEFAULT: '#423b39',
@@ -17,7 +17,7 @@ module.exports = {
         },
       },
       backgroundImage: {
-        'dashboard-gradient': 'linear-gradient(to bottom, #fed8d4 0%, #f8cecc 12%, #f2c4c2 25%, #ecb8b6 38%, #e4acaa 50%, #dca09e 62%, #d49492 75%, #cd8886 88%, #c57c7a 100%)',
+        'dashboard-gradient': 'linear-gradient(to bottom, #FFD1DC 0%, #FFC9D4 12%, #FFC1CC 25%, #F5B8C4 38%, #EBB0BC 50%, #E1A8B4 62%, #D7A0AC 75%, #CD98A4 88%, #C3909C 100%)',
       },
     },
   },
