@@ -317,9 +317,9 @@ def register_routes(app: Flask) -> None:
             stats = {}
             for col in product_cols:
                 stats[col] = {
-                    'avg': float(df[col].mean()),
-                    'min': float(df[col].min()),
-                    'max': float(df[col].max())
+                    'avg': round(float(df[col].mean()), 1),
+                    'min': int(df[col].min()),
+                    'max': int(df[col].max())
                 }
             
             # Return validation and preview data
@@ -336,7 +336,7 @@ def register_routes(app: Flask) -> None:
                 "daysOfData": len(df),
                 "monthsOfData": round(len(df) / 30.4, 1),
                 "stats": stats,
-                "preview": df.head(10).to_dict(orient='records'),
+                "preview": df.head(10).assign(Date=df['Date'].dt.strftime('%d/%m/%Y')).to_dict(orient='records'),
                 "validationChecks": {
                     "validDates": True,
                     "noMissingValues": not has_missing,

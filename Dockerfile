@@ -56,6 +56,7 @@ WORKDIR /app
 COPY pinkcafe/package.json pinkcafe/package-lock.json ./
 RUN npm ci
 COPY pinkcafe/ ./
+RUN chmod -R +x node_modules/.bin/
 EXPOSE 3000
 CMD ["npm", "start"]
 
