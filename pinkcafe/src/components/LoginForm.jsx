@@ -30,9 +30,9 @@ function LoginForm() {
       const data = await response.json();
 
       if (data.success) {
-        console.log('Login successful:', data.user);
-        // Optional: store user for later use
+        // Store user and login timestamp for session expiry
         localStorage.setItem('pinkcafe_user', JSON.stringify(data.user));
+        localStorage.setItem('pinkcafe_login_time', String(Date.now()));
         // Redirect to home immediately
         navigate('/home');
       } else {
