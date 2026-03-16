@@ -49,7 +49,7 @@ function NavBar() {
   const handleSignOut = (e) => {
     e.preventDefault();
     localStorage.removeItem('pinkcafe_user');
-    localStorage.removeItem('pinkcafe_login_time');
+    localStorage.removeItem('pinkcafe_last_activity');
     localStorage.removeItem('uploadedForecastData');
     localStorage.removeItem('selectedDatasetId');
     localStorage.removeItem('autoGenerateForecast');

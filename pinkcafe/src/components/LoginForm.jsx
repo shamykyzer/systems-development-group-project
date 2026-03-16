@@ -30,9 +30,9 @@ function LoginForm() {
       const data = await response.json();
 
       if (data.success) {
-        // Store user and login timestamp for session expiry
+        // Store user and activity timestamp for inactivity expiry
         localStorage.setItem('pinkcafe_user', JSON.stringify(data.user));
-        localStorage.setItem('pinkcafe_login_time', String(Date.now()));
+        localStorage.setItem('pinkcafe_last_activity', String(Date.now()));
         // Redirect to home immediately
         navigate('/home');
       } else {
