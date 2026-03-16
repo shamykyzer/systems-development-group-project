@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { STORAGE_KEYS } from '../config/constants';
 
 const navItems = [
   { to: '/home', label: 'Dashboard', icon: HomeIcon },
@@ -48,11 +49,7 @@ function NavBar() {
 
   const handleSignOut = (e) => {
     e.preventDefault();
-    localStorage.removeItem('pinkcafe_user');
-    localStorage.removeItem('pinkcafe_last_activity');
-    localStorage.removeItem('uploadedForecastData');
-    localStorage.removeItem('selectedDatasetId');
-    localStorage.removeItem('autoGenerateForecast');
+    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
     navigate('/login');
   };
 

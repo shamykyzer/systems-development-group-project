@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt, FaChartLine, FaChartBar, FaCalendarAlt } from 'react-icons/fa';
 
-// API base URL configuration - uses environment variable
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+import { API_BASE_URL } from '../config/constants';
 
 // Default settings for Prophet forecasting model
 const DEFAULT_SETTINGS = {
