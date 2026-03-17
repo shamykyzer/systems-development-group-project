@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt, FaChartLine, FaChartBar, FaCalendarAlt } from 'react-icons/fa';
+import { Toggle, TooltipIcon } from './shared/SharedComponents';
 
 import { API_BASE_URL } from '../config/constants';
 
@@ -40,43 +41,6 @@ const HOLIDAY_OPTIONS = [
 const COUNTRY_OPTIONS = ['United Kingdom', 'United States', 'Canada', 'Australia', 'Germany', 'France', 'Ireland'];
 
 /** Toggle switch - ClaudeRevamp style */
-function Toggle({ checked, onChange, label, desc, disabled = false }) {
-  return (
-    <label className={`flex items-start gap-3 cursor-pointer group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-      <div
-        className="relative flex-shrink-0 mt-0.5"
-        onClick={disabled ? undefined : () => onChange(!checked)}
-        role="button"
-        tabIndex={disabled ? -1 : 0}
-        onKeyDown={e => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onChange(!checked); } }}
-      >
-        <div
-          className="toggle-track"
-          style={{
-            background: checked ? 'rgba(66,59,57,0.2)' : 'rgba(0,0,0,0.06)',
-            border: `1px solid ${checked ? 'rgba(66,59,57,0.4)' : 'rgba(0,0,0,0.1)'}`,
-          }}
-        >
-          <div
-            className="toggle-thumb"
-            style={{
-              transform: checked ? 'translateX(22px)' : 'translateX(0)',
-              background: checked ? '#423b39' : 'rgba(255,255,255,0.9)',
-              boxShadow: checked ? '0 0 8px rgba(66,59,57,0.4)' : 'none',
-            }}
-          />
-        </div>
-      </div>
-      <div>
-        <p className={`text-sm font-semibold transition-colors duration-200 ${checked ? 'text-pinkcafe2' : 'text-gray-600'}`}>
-          {label}
-        </p>
-        {desc && <p className="text-xs mt-0.5 text-gray-500">{desc}</p>}
-      </div>
-    </label>
-  );
-}
-
 /**
  * ProphetSettingsPanel Component
  * 
@@ -181,32 +145,6 @@ function ProphetSettingsPanel() {
     setSelectedPreset(presetName);
     await updateActivePreset(presetName);
   };
-
-  /**
-   * TooltipIcon Component
-   * Displays an info icon that shows a tooltip on hover with detailed parameter descriptions
-   * Supports multi-line text by splitting on \n characters and rendering as separate lines
-   * 
-   * @param {string} text - The tooltip text to display (supports \n for line breaks)
-   * @param {string} placement - 'top' | 'bottom' - where the tooltip appears relative to the icon (default: 'bottom')
-   */
-  const TooltipIcon = ({ text, placement = 'bottom' }) => (
-    <span className="inline-block group relative cursor-pointer">
-      <svg className="w-4 h-4 inline text-pinkcafe2/50 hover:text-pinkcafe2 transition-colors" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
-      </svg>
-      <span className={`invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out absolute right-0 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-20 ${
-        placement === 'top' ? 'bottom-full mb-2' : 'top-6'
-      }`}>
-        {text.split('\n').map((line, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && <br />}
-            {line}
-          </React.Fragment>
-        ))}
-      </span>
-    </span>
-  );
 
   /**
    * Fetches the current settings for a specific preset from the backend
