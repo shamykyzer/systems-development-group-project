@@ -154,3 +154,49 @@ export function BulletListItem({ dotClass, children }) {
     </li>
   );
 }
+
+/**
+ * SettingField — label + optional tooltip + input (number or text).
+ * Handles parseInt/parseFloat internally via the parse prop.
+ */
+export function SettingField({ label, range, tooltip, value, onChange, type = 'number', step, min, max, parse = 'float', onWheel, placeholder }) {
+  const handleChange = (e) => {
+    if (type === 'text') {
+      onChange(e.target.value);
+    } else {
+      onChange(parse === 'int' ? parseInt(e.target.value) : parseFloat(e.target.value));
+    }
+  };
+  return (
+    <div>
+      <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
+        <span>{label}{range && <span className="text-pinkcafe2/50 text-xs ml-1">({range})</span>}</span>
+        {tooltip && <TooltipIcon text={tooltip} />}
+      </label>
+      <input
+        type={type}
+        step={step}
+        min={min}
+        max={max}
+        value={value}
+        onChange={handleChange}
+        onWheel={type === 'number' ? onWheel : undefined}
+        placeholder={placeholder}
+        className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
+      />
+    </div>
+  );
+}
+
+/**
+ * ToggleCard — Toggle wrapped in a white rounded card.
+ * Accepts optional children rendered below the toggle (e.g. conditional inputs).
+ */
+export function ToggleCard({ checked, onChange, label, desc, disabled, children }) {
+  return (
+    <div className="p-4 rounded-xl bg-white border border-gray-200">
+      <Toggle checked={checked} onChange={onChange} label={label} desc={desc} disabled={disabled} />
+      {children}
+    </div>
+  );
+}
