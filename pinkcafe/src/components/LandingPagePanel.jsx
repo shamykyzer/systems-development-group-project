@@ -4,11 +4,8 @@ import { FaPoundSign, FaChartLine, FaShoppingBag, FaCheckDouble, FaHome } from '
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 import { filterForecastFromToday, transformProphetData, calcForecastTrend, getTrainingDays, getMaxForecastMonths } from '../utils/chartUtils';
 import MultiLineChart from './landing/MultiLineChart';
-import LoadingOverlay from './landing/LoadingOverlay';
-import QuickStatsBar from './landing/QuickStatsBar';
-import ChartLegend from './landing/ChartLegend';
+import { LoadingOverlay, QuickStatsBar, ChartLegend, DatasetSelector } from './landing/Widgets';
 import { InsightsPanel, ModelPanel, ForecastControlPanel, DatasetPanel } from './landing/Panels';
-import DatasetSelector from './landing/DatasetSelector';
 
 // ===========================================================================
 // Main component
