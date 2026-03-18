@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { FaPoundSign, FaChartLine, FaShoppingBag, FaCheckDouble, FaHome } from 'react-icons/fa';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 import { filterForecastFromToday, transformProphetData, calcForecastTrend, getTrainingDays, getMaxForecastMonths } from '../utils/chartUtils';

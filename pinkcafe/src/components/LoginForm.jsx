@@ -53,68 +53,68 @@ function LoginForm() {
       </div>
 
       {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-bold text-black mb-2">
-          Email Address
-            </label>
-            <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
-          placeholder="you@pinkcafe.com"
-          required
-          disabled={loading}
-            />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
           </div>
+        )}
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-bold text-black mb-2">
-          Password
-            </label>
-            <div className="relative mb-4">
+        <div>
+          <label htmlFor="email" className="block text-sm font-bold text-black mb-2">
+            Email Address
+          </label>
           <input
-            type={showPassword ? "text" : "password"}
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full pr-10 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
-            placeholder="••••••••"
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
+            placeholder="you@pinkcafe.com"
             required
             disabled={loading}
           />
-          <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            {showPassword ? (
-              <FaEye
-                className="h-5 w-5 text-black cursor-pointer pointer-events-auto"
-                onClick={() => setShowPassword(false)}
-              />
-            ) : (
-              <FaEyeSlash
-                className="h-5 w-5 text-black cursor-pointer pointer-events-auto"
-                onClick={() => setShowPassword(true)}
-              />
-            )}
-          </span>
-            </div>
-          </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-black text-white font-semibold py-3 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
+        <div>
+          <label htmlFor="password" className="block text-sm font-bold text-black mb-2">
+            Password
+          </label>
+          <div className="relative mb-4">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pr-10 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none transition"
+              placeholder="••••••••"
+              required
+              disabled={loading}
+            />
+            <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              {showPassword ? (
+                <FaEye
+                  className="h-5 w-5 text-black cursor-pointer pointer-events-auto"
+                  onClick={() => setShowPassword(false)}
+                />
+              ) : (
+                <FaEyeSlash
+                  className="h-5 w-5 text-black cursor-pointer pointer-events-auto"
+                  onClick={() => setShowPassword(true)}
+                />
+              )}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-black text-white font-semibold py-3 rounded-lg transition duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
+      </form>
     </div>
   );
 }
