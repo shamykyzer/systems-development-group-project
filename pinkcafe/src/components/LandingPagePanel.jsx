@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FaPoundSign, FaChartLine, FaShoppingBag, FaCheckDouble, FaHome, FaTrashAlt, FaDatabase, FaFolderOpen, FaSyncAlt, FaLightbulb, FaCog } from 'react-icons/fa';
+import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 
 // ---------------------------------------------------------------------------
 // Catmull-Rom spline for smooth curves
@@ -619,25 +620,25 @@ function LandingPagePanel() {
 
     // ── Load stored datasets on mount ──────────────────────────────────────
     useEffect(() => {
-        const storedData = localStorage.getItem('uploadedForecastData');
+        const storedData = localStorage.getItem(STORAGE_KEYS.FORECAST_DATA);
         if (!storedData) return;
         try {
             const data = JSON.parse(storedData);
             if (Array.isArray(data)) {
                 setAllDatasets(data);
-                const selectedId = localStorage.getItem('selectedDatasetId');
+                const selectedId = localStorage.getItem(STORAGE_KEYS.SELECTED_DATASET);
                 if (selectedId) {
                     const dataset = data.find(d => d.datasetId.toString() === selectedId);
                     if (dataset) { setSelectedDatasetId(parseInt(selectedId)); setUploadedData(dataset); }
-                    else if (data.length > 0) { setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem('selectedDatasetId', data[0].datasetId.toString()); }
+                    else if (data.length > 0) { setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data[0].datasetId.toString()); }
                 } else if (data.length > 0) {
-                    setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem('selectedDatasetId', data[0].datasetId.toString());
+                    setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data[0].datasetId.toString());
                 }
             } else {
                 const dataArray = [data];
                 setAllDatasets(dataArray); setSelectedDatasetId(data.datasetId); setUploadedData(data);
-                localStorage.setItem('uploadedForecastData', JSON.stringify(dataArray));
-                localStorage.setItem('selectedDatasetId', data.datasetId.toString());
+                localStorage.setItem(STORAGE_KEYS.FORECAST_DATA, JSON.stringify(dataArray));
+                localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data.datasetId.toString());
             }
         } catch (err) { console.error('Failed to parse uploaded data:', err); }
     }, []);
@@ -648,7 +649,7 @@ function LandingPagePanel() {
         if (!dataset) return;
         setSelectedDatasetId(datasetId);
         setUploadedData(dataset);
-        localStorage.setItem('selectedDatasetId', datasetId.toString());
+        localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, datasetId.toString());
         setForecast7Days([]); setForecastMonth([]); setForecastYear([]); setForecastCustom([]);
         setHasGenerated(false);
     };
@@ -680,9 +681,9 @@ function LandingPagePanel() {
                 const displayName = uploadedData.displayName || productName;
                 try {
                     const [res7, resM, resY] = await Promise.all([
-                        fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`),
-                        fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`),
-                        fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`),
+                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`),
+                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`),
+                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`),
                     ]);
                     const [data7, dataM, dataY] = await Promise.all([res7.json(), resM.json(), resY.json()]);
                     if (res7.ok) forecasts7Days.push({ ...filterForecastFromToday(data7), item_name: displayName, product_name: productName });
@@ -703,10 +704,10 @@ function LandingPagePanel() {
     // ── Auto-generate when arriving from upload page ───────────────────────
     useEffect(() => {
         if (autoGenerateTriggered.current) return;
-        const shouldAutoGenerate = localStorage.getItem('autoGenerateForecast');
+        const shouldAutoGenerate = localStorage.getItem(STORAGE_KEYS.AUTO_FORECAST);
         if (shouldAutoGenerate === 'true' && uploadedData) {
             autoGenerateTriggered.current = true;
-            localStorage.removeItem('autoGenerateForecast');
+            localStorage.removeItem(STORAGE_KEYS.AUTO_FORECAST);
             generateAllForecasts();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -729,7 +730,7 @@ function LandingPagePanel() {
             for (const productName of uploadedData.products) {
                 const itemId = uploadedData.itemIds[productName];
                 try {
-                    const response = await fetch(`http://localhost:5001/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon_weeks}&train_weeks=20&_t=${Date.now()}`);
+                    const response = await fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon_weeks}&train_weeks=20&_t=${Date.now()}`);
                     const data = await response.json();
                     if (!response.ok) continue;
                     if (data?.forecast) {
@@ -754,18 +755,18 @@ function LandingPagePanel() {
     const handleDeleteDataset = async () => {
         if (!window.confirm(`Delete "${uploadedData.displayName || uploadedData.fileName}" and all associated data from the database?`)) return;
         try {
-            const response = await fetch(`http://localhost:5001/api/upload/dataset/${uploadedData.datasetId}`, { method: 'DELETE' });
+            const response = await fetch(`${API_BASE_URL}/api/upload/dataset/${uploadedData.datasetId}`, { method: 'DELETE' });
             if (!response.ok) { const error = await response.json(); throw new Error(error.message || 'Failed to delete dataset'); }
 
             const updatedDatasets = allDatasets.filter(d => d.datasetId !== uploadedData.datasetId);
             setAllDatasets(updatedDatasets);
-            localStorage.setItem('uploadedForecastData', JSON.stringify(updatedDatasets));
+            localStorage.setItem(STORAGE_KEYS.FORECAST_DATA, JSON.stringify(updatedDatasets));
 
             if (updatedDatasets.length > 0) {
                 setSelectedDatasetId(updatedDatasets[0].datasetId); setUploadedData(updatedDatasets[0]);
-                localStorage.setItem('selectedDatasetId', updatedDatasets[0].datasetId.toString());
+                localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, updatedDatasets[0].datasetId.toString());
             } else {
-                setUploadedData(null); setSelectedDatasetId(null); localStorage.removeItem('selectedDatasetId');
+                setUploadedData(null); setSelectedDatasetId(null); localStorage.removeItem(STORAGE_KEYS.SELECTED_DATASET);
             }
             setForecast7Days([]); setForecastMonth([]); setForecastYear([]); setHasGenerated(false);
         } catch (error) { console.error('Failed to delete dataset:', error); alert(`Failed to delete dataset: ${error.message}`); }

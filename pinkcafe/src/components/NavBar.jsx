@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { STORAGE_KEYS } from '../config/constants';
 
 const navItems = [
   { to: '/home', label: 'Dashboard', icon: HomeIcon },
@@ -44,6 +45,13 @@ function SignOutIcon({ className }) {
 function NavBar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSignOut = (e) => {
+    e.preventDefault();
+    Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+    navigate('/login');
+  };
 
   return (
     <>
@@ -100,6 +108,7 @@ function NavBar() {
                   key={to}
                   to={to}
                   title={label}
+                  onClick={label === 'Sign Out' ? handleSignOut : undefined}
                   className={`group relative flex items-center gap-3 px-4 py-3 rounded-xl text-base font-bold transition-all duration-300 ease-out overflow-hidden ${
                     isActive
                       ? 'bg-pinkcafe/40 text-black shadow-sm border-l-2 border-pinkcafe2'

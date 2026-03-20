@@ -14,6 +14,7 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Prophet'))
 
 from flask import Flask, jsonify, request, current_app
+import logging
 from db import connect
 from services import hash_password, verify_password
 from forecasting import ForecastError, run_forecast
@@ -348,8 +349,8 @@ def register_routes(app: Flask) -> None:
             })
             
         except Exception as e:
-            import traceback
-            return _err(f"Failed to process CSV: {str(e)}\n{traceback.format_exc()}", 500)
+            logging.exception("Failed to process CSV")
+            return _err("Failed to process CSV. Please check the file and try again.", 500)
 
     @app.delete("/api/upload/dataset/<int:dataset_id>")
     def delete_dataset(dataset_id: int):
@@ -376,8 +377,8 @@ def register_routes(app: Flask) -> None:
                     "message": f"Dataset '{dataset['name']}' and all associated data deleted successfully"
                 })
         except Exception as e:
-            import traceback
-            return _err(f"Failed to delete dataset: {str(e)}\n{traceback.format_exc()}", 500)
+            logging.exception("Failed to delete dataset")
+            return _err("Failed to delete dataset. Please try again.", 500)
 
     # --- Prophet Test (Hardcoded CSV) --------------------------------------
 
@@ -457,5 +458,5 @@ def register_routes(app: Flask) -> None:
             })
             
         except Exception as e:
-            import traceback
-            return _err(f"Prophet test failed: {str(e)}\n{traceback.format_exc()}", 500)
+            logging.exception("Prophet test failed")
+            return _err("Prophet test failed. Please check server logs.", 500)

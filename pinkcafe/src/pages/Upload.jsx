@@ -4,8 +4,7 @@ import ForecastCsvUploader from '../components/ForecastCsvUploader';
 import DataPreviewTable from '../components/DataPreviewTable';
 import CSVValidator from '../components/CSVValidator';
 import DataStatistics from '../components/DataStatistics';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 
 function Upload() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -30,7 +29,7 @@ function Upload() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch(`${API_URL}/api/upload/csv`, {
+      const response = await fetch(`${API_BASE_URL}/api/upload/csv`, {
         method: 'POST',
         body: formData
       });
@@ -76,7 +75,7 @@ function Upload() {
       uploadedAt: new Date().toISOString()
     };
     
-    const existingDatasets = JSON.parse(localStorage.getItem('uploadedForecastData') || '[]');
+    const existingDatasets = JSON.parse(localStorage.getItem(STORAGE_KEYS.FORECAST_DATA) || '[]');
     const existingIndex = existingDatasets.findIndex(d => d.datasetId === forecastData.datasetId);
     
     if (existingIndex >= 0) {
@@ -85,9 +84,9 @@ function Upload() {
       existingDatasets.push(forecastData);
     }
     
-    localStorage.setItem('uploadedForecastData', JSON.stringify(existingDatasets));
-    localStorage.setItem('selectedDatasetId', forecastData.datasetId.toString());
-    localStorage.setItem('autoGenerateForecast', 'true');
+    localStorage.setItem(STORAGE_KEYS.FORECAST_DATA, JSON.stringify(existingDatasets));
+    localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, forecastData.datasetId.toString());
+    localStorage.setItem(STORAGE_KEYS.AUTO_FORECAST, 'true');
     
     window.location.href = '/home';
   };

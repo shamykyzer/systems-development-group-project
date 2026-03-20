@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -16,10 +17,7 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      // Default to same-origin so the app works when frontend is served by the backend container.
-      // For local dev with separate ports, set REACT_APP_API_URL=http://localhost:5001
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${apiUrl}/api/v1/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,9 +28,9 @@ function LoginForm() {
       const data = await response.json();
 
       if (data.success) {
-        console.log('Login successful:', data.user);
-        // Optional: store user for later use
-        localStorage.setItem('pinkcafe_user', JSON.stringify(data.user));
+        // Store user and activity timestamp for inactivity expiry
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+        localStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY, String(Date.now()));
         // Redirect to home immediately
         navigate('/home');
       } else {
