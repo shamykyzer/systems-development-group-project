@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt, FaChartLine, FaChartBar, FaCalendarAlt } from 'react-icons/fa';
+import { Toggle, TooltipIcon, SettingField, ToggleCard } from './shared/SharedComponents';
 
 import { API_BASE_URL } from '../config/constants';
 
@@ -38,44 +39,6 @@ const HOLIDAY_OPTIONS = [
 ];
 
 const COUNTRY_OPTIONS = ['United Kingdom', 'United States', 'Canada', 'Australia', 'Germany', 'France', 'Ireland'];
-
-/** Toggle switch - ClaudeRevamp style */
-function Toggle({ checked, onChange, label, desc, disabled = false }) {
-  return (
-    <label className={`flex items-start gap-3 cursor-pointer group ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-      <div
-        className="relative flex-shrink-0 mt-0.5"
-        onClick={disabled ? undefined : () => onChange(!checked)}
-        role="button"
-        tabIndex={disabled ? -1 : 0}
-        onKeyDown={e => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onChange(!checked); } }}
-      >
-        <div
-          className="toggle-track"
-          style={{
-            background: checked ? 'rgba(66,59,57,0.2)' : 'rgba(0,0,0,0.06)',
-            border: `1px solid ${checked ? 'rgba(66,59,57,0.4)' : 'rgba(0,0,0,0.1)'}`,
-          }}
-        >
-          <div
-            className="toggle-thumb"
-            style={{
-              transform: checked ? 'translateX(22px)' : 'translateX(0)',
-              background: checked ? '#423b39' : 'rgba(255,255,255,0.9)',
-              boxShadow: checked ? '0 0 8px rgba(66,59,57,0.4)' : 'none',
-            }}
-          />
-        </div>
-      </div>
-      <div>
-        <p className={`text-sm font-semibold transition-colors duration-200 ${checked ? 'text-pinkcafe2' : 'text-gray-600'}`}>
-          {label}
-        </p>
-        {desc && <p className="text-xs mt-0.5 text-gray-500">{desc}</p>}
-      </div>
-    </label>
-  );
-}
 
 /**
  * ProphetSettingsPanel Component
@@ -181,32 +144,6 @@ function ProphetSettingsPanel() {
     setSelectedPreset(presetName);
     await updateActivePreset(presetName);
   };
-
-  /**
-   * TooltipIcon Component
-   * Displays an info icon that shows a tooltip on hover with detailed parameter descriptions
-   * Supports multi-line text by splitting on \n characters and rendering as separate lines
-   * 
-   * @param {string} text - The tooltip text to display (supports \n for line breaks)
-   * @param {string} placement - 'top' | 'bottom' - where the tooltip appears relative to the icon (default: 'bottom')
-   */
-  const TooltipIcon = ({ text, placement = 'bottom' }) => (
-    <span className="inline-block group relative cursor-pointer">
-      <svg className="w-4 h-4 inline text-pinkcafe2/50 hover:text-pinkcafe2 transition-colors" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
-      </svg>
-      <span className={`invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out absolute right-0 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-20 ${
-        placement === 'top' ? 'bottom-full mb-2' : 'top-6'
-      }`}>
-        {text.split('\n').map((line, i) => (
-          <React.Fragment key={i}>
-            {i > 0 && <br />}
-            {line}
-          </React.Fragment>
-        ))}
-      </span>
-    </span>
-  );
 
   /**
    * Fetches the current settings for a specific preset from the backend
@@ -658,178 +595,84 @@ function ProphetSettingsPanel() {
           </div>
 
           {/* Changepoint Prior Scale - controls how flexible the trend is */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Changepoint Prior Scale <span className="text-pinkcafe2/50 text-xs">(0.001 - 0.5)</span></span>
-              <TooltipIcon text={"Controls how flexible the trend is at changepoints.\n\nLower values (0.001-0.05) create smoother, more conservative trends.\n\nHigher values (0.1-0.5) allow more dramatic trend changes."} />
-            </label>
-            <input
-              type="number"
-              step="0.001"
-              min="0.001"
-              max="0.5"
-              value={settings.changepoint_prior_scale}
-              onChange={(e) => handleInputChange('changepoint_prior_scale', parseFloat(e.target.value))}
-              onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            />
-          </div>
+          <SettingField
+            label="Changepoint Prior Scale" range="0.001 - 0.5"
+            tooltip={"Controls how flexible the trend is at changepoints.\n\nLower values (0.001-0.05) create smoother, more conservative trends.\n\nHigher values (0.1-0.5) allow more dramatic trend changes."}
+            value={settings.changepoint_prior_scale} onChange={(v) => handleInputChange('changepoint_prior_scale', v)}
+            step={0.001} min={0.001} max={0.5} onWheel={handleNumberScroll}
+          />
 
           {/* Seasonality Prior Scale - controls strength of seasonal components */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Seasonality Prior Scale <span className="text-pinkcafe2/50 text-xs">(0.1 - 100)</span></span>
-              <TooltipIcon text={"Controls the strength of seasonal patterns (weekly, yearly).\n\nHigher values (20-100) allow stronger seasonal effects.\n\nLower values (0.1-5) dampen seasonality for smoother predictions."} />
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min="0.1"
-              max="100"
-              value={settings.seasonality_prior_scale}
-              onChange={(e) => handleInputChange('seasonality_prior_scale', parseFloat(e.target.value))}
-              onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            />
-          </div>
+          <SettingField
+            label="Seasonality Prior Scale" range="0.1 - 100"
+            tooltip={"Controls the strength of seasonal patterns (weekly, yearly).\n\nHigher values (20-100) allow stronger seasonal effects.\n\nLower values (0.1-5) dampen seasonality for smoother predictions."}
+            value={settings.seasonality_prior_scale} onChange={(v) => handleInputChange('seasonality_prior_scale', v)}
+            step={0.1} min={0.1} max={100} onWheel={handleNumberScroll}
+          />
 
           {/* Forecast Periods - how many days into the future to predict */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Forecast Periods <span className="text-pinkcafe2/50 text-xs">(1 - 730 days)</span></span>
-              <TooltipIcon text={"Number of days to forecast into the future.\n\nLonger forecasts have wider uncertainty intervals.\n\nMaximum 730 days (2 years)."} />
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="730"
-              value={settings.forecast_periods}
-              onChange={(e) => handleInputChange('forecast_periods', parseInt(e.target.value))}
-              onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            />
-          </div>
+          <SettingField
+            label="Forecast Periods" range="1 - 730 days"
+            tooltip={"Number of days to forecast into the future.\n\nLonger forecasts have wider uncertainty intervals.\n\nMaximum 730 days (2 years)."}
+            value={settings.forecast_periods} onChange={(v) => handleInputChange('forecast_periods', v)}
+            min={1} max={730} parse="int" onWheel={handleNumberScroll}
+          />
 
           {/* Interval Width - uncertainty prediction interval */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Interval Width <span className="text-pinkcafe2/50 text-xs">(0.50 - 0.99)</span></span>
-              <TooltipIcon text={"Confidence level for prediction intervals.\n\n0.80 (80%) means 80% confidence the actual sales will fall within the predicted range.\n\nDoes not affect the main prediction, only the uncertainty bounds."} />
-            </label>
-            <input
-              type="number"
-              step="0.05"
-              min="0.50"
-              max="0.99"
-              value={settings.interval_width}
-              onChange={(e) => handleInputChange('interval_width', parseFloat(e.target.value))}
-              onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            />
-          </div>
+          <SettingField
+            label="Interval Width" range="0.50 - 0.99"
+            tooltip={"Confidence level for prediction intervals.\n\n0.80 (80%) means 80% confidence the actual sales will fall within the predicted range.\n\nDoes not affect the main prediction, only the uncertainty bounds."}
+            value={settings.interval_width} onChange={(v) => handleInputChange('interval_width', v)}
+            step={0.05} min={0.50} max={0.99} onWheel={handleNumberScroll}
+          />
 
-          {/* Enable Cap / Enable Floor - ClaudeRevamp 2-column toggle layout (logistic only) */}
+          {/* Enable Cap / Enable Floor - logistic only */}
           {settings.growth === 'logistic' && (
             <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-white border border-gray-200">
-                <Toggle
-                  checked={settings.enable_cap}
-                  onChange={(v) => handleInputChange('enable_cap', v)}
-                  label="Enable Cap"
-                  desc="Maximum saturation value"
-                />
+              <ToggleCard checked={settings.enable_cap} onChange={(v) => handleInputChange('enable_cap', v)} label="Enable Cap" desc="Maximum saturation value">
                 {settings.enable_cap && (
                   <div className="mt-3">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="1.1"
-                      max="5.0"
-                      value={settings.cap_multiplier}
+                    <input type="number" step="0.1" min="1.1" max="5.0" value={settings.cap_multiplier}
                       onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
-                      onWheel={handleNumberScroll}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50"
-                    />
+                      onWheel={handleNumberScroll} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50" />
                   </div>
                 )}
-              </div>
-              <div className="p-4 rounded-xl bg-white border border-gray-200">
-                <Toggle
-                  checked={settings.enable_floor}
-                  onChange={(v) => handleInputChange('enable_floor', v)}
-                  label="Enable Floor"
-                  desc="Minimum saturation value"
-                />
+              </ToggleCard>
+              <ToggleCard checked={settings.enable_floor} onChange={(v) => handleInputChange('enable_floor', v)} label="Enable Floor" desc="Minimum saturation value">
                 {settings.enable_floor && (
                   <div className="mt-3">
-                    <input
-                      type="number"
-                      step="0.05"
-                      min="0"
-                      max="0.95"
-                      value={settings.floor_multiplier}
+                    <input type="number" step="0.05" min="0" max="0.95" value={settings.floor_multiplier}
                       onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
-                      onWheel={handleNumberScroll}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50"
-                    />
+                      onWheel={handleNumberScroll} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50" />
                   </div>
                 )}
-              </div>
+              </ToggleCard>
             </div>
           )}
 
           {/* Number of Changepoints - potential trend breaks */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Number of Changepoints <span className="text-pinkcafe2/50 text-xs">(5 - 50)</span></span>
-              <TooltipIcon text={"Number of potential points where the trend can change direction.\n\nDefault 25 works for most cases.\n\nUse fewer (10-15) for stable businesses with consistent growth.\n\nUse more (30-50) for volatile periods.\n\nMore changepoints = more flexible but potentially overfits."} />
-            </label>
-            <input
-              type="number"
-              min="5"
-              max="50"
-              value={settings.n_changepoints}
-              onChange={(e) => handleInputChange('n_changepoints', parseInt(e.target.value))}
-              onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            />
-          </div>
+          <SettingField
+            label="Number of Changepoints" range="5 - 50"
+            tooltip={"Number of potential points where the trend can change direction.\n\nDefault 25 works for most cases.\n\nUse fewer (10-15) for stable businesses with consistent growth.\n\nUse more (30-50) for volatile periods.\n\nMore changepoints = more flexible but potentially overfits."}
+            value={settings.n_changepoints} onChange={(v) => handleInputChange('n_changepoints', v)}
+            min={5} max={50} parse="int" onWheel={handleNumberScroll}
+          />
 
           {/* Changepoint Range - proportion of history for fitting changepoints */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Changepoint Range <span className="text-pinkcafe2/50 text-xs">(0.6 - 0.95)</span></span>
-              <TooltipIcon text={"Proportion of historical data where changepoints can occur.\n\nDefault 0.80 means changepoints only in first 80% of data, preventing overfitting to recent noise.\n\nUse 0.90-0.95 if recent changes are important (new menu, expansion).\n\nUse 0.60-0.75 for more stable, conservative forecasts."} />
-            </label>
-            <input
-              type="number"
-              step="0.05"
-              min="0.6"
-              max="0.95"
-              value={settings.changepoint_range}
-              onChange={(e) => handleInputChange('changepoint_range', parseFloat(e.target.value))}
-              onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            />
-          </div>
+          <SettingField
+            label="Changepoint Range" range="0.6 - 0.95"
+            tooltip={"Proportion of historical data where changepoints can occur.\n\nDefault 0.80 means changepoints only in first 80% of data, preventing overfitting to recent noise.\n\nUse 0.90-0.95 if recent changes are important (new menu, expansion).\n\nUse 0.60-0.75 for more stable, conservative forecasts."}
+            value={settings.changepoint_range} onChange={(v) => handleInputChange('changepoint_range', v)}
+            step={0.05} min={0.6} max={0.95} onWheel={handleNumberScroll}
+          />
 
           {/* Holidays Prior Scale - impact of holidays on predictions */}
-          <div>
-            <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-              <span>Holidays Prior Scale <span className="text-pinkcafe2/50 text-xs">(0.1 - 100)</span></span>
-              <TooltipIcon text={"Controls how much selected holidays affect predictions.\n\nHigher values (20-100) create larger holiday spikes.\n\nLower values (1-10) give subtle holiday effects.\n\nRequires holidays to be selected below."} />
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              min="0.1"
-              max="100"
-              value={settings.holidays_prior_scale}
-              onChange={(e) => handleInputChange('holidays_prior_scale', parseFloat(e.target.value))}
-              onWheel={handleNumberScroll}
-              className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-            />
-          </div>
+          <SettingField
+            label="Holidays Prior Scale" range="0.1 - 100"
+            tooltip={"Controls how much selected holidays affect predictions.\n\nHigher values (20-100) create larger holiday spikes.\n\nLower values (1-10) give subtle holiday effects.\n\nRequires holidays to be selected below."}
+            value={settings.holidays_prior_scale} onChange={(v) => handleInputChange('holidays_prior_scale', v)}
+            step={0.5} min={0.1} max={100} onWheel={handleNumberScroll}
+          />
         </div>
 
         {/* Seasonality Components - ClaudeRevamp toggle style */}
@@ -841,30 +684,9 @@ function ProphetSettingsPanel() {
             <TooltipIcon text={"Enable seasonal patterns in your forecast.\n\nDaily: patterns within a day (peak hours for bakery).\n\nWeekly: day-of-week effects (weekend vs weekday).\n\nYearly: seasonal patterns across the year (summer slump, winter holidays)."} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-white border border-gray-200">
-              <Toggle
-                checked={settings.daily_seasonality}
-                onChange={(v) => handleInputChange('daily_seasonality', v)}
-                label="Daily Seasonality"
-                desc="Intraday patterns"
-              />
-            </div>
-            <div className="p-4 rounded-xl bg-white border border-gray-200">
-              <Toggle
-                checked={settings.weekly_seasonality}
-                onChange={(v) => handleInputChange('weekly_seasonality', v)}
-                label="Weekly Seasonality"
-                desc="Day-of-week patterns"
-              />
-            </div>
-            <div className="p-4 rounded-xl bg-white border border-gray-200">
-              <Toggle
-                checked={settings.yearly_seasonality}
-                onChange={(v) => handleInputChange('yearly_seasonality', v)}
-                label="Yearly Seasonality"
-                desc="Annual patterns"
-              />
-            </div>
+            <ToggleCard checked={settings.daily_seasonality} onChange={(v) => handleInputChange('daily_seasonality', v)} label="Daily Seasonality" desc="Intraday patterns" />
+            <ToggleCard checked={settings.weekly_seasonality} onChange={(v) => handleInputChange('weekly_seasonality', v)} label="Weekly Seasonality" desc="Day-of-week patterns" />
+            <ToggleCard checked={settings.yearly_seasonality} onChange={(v) => handleInputChange('yearly_seasonality', v)} label="Yearly Seasonality" desc="Annual patterns" />
           </div>
         </div>
 
@@ -952,54 +774,27 @@ function ProphetSettingsPanel() {
           {settings.custom_seasonality_enabled && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-8">
               {/* Custom seasonality name input */}
-              <div>
-                <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-                  <span>Name</span>
-                  <TooltipIcon text="Descriptive name for your custom seasonality (e.g., 'monthly_promotion', 'biweekly_payday')." />
-                </label>
-                <input
-                  type="text"
-                  value={settings.custom_seasonality_name}
-                  onChange={(e) => handleInputChange('custom_seasonality_name', e.target.value)}
-                  placeholder="e.g., monthly"
-                  className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-                />
-              </div>
-              
+              <SettingField
+                label="Name" type="text" placeholder="e.g., monthly"
+                tooltip="Descriptive name for your custom seasonality (e.g., 'monthly_promotion', 'biweekly_payday')."
+                value={settings.custom_seasonality_name} onChange={(v) => handleInputChange('custom_seasonality_name', v)}
+              />
+
               {/* Custom seasonality period (in days) */}
-              <div>
-                <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-                  <span>Period <span className="text-pinkcafe2/50 text-xs">(7 - 365 days)</span></span>
-                  <TooltipIcon text={"Length of the recurring cycle in days.\n\nMust be at least 7 days. Should be a pattern you observe repeating consistently in your sales data."} />
-                </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="7"
-                  max="365"
-                  value={settings.custom_seasonality_period}
-                  onChange={(e) => handleInputChange('custom_seasonality_period', parseFloat(e.target.value))}
-                  onWheel={handleNumberScroll}
-                  className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-                />
-              </div>
-              
+              <SettingField
+                label="Period" range="7 - 365 days"
+                tooltip={"Length of the recurring cycle in days.\n\nMust be at least 7 days. Should be a pattern you observe repeating consistently in your sales data."}
+                value={settings.custom_seasonality_period} onChange={(v) => handleInputChange('custom_seasonality_period', v)}
+                step={0.5} min={7} max={365} onWheel={handleNumberScroll}
+              />
+
               {/* Fourier order - controls smoothness of custom seasonality */}
-              <div>
-                <label className="flex items-center justify-between text-sm font-medium text-pinkcafe2/80 mb-2">
-                  <span>Fourier Order <span className="text-pinkcafe2/50 text-xs">(1 - 20)</span></span>
-                  <TooltipIcon text={"Controls the complexity of the seasonal pattern.\n\nLower values (1-5) create smooth, simple patterns.\n\nHigher values (6-15) allow more complex, irregular patterns.\n\nMaximum 20, but values above 10 rarely needed."} />
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={settings.custom_seasonality_fourier_order}
-                  onChange={(e) => handleInputChange('custom_seasonality_fourier_order', parseInt(e.target.value))}
-                  onWheel={handleNumberScroll}
-                  className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-                />
-              </div>
+              <SettingField
+                label="Fourier Order" range="1 - 20"
+                tooltip={"Controls the complexity of the seasonal pattern.\n\nLower values (1-5) create smooth, simple patterns.\n\nHigher values (6-15) allow more complex, irregular patterns.\n\nMaximum 20, but values above 10 rarely needed."}
+                value={settings.custom_seasonality_fourier_order} onChange={(v) => handleInputChange('custom_seasonality_fourier_order', v)}
+                min={1} max={20} parse="int" onWheel={handleNumberScroll}
+              />
             </div>
           )}
         </div>
