@@ -83,6 +83,15 @@ CREATE TABLE IF NOT EXISTS active_preset (
   id          INTEGER PRIMARY KEY CHECK (id = 1),
   preset_name TEXT NOT NULL DEFAULT 'Default'
 );
+
+-- Auth session tokens (one row per active login)
+CREATE TABLE IF NOT EXISTS sessions (
+  token      TEXT PRIMARY KEY,
+  user_id    INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 """
 
 
