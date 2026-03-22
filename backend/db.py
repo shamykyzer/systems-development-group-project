@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS datasets (
   name            TEXT NOT NULL,
   uploaded_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   source_filename TEXT,
-  notes           TEXT
+  notes           TEXT,
+  uploaded_by_user_id INTEGER,
+  FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS items (
@@ -152,6 +154,23 @@ def init_db(db_path: str) -> None:
             "INSERT OR IGNORE INTO users (username, email, password_hash) VALUES (?, ?, ?)",
             (seed_username, seed_email, hash_password(seed_password)),
         )
+
+        # # Migration: ensure datasets are tied to owning users.
+        # dataset_columns = {
+        #   row["name"] for row in conn.execute("PRAGMA table_info(datasets)").fetchall()
+        # }
+        # if "uploaded_by_user_id" not in dataset_columns:
+        #   conn.execute("ALTER TABLE datasets ADD COLUMN uploaded_by_user_id INTEGER")
+
+        # admin_user = conn.execute(
+        #   "SELECT id FROM users WHERE email = ?",
+        #   (seed_email,),
+        # ).fetchone()
+        # if admin_user:
+        #   conn.execute(
+        #     "UPDATE datasets SET uploaded_by_user_id = ? WHERE uploaded_by_user_id IS NULL",
+        #     (int(admin_user["id"]),),
+        #   )
 
         conn.commit()
 

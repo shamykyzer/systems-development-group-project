@@ -15,7 +15,7 @@ from functools import wraps
 from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Prophet'))
 
-from flask import Flask, jsonify, request, current_app
+from flask import Flask, jsonify, request, current_app, g
 import logging
 from db import connect
 from services import hash_password, verify_password
@@ -72,8 +72,17 @@ def require_auth(f):
             ).fetchone()
         if not row:
             return _err("Invalid or expired token", 401)
+        g.current_user_id = int(row["user_id"])
         return f(*args, **kwargs)
     return decorated
+
+
+def _current_user_id() -> int:
+    """Return the authenticated user id set by require_auth."""
+    uid = getattr(g, "current_user_id", None)
+    if uid is None:
+        raise RuntimeError("Authentication context missing")
+    return int(uid)
 
 
 # ---------------------------------------------------------------------------
@@ -192,6 +201,13 @@ def register_routes(app: Flask) -> None:
 
         with connect(_db()) as conn:
             try:
+                owner_row = conn.execute(
+                    "SELECT id FROM datasets WHERE id = ? AND uploaded_by_user_id = ?",
+                    (dataset_id, _current_user_id()),
+                ).fetchone()
+                if not owner_row:
+                    return _err("Dataset not found", 404)
+
                 return jsonify(run_forecast(
                     conn,
                     dataset_id=dataset_id,
@@ -202,6 +218,67 @@ def register_routes(app: Flask) -> None:
                 ))
             except ForecastError as e:
                 return _err(str(e))
+
+
+    @app.get("/api/upload/datasets")
+    @require_auth
+    def list_user_datasets():
+        """
+        Return all datasets owned by the currently authenticated user.
+        Includes product->item mappings and date range so frontend can load
+        persisted datasets without relying on local storage.
+        """
+        user_id = _current_user_id()
+
+        with connect(_db()) as conn:
+            datasets = conn.execute(
+                """
+                SELECT id, name, source_filename, uploaded_at
+                FROM datasets
+                WHERE uploaded_by_user_id = ?
+                ORDER BY uploaded_at DESC, id DESC
+                """,
+                (user_id,),
+            ).fetchall()
+
+            response_rows = []
+            for ds in datasets:
+                sales_span = conn.execute(
+                    "SELECT MIN(date) AS start_date, MAX(date) AS end_date FROM sales WHERE dataset_id = ?",
+                    (int(ds["id"]),),
+                ).fetchone()
+                item_rows = conn.execute(
+                    """
+                    SELECT i.id AS item_id, i.name AS item_name
+                    FROM sales s
+                    JOIN items i ON i.id = s.item_id
+                    WHERE s.dataset_id = ?
+                    GROUP BY i.id, i.name
+                    ORDER BY i.name
+                    """,
+                    (int(ds["id"]),),
+                ).fetchall()
+
+                products = [row["item_name"] for row in item_rows]
+                item_ids = {row["item_name"]: int(row["item_id"]) for row in item_rows}
+
+                start_date = sales_span["start_date"]
+                end_date = sales_span["end_date"]
+
+                response_rows.append({
+                    "datasetId": int(ds["id"]),
+                    "fileName": ds["source_filename"] or ds["name"],
+                    "displayName": ds["name"],
+                    "products": products,
+                    "itemIds": item_ids,
+                    "dateRange": {
+                        "start": datetime.strptime(start_date, "%Y-%m-%d").strftime("%d/%m/%Y") if start_date else "",
+                        "end": datetime.strptime(end_date, "%Y-%m-%d").strftime("%d/%m/%Y") if end_date else "",
+                    },
+                    "uploadedAt": ds["uploaded_at"],
+                })
+
+            return jsonify({"success": True, "datasets": response_rows})
 
 
     # --- Prophet preset settings -------------------------------------------
@@ -305,6 +382,8 @@ def register_routes(app: Flask) -> None:
             return _err("File must be a CSV", 400)
         
         try:
+            current_user_id = _current_user_id()
+
             # Read CSV
             df = pd.read_csv(file)
             
@@ -337,8 +416,8 @@ def register_routes(app: Flask) -> None:
             with connect(_db()) as conn:
                 # Create dataset entry
                 cursor = conn.execute(
-                    "INSERT INTO datasets (name, source_filename) VALUES (?, ?)",
-                    (secure_filename(file.filename), file.filename)
+                    "INSERT INTO datasets (name, source_filename, uploaded_by_user_id) VALUES (?, ?, ?)",
+                    (secure_filename(file.filename), file.filename, current_user_id)
                 )
                 dataset_id = cursor.lastrowid
                 
@@ -415,11 +494,13 @@ def register_routes(app: Flask) -> None:
         Delete a dataset and all its associated sales records.
         """
         try:
+            current_user_id = _current_user_id()
+
             with connect(_db()) as conn:
-                # Check if dataset exists
+                # Check if dataset exists and is owned by the current user
                 dataset = conn.execute(
-                    "SELECT id, name FROM datasets WHERE id = ?",
-                    (dataset_id,)
+                    "SELECT id, name FROM datasets WHERE id = ? AND uploaded_by_user_id = ?",
+                    (dataset_id, current_user_id)
                 ).fetchone()
                 
                 if not dataset:
@@ -436,6 +517,29 @@ def register_routes(app: Flask) -> None:
         except Exception as e:
             logging.exception("Failed to delete dataset")
             return _err("Failed to delete dataset. Please try again.", 500)
+
+    @app.put("/api/upload/dataset/<int:dataset_id>/name")
+    @require_auth
+    def update_dataset_name(dataset_id: int):
+        """Update the display name of a dataset owned by the current user."""
+        new_name = ((request.get_json(silent=True) or {}).get("display_name") or "").strip()
+        if not new_name:
+            return _err("display_name is required", 400)
+
+        try:
+            with connect(_db()) as conn:
+                result = conn.execute(
+                    "UPDATE datasets SET name = ? WHERE id = ? AND uploaded_by_user_id = ?",
+                    (new_name, dataset_id, _current_user_id()),
+                )
+                if result.rowcount == 0:
+                    return _err("Dataset not found", 404)
+                conn.commit()
+
+            return jsonify({"success": True, "dataset_id": dataset_id, "display_name": new_name})
+        except Exception:
+            logging.exception("Failed to update dataset name")
+            return _err("Failed to update dataset name. Please try again.", 500)
 
     # --- Prophet Test (Hardcoded CSV) --------------------------------------
 
