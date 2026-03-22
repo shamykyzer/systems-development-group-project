@@ -40,7 +40,7 @@ function ProphetSettingsPanel() {
   
   // State: Model configuration settings with default values
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  
+
   // State: Saved settings to track unsaved changes
   const [savedSettings, setSavedSettings] = useState(DEFAULT_SETTINGS);
   
@@ -489,7 +489,7 @@ function ProphetSettingsPanel() {
               : 'Preset Configuration'}
           </h2>
           {hasUnsavedChanges && (
-            <span className="px-3 py-1 bg-pinkcafe2/20 text-pinkcafe2 text-xs sm:text-sm font-semibold rounded-full border border-pinkcafe2/40">
+            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs sm:text-sm font-semibold rounded-full border border-yellow-300">
               Unsaved Changes
             </span>
           )}
@@ -817,7 +817,7 @@ function ProphetSettingsPanel() {
                 onClick={handleSaveSettings}
                 disabled={loading}
                 className={`flex-1 min-w-0 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  hasUnsavedChanges ? 'bg-pinkcafe2 hover:bg-pinkcafe2/90' : 'bg-pinkcafe2/80 hover:bg-pinkcafe2'
+                  hasUnsavedChanges ? 'bg-pink-600 hover:bg-pink-700' : 'bg-pink-500 hover:bg-pink-600'
                 }`}
               >
                 {loading ? 'Saving...' : (hasUnsavedChanges ? 'Save Changes' : 'Save Preset')}
