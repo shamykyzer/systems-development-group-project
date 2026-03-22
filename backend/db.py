@@ -12,8 +12,10 @@ from pathlib import Path
 from typing import Iterator
 import os
 
+from config import PROPHET_PRESET_DEFAULTS
+
 # --- Schema ---
-SCHEMA_SQL = """
+SCHEMA_SQL = f"""
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -55,24 +57,24 @@ CREATE INDEX IF NOT EXISTS idx_sales_item_date    ON sales(item_id, date);
 CREATE TABLE IF NOT EXISTS prophet_presets (
   id                               INTEGER PRIMARY KEY AUTOINCREMENT,
   preset_name                      TEXT UNIQUE NOT NULL,
-  growth                           TEXT    NOT NULL DEFAULT 'linear',
-  changepoint_prior_scale          REAL    NOT NULL DEFAULT 0.15,
-  seasonality_prior_scale          REAL    NOT NULL DEFAULT 15.0,
-  seasonality_mode                 TEXT    NOT NULL DEFAULT 'additive',
-  daily_seasonality                INTEGER NOT NULL DEFAULT 0,
-  weekly_seasonality               INTEGER NOT NULL DEFAULT 1,
-  yearly_seasonality               INTEGER NOT NULL DEFAULT 0,
-  forecast_periods                 INTEGER NOT NULL DEFAULT 365,
-  floor_multiplier                 REAL    NOT NULL DEFAULT 0.5,
-  cap_multiplier                   REAL    NOT NULL DEFAULT 1.5,
-  custom_seasonality_enabled       INTEGER NOT NULL DEFAULT 0,
-  custom_seasonality_name          TEXT    NOT NULL DEFAULT '',
-  custom_seasonality_period        REAL    NOT NULL DEFAULT 30.5,
-  custom_seasonality_fourier_order INTEGER NOT NULL DEFAULT 3,
-  n_changepoints                   INTEGER NOT NULL DEFAULT 25,
-  changepoint_range                REAL    NOT NULL DEFAULT 0.8,
-  interval_width                   REAL    NOT NULL DEFAULT 0.80,
-  holidays_prior_scale             REAL    NOT NULL DEFAULT 10.0,
+  growth                           TEXT    NOT NULL DEFAULT '{PROPHET_PRESET_DEFAULTS['growth']}',
+  changepoint_prior_scale          REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['changepoint_prior_scale']},
+  seasonality_prior_scale          REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['seasonality_prior_scale']},
+  seasonality_mode                 TEXT    NOT NULL DEFAULT '{PROPHET_PRESET_DEFAULTS['seasonality_mode']}',
+  daily_seasonality                INTEGER NOT NULL DEFAULT {int(bool(PROPHET_PRESET_DEFAULTS['daily_seasonality']))},
+  weekly_seasonality               INTEGER NOT NULL DEFAULT {int(bool(PROPHET_PRESET_DEFAULTS['weekly_seasonality']))},
+  yearly_seasonality               INTEGER NOT NULL DEFAULT {int(bool(PROPHET_PRESET_DEFAULTS['yearly_seasonality']))},
+  forecast_periods                 INTEGER NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['forecast_periods']},
+  floor_multiplier                 REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['floor_multiplier']},
+  cap_multiplier                   REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['cap_multiplier']},
+  custom_seasonality_enabled       INTEGER NOT NULL DEFAULT {int(bool(PROPHET_PRESET_DEFAULTS['custom_seasonality_enabled']))},
+  custom_seasonality_name          TEXT    NOT NULL DEFAULT '{PROPHET_PRESET_DEFAULTS['custom_seasonality_name']}',
+  custom_seasonality_period        REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['custom_seasonality_period']},
+  custom_seasonality_fourier_order INTEGER NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['custom_seasonality_fourier_order']},
+  n_changepoints                   INTEGER NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['n_changepoints']},
+  changepoint_range                REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['changepoint_range']},
+  interval_width                   REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['interval_width']},
+  holidays_prior_scale             REAL    NOT NULL DEFAULT {PROPHET_PRESET_DEFAULTS['holidays_prior_scale']},
   holidays                         TEXT    NOT NULL DEFAULT '[]',
   created_at                       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at                       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -125,12 +127,17 @@ def init_db(db_path: str) -> None:
         conn.execute("""
             UPDATE prophet_presets 
             SET 
-                changepoint_prior_scale = 0.15,
-                seasonality_prior_scale = 15.0,
-                seasonality_mode = 'additive',
-                yearly_seasonality = 0
+            changepoint_prior_scale = ?,
+            seasonality_prior_scale = ?,
+            seasonality_mode = ?,
+            yearly_seasonality = ?
             WHERE preset_name = 'Default'
-        """)
+        """, (
+          PROPHET_PRESET_DEFAULTS["changepoint_prior_scale"],
+          PROPHET_PRESET_DEFAULTS["seasonality_prior_scale"],
+          PROPHET_PRESET_DEFAULTS["seasonality_mode"],
+          int(bool(PROPHET_PRESET_DEFAULTS["yearly_seasonality"])),
+        ))
 
         # Seed the active_preset singleton row (id=1 always)
         conn.execute(
