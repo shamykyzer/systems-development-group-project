@@ -384,9 +384,6 @@ function LandingPagePanel() {
                     <div className="animate-slide-in-right animate-delay-600">
                         <InsightsPanel currentForecasts={currentForecasts} uploadedData={uploadedData} />
                     </div>
-                    <div className="animate-slide-in-right animate-delay-700">
-                        <ModelPanel currentForecasts={currentForecasts} />
-                    </div>
                 </div>
             </div>
         </div>
