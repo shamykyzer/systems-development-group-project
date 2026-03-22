@@ -5,6 +5,7 @@ import DataPreviewTable from '../components/DataPreviewTable';
 import CSVValidator from '../components/CSVValidator';
 import DataStatistics from '../components/DataStatistics';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
+import { authFetch } from '../utils/apiUtils';
 
 function Upload() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -29,7 +30,7 @@ function Upload() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch(`${API_BASE_URL}/api/upload/csv`, {
+      const response = await authFetch(`${API_BASE_URL}/api/upload/csv`, {
         method: 'POST',
         body: formData
       });
