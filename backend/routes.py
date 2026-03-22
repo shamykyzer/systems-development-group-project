@@ -317,6 +317,10 @@ def register_routes(app: Flask) -> None:
                 df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
             except Exception as e:
                 return _err(f"Dates must be in dd/mm/yyyy format. Error: {str(e)}", 400)
+
+            # Check for invalid/missing dates
+            if df['Date'].isnull().any():
+                return _err("Some rows have invalid or missing dates. Please check your CSV.", 400)
             
             # Get product columns (everything except Date)
             product_cols = [col for col in df.columns if col != 'Date']
