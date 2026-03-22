@@ -4,6 +4,7 @@ import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt, FaChartLine, FaChartBar, FaC
 import { Toggle, TooltipIcon, SettingField, ToggleCard } from './shared/SharedComponents';
 
 import { API_BASE_URL } from '../config/constants';
+import { authFetch } from '../utils/apiUtils';
 
 // Default settings for Prophet forecasting model
 const DEFAULT_SETTINGS = {
@@ -81,11 +82,11 @@ function ProphetSettingsPanel() {
    */
   const fetchAvailablePresets = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prophet/presets`);
+      const response = await authFetch(`${API_BASE_URL}/api/prophet/presets`);
       const data = await response.json();
       if (Array.isArray(data)) {
         setAvailablePresets(data.map(preset => preset.preset_name));
-        const activeResponse = await fetch(`${API_BASE_URL}/api/prophet/active-preset`);
+        const activeResponse = await authFetch(`${API_BASE_URL}/api/prophet/active-preset`);
         const activeData = await activeResponse.json();
         if (activeData.preset_name) {
           setSelectedPreset(activeData.preset_name);
@@ -122,7 +123,7 @@ function ProphetSettingsPanel() {
    */
   const updateActivePreset = async (presetName) => {
     try {
-      await fetch(`${API_BASE_URL}/api/prophet/active-preset`, {
+      await authFetch(`${API_BASE_URL}/api/prophet/active-preset`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +154,7 @@ function ProphetSettingsPanel() {
   const fetchPresetSettings = async (presetName) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prophet/presets/${presetName}`);
+      const response = await authFetch(`${API_BASE_URL}/api/prophet/presets/${presetName}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -227,7 +228,7 @@ function ProphetSettingsPanel() {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
+      const response = await authFetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -304,7 +305,7 @@ function ProphetSettingsPanel() {
         if (!createPayload.enable_cap) createPayload.cap_multiplier = 5.0;
         if (!createPayload.enable_floor) createPayload.floor_multiplier = 0;
       }
-      const response = await fetch(`${API_BASE_URL}/api/prophet/presets`, {
+      const response = await authFetch(`${API_BASE_URL}/api/prophet/presets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -353,7 +354,7 @@ function ProphetSettingsPanel() {
     setMessage({ type: '', text: '' });
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
+      const response = await authFetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
         method: 'DELETE'
       });
       
@@ -391,7 +392,7 @@ function ProphetSettingsPanel() {
       setSettings(DEFAULT_SETTINGS);
       
       // Save the default settings to the backend
-      const response = await fetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
+      const response = await authFetch(`${API_BASE_URL}/api/prophet/presets/${selectedPreset}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

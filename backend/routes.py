@@ -10,7 +10,9 @@ Endpoints:
   GET  /api/v1/forecast      - run a Prophet (or baseline) forecast
 """
 
-import sys, os
+import sys, os, re, secrets
+from functools import wraps
+from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Prophet'))
 
 from flask import Flask, jsonify, request, current_app
@@ -51,6 +53,29 @@ def _db() -> str:
     return current_app.config.get("DATABASE_PATH", "data/pinkcafe.db")
 
 
+# Regex: only allow safe characters in usernames (prevents stored XSS via username field)
+_VALID_USERNAME_RE = re.compile(r"^[\w\s.'\-]{1,50}$")
+
+
+def require_auth(f):
+    """Route decorator: rejects requests without a valid Bearer token (S-02)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return _err("Authentication required", 401)
+        token = auth_header[7:]
+        with connect(_db()) as conn:
+            row = conn.execute(
+                "SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime('now')",
+                (token,)
+            ).fetchone()
+        if not row:
+            return _err("Invalid or expired token", 401)
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ---------------------------------------------------------------------------
 # Route registration
 # ---------------------------------------------------------------------------
@@ -76,6 +101,13 @@ def register_routes(app: Flask) -> None:
 
         if not username or not email or not password:
             return _err("username, email, and password are required")
+
+        # S-08: reject usernames that contain HTML/script characters
+        if not _VALID_USERNAME_RE.match(username):
+            return _err(
+                "Username may only contain letters, numbers, spaces, hyphens, "
+                "underscores, apostrophes, and dots (max 50 characters)"
+            )
 
         with connect(_db()) as conn:
             try:
@@ -109,8 +141,19 @@ def register_routes(app: Flask) -> None:
         if not user or not verify_password(password, user["password_hash"]):
             return _err("Invalid email or password", 401)
 
+        # Issue a 24-hour session token
+        token = secrets.token_urlsafe(32)
+        expires = datetime.now(timezone.utc) + timedelta(hours=24)
+        with connect(_db()) as conn:
+            conn.execute(
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
+                (token, int(user["id"]), expires.strftime("%Y-%m-%d %H:%M:%S")),
+            )
+            conn.commit()
+
         return jsonify({
             "success": True,
+            "token": token,
             "user": {"id": int(user["id"]), "username": user["username"], "email": user["email"]},
         })
 
@@ -118,6 +161,7 @@ def register_routes(app: Flask) -> None:
     # --- Forecast -----------------------------------------------------------
 
     @app.get("/api/v1/forecast")
+    @require_auth
     def get_forecast():
         """
         Run a sales forecast. Query params:
@@ -163,12 +207,14 @@ def register_routes(app: Flask) -> None:
     # --- Prophet preset settings -------------------------------------------
 
     @app.get("/api/prophet/presets")
+    @require_auth
     def prophet_list_presets():
         """List all available preset names."""
         with connect(_db()) as conn:
             return jsonify(list_presets(conn))
 
     @app.post("/api/prophet/presets")
+    @require_auth
     def prophet_create_preset():
         """Create a new preset. Body: {preset_name, ...settings}"""
         data = request.get_json(silent=True) or {}
@@ -180,6 +226,7 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e))
 
     @app.get("/api/prophet/presets/<string:preset_name>")
+    @require_auth
     def prophet_get_preset(preset_name: str):
         """Return the settings for a single preset."""
         with connect(_db()) as conn:
@@ -189,6 +236,7 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e), 404)
 
     @app.put("/api/prophet/presets/<string:preset_name>")
+    @require_auth
     def prophet_update_preset(preset_name: str):
         """Update all settings for an existing preset. Body: {...settings}"""
         data = request.get_json(silent=True) or {}
@@ -200,6 +248,7 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e), 404)
 
     @app.delete("/api/prophet/presets/<string:preset_name>")
+    @require_auth
     def prophet_delete_preset(preset_name: str):
         """Delete a preset (cannot delete 'Default')."""
         with connect(_db()) as conn:
@@ -211,12 +260,14 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e), status)
 
     @app.get("/api/prophet/active-preset")
+    @require_auth
     def prophet_get_active_preset():
         """Return the name of the currently active preset."""
         with connect(_db()) as conn:
             return jsonify({"preset_name": get_active_preset(conn)})
 
     @app.put("/api/prophet/active-preset")
+    @require_auth
     def prophet_set_active_preset():
         """Set the active preset. Body: {preset_name}"""
         data = request.get_json(silent=True) or {}
@@ -232,6 +283,7 @@ def register_routes(app: Flask) -> None:
     # --- Prophet Test (Hardcoded CSV) --------------------------------------
 
     @app.post("/api/upload/csv")
+    @require_auth
     def upload_csv():
         """
         Upload and process a CSV file containing sales data.
@@ -353,6 +405,7 @@ def register_routes(app: Flask) -> None:
             return _err("Failed to process CSV. Please check the file and try again.", 500)
 
     @app.delete("/api/upload/dataset/<int:dataset_id>")
+    @require_auth
     def delete_dataset(dataset_id: int):
         """
         Delete a dataset and all its associated sales records.
@@ -383,6 +436,7 @@ def register_routes(app: Flask) -> None:
     # --- Prophet Test (Hardcoded CSV) --------------------------------------
 
     @app.get("/api/prophet/test")
+    @require_auth
     def prophet_test():
         """
         TEST ENDPOINT: Load hardcoded CSV data and run Prophet forecast.

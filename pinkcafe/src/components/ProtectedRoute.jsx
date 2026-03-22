@@ -16,6 +16,7 @@ function isAuthenticated() {
     if (!lastActivity || Date.now() - Number(lastActivity) > INACTIVITY_TIMEOUT_MS) {
       localStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
       return false;
     }
 
@@ -26,6 +27,7 @@ function isAuthenticated() {
   } catch {
     localStorage.removeItem(STORAGE_KEYS.USER);
     localStorage.removeItem(STORAGE_KEYS.LAST_ACTIVITY);
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
     return false;
   }
 }

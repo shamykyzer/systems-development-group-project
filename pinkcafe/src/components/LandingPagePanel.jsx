@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FaPoundSign, FaChartLine, FaShoppingBag, FaCheckDouble, FaHome } from 'react-icons/fa';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
+import { authFetch } from '../utils/apiUtils';
 import { filterForecastFromToday, transformProphetData, calcForecastTrend, getTrainingDays, getMaxForecastMonths } from '../utils/chartUtils';
 import MultiLineChart from './landing/MultiLineChart';
 import { LoadingOverlay, QuickStatsBar, ChartLegend, DatasetSelector } from './landing/Widgets';
@@ -103,9 +104,9 @@ function LandingPagePanel() {
                 const displayName = uploadedData.displayName || productName;
                 try {
                     const [res7, resM, resY] = await Promise.all([
-                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`),
-                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`),
-                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`),
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`),
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`),
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`),
                     ]);
                     const [data7, dataM, dataY] = await Promise.all([res7.json(), resM.json(), resY.json()]);
                     if (res7.ok) forecasts7Days.push({ ...filterForecastFromToday(data7), item_name: displayName, product_name: productName });
@@ -152,7 +153,7 @@ function LandingPagePanel() {
             for (const productName of uploadedData.products) {
                 const itemId = uploadedData.itemIds[productName];
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon_weeks}&train_weeks=20&_t=${Date.now()}`);
+                    const response = await authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon_weeks}&train_weeks=20&_t=${Date.now()}`);
                     const data = await response.json();
                     if (!response.ok) continue;
                     if (data?.forecast) {
@@ -177,7 +178,7 @@ function LandingPagePanel() {
     const handleDeleteDataset = async () => {
         if (!window.confirm(`Delete "${uploadedData.displayName || uploadedData.fileName}" and all associated data from the database?`)) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/upload/dataset/${uploadedData.datasetId}`, { method: 'DELETE' });
+            const response = await authFetch(`${API_BASE_URL}/api/upload/dataset/${uploadedData.datasetId}`, { method: 'DELETE' });
             if (!response.ok) { const error = await response.json(); throw new Error(error.message || 'Failed to delete dataset'); }
 
             const updatedDatasets = allDatasets.filter(d => d.datasetId !== uploadedData.datasetId);

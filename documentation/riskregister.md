@@ -2,7 +2,7 @@
 
 > **Bristol-Pink Bakery Sales Prediction System**
 > Systems Development Group Project — University of the West of England
-> Last reviewed: **February 25, 2026** | Next review: **March 2026**
+> Last reviewed: **March 22, 2026** | Next review: **No further scheduled review (final pre-submission update)**
 
 ---
 
@@ -20,7 +20,7 @@
 
 ## 1. Purpose & Scope
 
-This document identifies, assesses, and tracks all risks relevant to the design and delivery of the Bristol-Pink Bakery Sales Prediction System. It covers the full project lifecycle from initial research through final submission in April 2026.
+This document identifies, assesses, and tracks all risks relevant to the design and delivery of the Bristol-Pink Bakery Sales Prediction System. It covers the full project lifecycle from initial research through final submission on April 2, 2026.
 
 The register is reviewed and updated by the team at each group workshop. Any team member may raise a new risk; the group collectively agrees on the rating and assigns a named owner responsible for monitoring and executing the mitigation.
 
@@ -71,6 +71,8 @@ Risks are assessed on two independent dimensions — **Likelihood** (probability
 The team has a **low tolerance** for risks affecting system functionality, security, and final submission quality. We accept a **moderate tolerance** for minor UI/UX defects and internal communication challenges, provided they do not block core feature delivery.
 
 All risks rated **High** are escalated immediately and assigned a named owner. Risks rated **Medium** are reviewed at every workshop. **Low** risks are reviewed monthly or when a status change is observed.
+
+As this is the final pre-submission review, no further scheduled risk workshops remain; any new issues will be managed as immediate actions through to submission.
 
 ---
 
@@ -435,3 +437,4 @@ All changes to risk ratings, status, or new risks added are recorded here.
 | Feb 2026 | R8 | Added following mid-project presentation — tutor and peer feedback highlighted presentation flow and demo resilience as areas for improvement. | All |
 | Feb 2026 | R9 | Added to reflect growing backlog of potential enhancements identified during development. | All |
 | Feb 2026 | R10 | Added to capture the data privacy implications of the currently-open DEF-02 (unauthenticated API access). | Nickolas |
+| Mar 2026 | All | Final risk register review completed ahead of submission (due April 2, 2026). Existing ratings retained; focus moved to closure of active integration/testing/security actions. | All |

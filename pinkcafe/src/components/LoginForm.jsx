@@ -28,9 +28,10 @@ function LoginForm() {
       const data = await response.json();
 
       if (data.success) {
-        // Store user and activity timestamp for inactivity expiry
+        // Store user, activity timestamp, and auth token for inactivity expiry
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
         localStorage.setItem(STORAGE_KEYS.LAST_ACTIVITY, String(Date.now()));
+        localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
         // Redirect to home immediately
         navigate('/home');
       } else {
