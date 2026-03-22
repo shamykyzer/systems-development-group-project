@@ -86,8 +86,26 @@ function Upload() {
     }
   };
 
-  const handleGenerateForecast = () => {
+  const handleGenerateForecast = async () => {
     if (!uploadedData) return;
+
+    const chosenDisplayName = (displayName || uploadedData.products[0] || 'Sales').trim();
+
+    try {
+      const renameResponse = await authFetch(`${API_BASE_URL}/api/upload/dataset/${uploadedData.dataset_id}/name`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: chosenDisplayName })
+      });
+
+      if (!renameResponse.ok) {
+        const renameBody = await renameResponse.json().catch(() => ({}));
+        throw new Error(renameBody.message || 'Failed to save dataset name');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to save dataset name');
+      return;
+    }
     
     const forecastData = {
       datasetId: uploadedData.dataset_id,
@@ -95,7 +113,7 @@ function Upload() {
       products: uploadedData.products,
       fileName: uploadedData.fileName,
       dateRange: uploadedData.dateRange,
-      displayName: displayName || uploadedData.products[0] || 'Sales',
+      displayName: chosenDisplayName,
       uploadedAt: new Date().toISOString()
     };
     

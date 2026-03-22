@@ -45,29 +45,56 @@ function LandingPagePanel() {
         { value: 'custom', label: 'Custom dates' },
     ];
 
-    // ── Load stored datasets on mount ──────────────────────────────────────
+    // ── Load persisted datasets for the current user on mount ─────────────
     useEffect(() => {
-        const storedData = localStorage.getItem(STORAGE_KEYS.FORECAST_DATA);
-        if (!storedData) return;
-        try {
-            const data = JSON.parse(storedData);
-            if (Array.isArray(data)) {
-                setAllDatasets(data);
-                const selectedId = localStorage.getItem(STORAGE_KEYS.SELECTED_DATASET);
-                if (selectedId) {
-                    const dataset = data.find(d => d.datasetId.toString() === selectedId);
-                    if (dataset) { setSelectedDatasetId(parseInt(selectedId)); setUploadedData(dataset); }
-                    else if (data.length > 0) { setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data[0].datasetId.toString()); }
-                } else if (data.length > 0) {
-                    setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data[0].datasetId.toString());
-                }
-            } else {
-                const dataArray = [data];
-                setAllDatasets(dataArray); setSelectedDatasetId(data.datasetId); setUploadedData(data);
-                localStorage.setItem(STORAGE_KEYS.FORECAST_DATA, JSON.stringify(dataArray));
-                localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data.datasetId.toString());
+        let isMounted = true;
+
+        const hydrateFromDatasets = (datasets) => {
+            if (!isMounted) return;
+
+            const normalized = Array.isArray(datasets) ? datasets : [];
+            setAllDatasets(normalized);
+
+            if (normalized.length === 0) {
+                setSelectedDatasetId(null);
+                setUploadedData(null);
+                localStorage.removeItem(STORAGE_KEYS.SELECTED_DATASET);
+                return;
             }
-        } catch (err) { console.error('Failed to parse uploaded data:', err); }
+
+            const selectedId = localStorage.getItem(STORAGE_KEYS.SELECTED_DATASET);
+            const selectedDataset = selectedId
+                ? normalized.find(d => d.datasetId.toString() === selectedId)
+                : null;
+            const chosenDataset = selectedDataset || normalized[0];
+
+            setSelectedDatasetId(chosenDataset.datasetId);
+            setUploadedData(chosenDataset);
+            localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, chosenDataset.datasetId.toString());
+        };
+
+        const loadDatasets = async () => {
+            try {
+                const response = await authFetch(`${API_BASE_URL}/api/upload/datasets`);
+                const body = await response.json();
+                if (!response.ok) throw new Error(body.message || 'Failed to load datasets');
+
+                const datasets = Array.isArray(body.datasets) ? body.datasets : [];
+                localStorage.setItem(STORAGE_KEYS.FORECAST_DATA, JSON.stringify(datasets));
+                hydrateFromDatasets(datasets);
+            } catch (error) {
+                console.error('Failed to load datasets from API, clearing stale local cache:', error);
+                localStorage.removeItem(STORAGE_KEYS.FORECAST_DATA);
+                localStorage.removeItem(STORAGE_KEYS.SELECTED_DATASET);
+                hydrateFromDatasets([]);
+            }
+        };
+
+        loadDatasets();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     // ── Dataset switching ──────────────────────────────────────────────────
