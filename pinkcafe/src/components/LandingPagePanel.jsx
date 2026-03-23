@@ -6,6 +6,7 @@ import { filterForecastFromToday, transformProphetData, calcForecastTrend, getTr
 import MultiLineChart from './landing/MultiLineChart';
 import { LoadingOverlay, QuickStatsBar, ChartLegend, DatasetSelector } from './landing/Widgets';
 import { InsightsPanel, ModelPanel, ForecastControlPanel, DatasetPanel } from './landing/Panels';
+import ComparisonPanel from './landing/ComparisonPanel';
 
 // ===========================================================================
 // Main component
@@ -385,6 +386,9 @@ function LandingPagePanel() {
                     </div>
                     <div className="animate-slide-in-right animate-delay-700">
                         <ModelPanel currentForecasts={currentForecasts} />
+                    </div>
+                    <div className="animate-slide-in-right animate-delay-800">
+                        <ComparisonPanel datasetId={selectedDatasetId} uploadedData={uploadedData} />
                     </div>
                 </div>
             </div>
