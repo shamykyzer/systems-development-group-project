@@ -10,10 +10,12 @@ Endpoints:
   GET  /api/v1/forecast      - run a Prophet (or baseline) forecast
 """
 
-import sys, os
+import sys, os, re, secrets
+from functools import wraps
+from datetime import datetime, timedelta, timezone
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Prophet'))
 
-from flask import Flask, jsonify, request, current_app
+from flask import Flask, jsonify, request, current_app, g
 import logging
 from db import connect
 from services import hash_password, verify_password
@@ -52,6 +54,38 @@ def _db() -> str:
     return current_app.config.get("DATABASE_PATH", "data/pinkcafe.db")
 
 
+# Regex: only allow safe characters in usernames (prevents stored XSS via username field)
+_VALID_USERNAME_RE = re.compile(r"^[\w\s.'\-]{1,50}$")
+
+
+def require_auth(f):
+    """Route decorator: rejects requests without a valid Bearer token (S-02)."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return _err("Authentication required", 401)
+        token = auth_header[7:]
+        with connect(_db()) as conn:
+            row = conn.execute(
+                "SELECT user_id FROM sessions WHERE token = ? AND expires_at > datetime('now')",
+                (token,)
+            ).fetchone()
+        if not row:
+            return _err("Invalid or expired token", 401)
+        g.current_user_id = int(row["user_id"])
+        return f(*args, **kwargs)
+    return decorated
+
+
+def _current_user_id() -> int:
+    """Return the authenticated user id set by require_auth."""
+    uid = getattr(g, "current_user_id", None)
+    if uid is None:
+        raise RuntimeError("Authentication context missing")
+    return int(uid)
+
+
 # ---------------------------------------------------------------------------
 # Route registration
 # ---------------------------------------------------------------------------
@@ -77,6 +111,13 @@ def register_routes(app: Flask) -> None:
 
         if not username or not email or not password:
             return _err("username, email, and password are required")
+
+        # S-08: reject usernames that contain HTML/script characters
+        if not _VALID_USERNAME_RE.match(username):
+            return _err(
+                "Username may only contain letters, numbers, spaces, hyphens, "
+                "underscores, apostrophes, and dots (max 50 characters)"
+            )
 
         with connect(_db()) as conn:
             try:
@@ -110,8 +151,19 @@ def register_routes(app: Flask) -> None:
         if not user or not verify_password(password, user["password_hash"]):
             return _err("Invalid email or password", 401)
 
+        # Issue a 24-hour session token
+        token = secrets.token_urlsafe(32)
+        expires = datetime.now(timezone.utc) + timedelta(hours=24)
+        with connect(_db()) as conn:
+            conn.execute(
+                "INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)",
+                (token, int(user["id"]), expires.strftime("%Y-%m-%d %H:%M:%S")),
+            )
+            conn.commit()
+
         return jsonify({
             "success": True,
+            "token": token,
             "user": {"id": int(user["id"]), "username": user["username"], "email": user["email"]},
         })
 
@@ -119,6 +171,7 @@ def register_routes(app: Flask) -> None:
     # --- Forecast -----------------------------------------------------------
 
     @app.get("/api/v1/forecast")
+    @require_auth
     def get_forecast():
         """
         Run a sales forecast. Query params:
@@ -149,6 +202,13 @@ def register_routes(app: Flask) -> None:
 
         with connect(_db()) as conn:
             try:
+                owner_row = conn.execute(
+                    "SELECT id FROM datasets WHERE id = ? AND uploaded_by_user_id = ?",
+                    (dataset_id, _current_user_id()),
+                ).fetchone()
+                if not owner_row:
+                    return _err("Dataset not found", 404)
+
                 return jsonify(run_forecast(
                     conn,
                     dataset_id=dataset_id,
@@ -164,6 +224,7 @@ def register_routes(app: Flask) -> None:
     # --- Algorithm comparison -----------------------------------------------
 
     @app.get("/api/v1/forecast/compare")
+    @require_auth
     def compare_algorithms():
         """
         Compare Prophet, SARIMA, and Linear Regression via backtesting.
@@ -203,15 +264,78 @@ def register_routes(app: Flask) -> None:
             except ForecastError as e:
                 return _err(str(e))
 
+    @app.get("/api/upload/datasets")
+    @require_auth
+    def list_user_datasets():
+        """
+        Return all datasets owned by the currently authenticated user.
+        Includes product->item mappings and date range so frontend can load
+        persisted datasets without relying on local storage.
+        """
+        user_id = _current_user_id()
+
+        with connect(_db()) as conn:
+            datasets = conn.execute(
+                """
+                SELECT id, name, source_filename, uploaded_at
+                FROM datasets
+                WHERE uploaded_by_user_id = ?
+                ORDER BY uploaded_at DESC, id DESC
+                """,
+                (user_id,),
+            ).fetchall()
+
+            response_rows = []
+            for ds in datasets:
+                sales_span = conn.execute(
+                    "SELECT MIN(date) AS start_date, MAX(date) AS end_date FROM sales WHERE dataset_id = ?",
+                    (int(ds["id"]),),
+                ).fetchone()
+                item_rows = conn.execute(
+                    """
+                    SELECT i.id AS item_id, i.name AS item_name
+                    FROM sales s
+                    JOIN items i ON i.id = s.item_id
+                    WHERE s.dataset_id = ?
+                    GROUP BY i.id, i.name
+                    ORDER BY i.name
+                    """,
+                    (int(ds["id"]),),
+                ).fetchall()
+
+                products = [row["item_name"] for row in item_rows]
+                item_ids = {row["item_name"]: int(row["item_id"]) for row in item_rows}
+
+                start_date = sales_span["start_date"]
+                end_date = sales_span["end_date"]
+
+                response_rows.append({
+                    "datasetId": int(ds["id"]),
+                    "fileName": ds["source_filename"] or ds["name"],
+                    "displayName": ds["name"],
+                    "products": products,
+                    "itemIds": item_ids,
+                    "dateRange": {
+                        "start": datetime.strptime(start_date, "%Y-%m-%d").strftime("%d/%m/%Y") if start_date else "",
+                        "end": datetime.strptime(end_date, "%Y-%m-%d").strftime("%d/%m/%Y") if end_date else "",
+                    },
+                    "uploadedAt": ds["uploaded_at"],
+                })
+
+            return jsonify({"success": True, "datasets": response_rows})
+
+
     # --- Prophet preset settings -------------------------------------------
 
     @app.get("/api/prophet/presets")
+    @require_auth
     def prophet_list_presets():
         """List all available preset names."""
         with connect(_db()) as conn:
             return jsonify(list_presets(conn))
 
     @app.post("/api/prophet/presets")
+    @require_auth
     def prophet_create_preset():
         """Create a new preset. Body: {preset_name, ...settings}"""
         data = request.get_json(silent=True) or {}
@@ -223,6 +347,7 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e))
 
     @app.get("/api/prophet/presets/<string:preset_name>")
+    @require_auth
     def prophet_get_preset(preset_name: str):
         """Return the settings for a single preset."""
         with connect(_db()) as conn:
@@ -232,6 +357,7 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e), 404)
 
     @app.put("/api/prophet/presets/<string:preset_name>")
+    @require_auth
     def prophet_update_preset(preset_name: str):
         """Update all settings for an existing preset. Body: {...settings}"""
         data = request.get_json(silent=True) or {}
@@ -243,6 +369,7 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e), 404)
 
     @app.delete("/api/prophet/presets/<string:preset_name>")
+    @require_auth
     def prophet_delete_preset(preset_name: str):
         """Delete a preset (cannot delete 'Default')."""
         with connect(_db()) as conn:
@@ -254,12 +381,14 @@ def register_routes(app: Flask) -> None:
                 return _err(str(e), status)
 
     @app.get("/api/prophet/active-preset")
+    @require_auth
     def prophet_get_active_preset():
         """Return the name of the currently active preset."""
         with connect(_db()) as conn:
             return jsonify({"preset_name": get_active_preset(conn)})
 
     @app.put("/api/prophet/active-preset")
+    @require_auth
     def prophet_set_active_preset():
         """Set the active preset. Body: {preset_name}"""
         data = request.get_json(silent=True) or {}
@@ -275,6 +404,7 @@ def register_routes(app: Flask) -> None:
     # --- Prophet Test (Hardcoded CSV) --------------------------------------
 
     @app.post("/api/upload/csv")
+    @require_auth
     def upload_csv():
         """
         Upload and process a CSV file containing sales data.
@@ -296,6 +426,8 @@ def register_routes(app: Flask) -> None:
             return _err("File must be a CSV", 400)
         
         try:
+            current_user_id = _current_user_id()
+
             # Read CSV
             df = pd.read_csv(file)
             
@@ -308,6 +440,10 @@ def register_routes(app: Flask) -> None:
                 df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
             except Exception as e:
                 return _err(f"Dates must be in dd/mm/yyyy format. Error: {str(e)}", 400)
+
+            # Check for invalid/missing dates
+            if df['Date'].isnull().any():
+                return _err("Some rows have invalid or missing dates. Please check your CSV.", 400)
             
             # Get product columns (everything except Date)
             product_cols = [col for col in df.columns if col != 'Date']
@@ -324,8 +460,8 @@ def register_routes(app: Flask) -> None:
             with connect(_db()) as conn:
                 # Create dataset entry
                 cursor = conn.execute(
-                    "INSERT INTO datasets (name, source_filename) VALUES (?, ?)",
-                    (secure_filename(file.filename), file.filename)
+                    "INSERT INTO datasets (name, source_filename, uploaded_by_user_id) VALUES (?, ?, ?)",
+                    (secure_filename(file.filename), file.filename, current_user_id)
                 )
                 dataset_id = cursor.lastrowid
                 
@@ -396,16 +532,19 @@ def register_routes(app: Flask) -> None:
             return _err("Failed to process CSV. Please check the file and try again.", 500)
 
     @app.delete("/api/upload/dataset/<int:dataset_id>")
+    @require_auth
     def delete_dataset(dataset_id: int):
         """
         Delete a dataset and all its associated sales records.
         """
         try:
+            current_user_id = _current_user_id()
+
             with connect(_db()) as conn:
-                # Check if dataset exists
+                # Check if dataset exists and is owned by the current user
                 dataset = conn.execute(
-                    "SELECT id, name FROM datasets WHERE id = ?",
-                    (dataset_id,)
+                    "SELECT id, name FROM datasets WHERE id = ? AND uploaded_by_user_id = ?",
+                    (dataset_id, current_user_id)
                 ).fetchone()
                 
                 if not dataset:
@@ -423,9 +562,33 @@ def register_routes(app: Flask) -> None:
             logging.exception("Failed to delete dataset")
             return _err("Failed to delete dataset. Please try again.", 500)
 
+    @app.put("/api/upload/dataset/<int:dataset_id>/name")
+    @require_auth
+    def update_dataset_name(dataset_id: int):
+        """Update the display name of a dataset owned by the current user."""
+        new_name = ((request.get_json(silent=True) or {}).get("display_name") or "").strip()
+        if not new_name:
+            return _err("display_name is required", 400)
+
+        try:
+            with connect(_db()) as conn:
+                result = conn.execute(
+                    "UPDATE datasets SET name = ? WHERE id = ? AND uploaded_by_user_id = ?",
+                    (new_name, dataset_id, _current_user_id()),
+                )
+                if result.rowcount == 0:
+                    return _err("Dataset not found", 404)
+                conn.commit()
+
+            return jsonify({"success": True, "dataset_id": dataset_id, "display_name": new_name})
+        except Exception:
+            logging.exception("Failed to update dataset name")
+            return _err("Failed to update dataset name. Please try again.", 500)
+
     # --- Prophet Test (Hardcoded CSV) --------------------------------------
 
     @app.get("/api/prophet/test")
+    @require_auth
     def prophet_test():
         """
         TEST ENDPOINT: Load hardcoded CSV data and run Prophet forecast.

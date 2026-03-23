@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FaChartLine, FaBullseye, FaShoppingBag, FaTrophy, FaDownload, FaHome } from 'react-icons/fa';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
+import { authFetch } from '../utils/apiUtils';
 import { filterForecastFromToday, transformProphetData, calcForecastTrend, getTrainingDays, getMaxForecastMonths } from '../utils/chartUtils';
 import MultiLineChart from './landing/MultiLineChart';
 import { LoadingOverlay, ChartLegend, DatasetSelector } from './landing/Widgets';
@@ -21,6 +22,8 @@ function LandingPagePanel() {
     const [selectedProduct, setSelectedProduct] = useState('all');
 
     const [forecast7Days, setForecast7Days] = useState([]);
+    const [forecast6Weeks, setForecast6Weeks] = useState([]);
+    const [forecast8Weeks, setForecast8Weeks] = useState([]);
     const [forecastMonth, setForecastMonth] = useState([]);
     const [forecastYear, setForecastYear] = useState([]);
     const [forecastCustom, setForecastCustom] = useState([]);
@@ -40,33 +43,62 @@ function LandingPagePanel() {
     const FORECAST_RANGE_OPTIONS = [
         { value: '7days', label: 'Next 7 days' },
         { value: 'upcomingMonth', label: 'Next 4 weeks' },
+        { value: '6weeks', label: 'Next 6 weeks' },
+        { value: '8weeks', label: 'Next 8 weeks' },
         { value: 'upcomingYear', label: `Long-term (${maxForecastMonths} month${maxForecastMonths !== 1 ? 's' : ''})` },
         { value: 'custom', label: 'Custom dates' },
     ];
 
-    // ── Load stored datasets on mount ──────────────────────────────────────
+    // ── Load persisted datasets for the current user on mount ─────────────
     useEffect(() => {
-        const storedData = localStorage.getItem(STORAGE_KEYS.FORECAST_DATA);
-        if (!storedData) return;
-        try {
-            const data = JSON.parse(storedData);
-            if (Array.isArray(data)) {
-                setAllDatasets(data);
-                const selectedId = localStorage.getItem(STORAGE_KEYS.SELECTED_DATASET);
-                if (selectedId) {
-                    const dataset = data.find(d => d.datasetId.toString() === selectedId);
-                    if (dataset) { setSelectedDatasetId(parseInt(selectedId)); setUploadedData(dataset); }
-                    else if (data.length > 0) { setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data[0].datasetId.toString()); }
-                } else if (data.length > 0) {
-                    setSelectedDatasetId(data[0].datasetId); setUploadedData(data[0]); localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data[0].datasetId.toString());
-                }
-            } else {
-                const dataArray = [data];
-                setAllDatasets(dataArray); setSelectedDatasetId(data.datasetId); setUploadedData(data);
-                localStorage.setItem(STORAGE_KEYS.FORECAST_DATA, JSON.stringify(dataArray));
-                localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, data.datasetId.toString());
+        let isMounted = true;
+
+        const hydrateFromDatasets = (datasets) => {
+            if (!isMounted) return;
+
+            const normalized = Array.isArray(datasets) ? datasets : [];
+            setAllDatasets(normalized);
+
+            if (normalized.length === 0) {
+                setSelectedDatasetId(null);
+                setUploadedData(null);
+                localStorage.removeItem(STORAGE_KEYS.SELECTED_DATASET);
+                return;
             }
-        } catch (err) { console.error('Failed to parse uploaded data:', err); }
+
+            const selectedId = localStorage.getItem(STORAGE_KEYS.SELECTED_DATASET);
+            const selectedDataset = selectedId
+                ? normalized.find(d => d.datasetId.toString() === selectedId)
+                : null;
+            const chosenDataset = selectedDataset || normalized[0];
+
+            setSelectedDatasetId(chosenDataset.datasetId);
+            setUploadedData(chosenDataset);
+            localStorage.setItem(STORAGE_KEYS.SELECTED_DATASET, chosenDataset.datasetId.toString());
+        };
+
+        const loadDatasets = async () => {
+            try {
+                const response = await authFetch(`${API_BASE_URL}/api/upload/datasets`);
+                const body = await response.json();
+                if (!response.ok) throw new Error(body.message || 'Failed to load datasets');
+
+                const datasets = Array.isArray(body.datasets) ? body.datasets : [];
+                localStorage.setItem(STORAGE_KEYS.FORECAST_DATA, JSON.stringify(datasets));
+                hydrateFromDatasets(datasets);
+            } catch (error) {
+                console.error('Failed to load datasets from API, clearing stale local cache:', error);
+                localStorage.removeItem(STORAGE_KEYS.FORECAST_DATA);
+                localStorage.removeItem(STORAGE_KEYS.SELECTED_DATASET);
+                hydrateFromDatasets([]);
+            }
+        };
+
+        loadDatasets();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     // ── Dataset switching ──────────────────────────────────────────────────
@@ -86,7 +118,7 @@ function LandingPagePanel() {
 
         setIsLoading(true);
         setForecastError(null);
-        setForecast7Days([]); setForecastMonth([]); setForecastYear([]);
+        setForecast7Days([]); setForecast6Weeks([]); setForecast8Weeks([]); setForecastMonth([]); setForecastYear([]);
 
         try {
             const datasetId = uploadedData.datasetId;
@@ -95,35 +127,41 @@ function LandingPagePanel() {
             const weeksFromLastData = Math.ceil((today - lastDataDate) / (7 * 24 * 60 * 60 * 1000));
 
             const horizon7Days = Math.min(52, weeksFromLastData + 1);
+            const horizon6Weeks = Math.min(52, weeksFromLastData + 6);
+            const horizon8Weeks = Math.min(52, weeksFromLastData + 8);
             const horizonMonth = Math.min(52, weeksFromLastData + 4);
             const targetEndDate = new Date(today);
             targetEndDate.setDate(targetEndDate.getDate() + Math.ceil(maxForecastMonths * 30.44));
             const horizonYear = Math.min(52, Math.max(1, Math.ceil((targetEndDate - lastDataDate) / (7 * 24 * 60 * 60 * 1000))));
 
-            const forecasts7Days = [], forecastsMonth = [], forecastsYear = [];
+            const forecasts7Days = [], forecasts6Weeks = [], forecasts8Weeks = [], forecastsMonth = [], forecastsYear = [];
 
             for (const productName of uploadedData.products) {
                 const itemId = uploadedData.itemIds[productName];
                 const displayName = uploadedData.displayName || productName;
                 try {
-                    const [res7, resM, resY] = await Promise.all([
-                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`),
-                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`),
-                        fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`),
+                    const [res7, res6, res8, resM, resY] = await Promise.all([
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`),
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon6Weeks}&train_weeks=20&_t=${Date.now()}`),
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon8Weeks}&train_weeks=20&_t=${Date.now()}`),
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`),
+                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`),
                     ]);
-                    const [data7, dataM, dataY] = await Promise.all([res7.json(), resM.json(), resY.json()]);
+                    const [data7, data6, data8, dataM, dataY] = await Promise.all([res7.json(), res6.json(), res8.json(), resM.json(), resY.json()]);
                     if (res7.ok) forecasts7Days.push({ ...filterForecastFromToday(data7), item_name: displayName, product_name: productName });
+                    if (res6.ok) forecasts6Weeks.push({ ...filterForecastFromToday(data6), item_name: displayName, product_name: productName });
+                    if (res8.ok) forecasts8Weeks.push({ ...filterForecastFromToday(data8), item_name: displayName, product_name: productName });
                     if (resM.ok) forecastsMonth.push({ ...filterForecastFromToday(dataM), item_name: displayName, product_name: productName });
                     if (resY.ok) forecastsYear.push({ ...filterForecastFromToday(dataY), item_name: displayName, product_name: productName });
                 } catch (error) { console.error(`Error fetching forecast for ${productName}:`, error); }
             }
 
-            setForecast7Days(forecasts7Days); setForecastMonth(forecastsMonth); setForecastYear(forecastsYear);
+            setForecast7Days(forecasts7Days); setForecast6Weeks(forecasts6Weeks); setForecast8Weeks(forecasts8Weeks); setForecastMonth(forecastsMonth); setForecastYear(forecastsYear);
             setHasGenerated(true); setLastGenerated(new Date());
         } catch (error) {
             console.error('Forecast error:', error);
             setForecastError(error.message);
-            setForecast7Days([]); setForecastMonth([]); setForecastYear([]); setHasGenerated(false);
+            setForecast7Days([]); setForecast6Weeks([]); setForecast8Weeks([]); setForecastMonth([]); setForecastYear([]); setHasGenerated(false);
         } finally { setIsLoading(false); }
     };
 
@@ -197,7 +235,7 @@ function LandingPagePanel() {
             for (const productName of uploadedData.products) {
                 const itemId = uploadedData.itemIds[productName];
                 try {
-                    const response = await fetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon_weeks}&train_weeks=20&_t=${Date.now()}`);
+                    const response = await authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon_weeks}&train_weeks=20&_t=${Date.now()}`);
                     const data = await response.json();
                     if (!response.ok) continue;
                     if (data?.forecast) {
@@ -222,7 +260,7 @@ function LandingPagePanel() {
     const handleDeleteDataset = async () => {
         if (!window.confirm(`Delete "${uploadedData.displayName || uploadedData.fileName}" and all associated data from the database?`)) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/api/upload/dataset/${uploadedData.datasetId}`, { method: 'DELETE' });
+            const response = await authFetch(`${API_BASE_URL}/api/upload/dataset/${uploadedData.datasetId}`, { method: 'DELETE' });
             if (!response.ok) { const error = await response.json(); throw new Error(error.message || 'Failed to delete dataset'); }
 
             const updatedDatasets = allDatasets.filter(d => d.datasetId !== uploadedData.datasetId);
@@ -243,6 +281,8 @@ function LandingPagePanel() {
     // ── Derived data ───────────────────────────────────────────────────────
     const getCurrentForecast = () => {
         if (forecastRange === '7days') return forecast7Days;
+        if (forecastRange === '6weeks') return forecast6Weeks;
+        if (forecastRange === '8weeks') return forecast8Weeks;
         if (forecastRange === 'upcomingMonth') return forecastMonth;
         if (forecastRange === 'upcomingYear') return forecastYear;
         if (forecastRange === 'custom') return forecastCustom;
