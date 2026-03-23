@@ -153,6 +153,7 @@ function Upload() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && isDataValid && handleGenerateForecast()}
                 placeholder={`e.g., ${uploadedData.products[0]} Sales`}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pinkcafe2 focus:border-transparent"
               />

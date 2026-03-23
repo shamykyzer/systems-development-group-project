@@ -530,7 +530,7 @@ function ProphetSettingsPanel() {
               onChange={(e) => setNewPresetName(e.target.value)}
               placeholder="Enter preset name..."
               className="w-full px-4 py-2 border border-pinkcafe2/20 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50 focus:border-pinkcafe2/50"
-              onKeyPress={(e) => e.key === 'Enter' && handleCreatePreset()} // Allow Enter key to submit
+              onKeyDown={(e) => e.key === 'Enter' && handleCreatePreset()} // Allow Enter key to submit
             />
             <p className="text-sm text-pinkcafe2/60 mt-2">
               {creationMode === 'new' 
@@ -543,39 +543,13 @@ function ProphetSettingsPanel() {
         {/* Two-column grid layout for configuration inputs */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           
-          {/* Growth Model - ClaudeRevamp 2-card layout */}
+          {/* Growth Model */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-sm font-medium text-pinkcafe2/80 flex items-center gap-1">
-                How should the overall trend of your data grow over time?
-                <TooltipIcon text={"Linear: Assumes unbounded growth. Best for most bakery sales without natural limits.\n\nLogistic: Used when there's a maximum capacity (saturating growth), requires setting cap_multiplier."} />
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[
-                ['linear', FaChartLine, 'Uncapped growth — trend can rise or fall without limit'],
-                ['logistic', FaChartBar, 'S-curve growth — levels off at a cap value. Requires setting a maximum'],
-              ].map(([val, Icon, desc]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => handleInputChange('growth', val)}
-                  className={`p-4 rounded-xl text-left transition-all duration-200 ${
-                    settings.growth === val
-                      ? 'bg-pinkcafe/50 border-2 border-pinkcafe2 shadow-md scale-[1.02]'
-                      : 'bg-white border border-gray-200 hover:border-pinkcafe2/40 hover:shadow-sm hover:scale-[1.01]'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 mb-1">
-                    <Icon className={`text-lg flex-shrink-0 ${settings.growth === val ? 'text-pinkcafe2' : 'text-gray-500'}`} />
-                    <p className={`font-bold text-sm capitalize ${settings.growth === val ? 'text-pinkcafe2' : 'text-gray-700'}`}>
-                      {val}
-                    </p>
-                  </div>
-                  <p className="text-xs pl-9 text-gray-500">{desc}</p>
-                </button>
-              ))}
-            </div>
+            <p className="text-sm font-medium text-pinkcafe2/80 flex items-center gap-1">
+              Linear Growth
+              <TooltipIcon text={"Determines how the forecast trend behaves over time. Linear growth allows the trend to increase or decrease freely, making it ideal for cafe sales where there are no hard upper or lower limits on demand."} />
+            </p>
+            <p className="text-xs text-pinkcafe2/50 mt-1">Trend rises or falls freely based on historical patterns</p>
           </div>
 
           {/* Seasonality Mode - how seasonal effects combine with trend */}
@@ -626,30 +600,6 @@ function ProphetSettingsPanel() {
             step={0.05} min={0.50} max={0.99} onWheel={handleNumberScroll}
           />
 
-          {/* Enable Cap / Enable Floor - logistic only */}
-          {settings.growth === 'logistic' && (
-            <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ToggleCard checked={settings.enable_cap} onChange={(v) => handleInputChange('enable_cap', v)} label="Enable Cap" desc="Maximum saturation value">
-                {settings.enable_cap && (
-                  <div className="mt-3">
-                    <input type="number" step="0.1" min="1.1" max="5.0" value={settings.cap_multiplier}
-                      onChange={(e) => handleInputChange('cap_multiplier', parseFloat(e.target.value))}
-                      onWheel={handleNumberScroll} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50" />
-                  </div>
-                )}
-              </ToggleCard>
-              <ToggleCard checked={settings.enable_floor} onChange={(v) => handleInputChange('enable_floor', v)} label="Enable Floor" desc="Minimum saturation value">
-                {settings.enable_floor && (
-                  <div className="mt-3">
-                    <input type="number" step="0.05" min="0" max="0.95" value={settings.floor_multiplier}
-                      onChange={(e) => handleInputChange('floor_multiplier', parseFloat(e.target.value))}
-                      onWheel={handleNumberScroll} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-pinkcafe2/50" />
-                  </div>
-                )}
-              </ToggleCard>
-            </div>
-          )}
-
           {/* Number of Changepoints - potential trend breaks */}
           <SettingField
             label="Number of Changepoints" range="5 - 50"
@@ -697,7 +647,7 @@ function ProphetSettingsPanel() {
             <h3 className="text-base sm:text-lg font-bold text-black">
               Public Holidays
             </h3>
-            <TooltipIcon text={"Select holidays that create predictable sales spikes or dips for your bakery. Prophet will learn the typical effect of each holiday from historical data and apply it to future forecasts.\n\nStrength controlled by Holidays Prior Scale above."} placement="top" />
+            <TooltipIcon text={"Select holidays that create predictable sales spikes or dips for your bakery. Prophet will learn the typical effect of each holiday from historical data and apply it to future forecasts.\n\nStrength controlled by Holidays Prior Scale above."} />
           </div>
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-4 rounded-xl bg-white border border-gray-200">
@@ -741,7 +691,7 @@ function ProphetSettingsPanel() {
                           }}
                           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                             selected
-                              ? 'bg-pinkcafe/30 border-pinkcafe2/50 text-pinkcafe2 shadow-sm'
+                              ? 'bg-pinkcafe2/30 border-pinkcafe2/50 text-pinkcafe2 shadow-sm'
                               : 'bg-white border-gray-200 text-gray-600 hover:border-pinkcafe2/40 hover:shadow-sm'
                           }`}
                         >
@@ -767,7 +717,7 @@ function ProphetSettingsPanel() {
                 desc="Add patterns beyond daily/weekly/yearly"
               />
             </div>
-            <TooltipIcon text={"Add custom seasonal patterns beyond daily/weekly/yearly.\n\nOnly enable if you have a specific recurring pattern not covered by standard seasonality."} placement="top" />
+            <TooltipIcon text={"Add custom seasonal patterns beyond daily/weekly/yearly.\n\nOnly enable if you have a specific recurring pattern not covered by standard seasonality."} />
           </div>
           
           {/* Custom seasonality fields - only shown when enabled */}
