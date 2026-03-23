@@ -73,47 +73,63 @@ expect_body "Login response contains user object" '"user"' \
     -d '{"email":"admin@pinkcafe.com","password":"pinkcafe2025"}'
 
 # ---------------------------------------------------------------------------
-# Prophet presets
+# Obtain auth token for subsequent requests
 # ---------------------------------------------------------------------------
-expect_status "GET /api/prophet/presets → 200" 200 \
-    "$BASE_URL/api/prophet/presets"
-
-expect_body "Presets response contains Default preset" "Default" \
-    "$BASE_URL/api/prophet/presets"
-
-expect_status "GET /api/prophet/presets/Default → 200" 200 \
-    "$BASE_URL/api/prophet/presets/Default"
-
-expect_status "GET /api/prophet/presets/NonExistent → 404" 404 \
-    "$BASE_URL/api/prophet/presets/NonExistent"
-
-expect_status "GET /api/prophet/active-preset → 200" 200 \
-    "$BASE_URL/api/prophet/active-preset"
-
-# Create / delete a temporary preset
-expect_status "POST /api/prophet/presets — create SmokeTest preset → 201" 201 \
-    -X POST "$BASE_URL/api/prophet/presets" \
+TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"preset_name":"SmokeTest"}'
+    -d '{"email":"admin@pinkcafe.com","password":"pinkcafe2025"}' \
+    | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 
-expect_status "DELETE /api/prophet/presets/SmokeTest → 200" 200 \
-    -X DELETE "$BASE_URL/api/prophet/presets/SmokeTest"
+if [[ -z "$TOKEN" ]]; then
+    echo -e "${RED}FATAL: Could not obtain auth token — skipping authenticated tests${RESET}"
+    FAIL=$((FAIL + 12))
+else
+    pass "Obtained auth token"
+    AUTH=(-H "Authorization: Bearer $TOKEN")
 
-# Deleting 'Default' must be forbidden
-expect_status "DELETE /api/prophet/presets/Default → 400 (protected)" 400 \
-    -X DELETE "$BASE_URL/api/prophet/presets/Default"
+    # ---------------------------------------------------------------------------
+    # Prophet presets (authenticated)
+    # ---------------------------------------------------------------------------
+    expect_status "GET /api/prophet/presets → 200" 200 \
+        "${AUTH[@]}" "$BASE_URL/api/prophet/presets"
 
-# ---------------------------------------------------------------------------
-# Algorithm comparison
-# ---------------------------------------------------------------------------
-expect_status "GET /api/v1/forecast/compare — missing params → 400" 400 \
-    "$BASE_URL/api/v1/forecast/compare"
+    expect_body "Presets response contains Default preset" "Default" \
+        "${AUTH[@]}" "$BASE_URL/api/prophet/presets"
 
-expect_status "GET /api/v1/forecast/compare — missing item_id → 400" 400 \
-    "$BASE_URL/api/v1/forecast/compare?dataset_id=1"
+    expect_status "GET /api/prophet/presets/Default → 200" 200 \
+        "${AUTH[@]}" "$BASE_URL/api/prophet/presets/Default"
 
-expect_body "Compare endpoint returns JSON with success field" '"success"' \
-    "$BASE_URL/api/v1/forecast/compare?dataset_id=1&item_id=1&train_weeks=20&test_days=14"
+    expect_status "GET /api/prophet/presets/NonExistent → 404" 404 \
+        "${AUTH[@]}" "$BASE_URL/api/prophet/presets/NonExistent"
+
+    expect_status "GET /api/prophet/active-preset → 200" 200 \
+        "${AUTH[@]}" "$BASE_URL/api/prophet/active-preset"
+
+    # Create / delete a temporary preset
+    expect_status "POST /api/prophet/presets — create SmokeTest preset → 201" 201 \
+        -X POST "${AUTH[@]}" "$BASE_URL/api/prophet/presets" \
+        -H "Content-Type: application/json" \
+        -d '{"preset_name":"SmokeTest"}'
+
+    expect_status "DELETE /api/prophet/presets/SmokeTest → 200" 200 \
+        -X DELETE "${AUTH[@]}" "$BASE_URL/api/prophet/presets/SmokeTest"
+
+    # Deleting 'Default' must be forbidden
+    expect_status "DELETE /api/prophet/presets/Default → 400 (protected)" 400 \
+        -X DELETE "${AUTH[@]}" "$BASE_URL/api/prophet/presets/Default"
+
+    # ---------------------------------------------------------------------------
+    # Algorithm comparison (authenticated)
+    # ---------------------------------------------------------------------------
+    expect_status "GET /api/v1/forecast/compare — missing params → 400" 400 \
+        "${AUTH[@]}" "$BASE_URL/api/v1/forecast/compare"
+
+    expect_status "GET /api/v1/forecast/compare — missing item_id → 400" 400 \
+        "${AUTH[@]}" "$BASE_URL/api/v1/forecast/compare?dataset_id=1"
+
+    expect_body "Compare endpoint returns JSON with success field" '"success"' \
+        "${AUTH[@]}" "$BASE_URL/api/v1/forecast/compare?dataset_id=1&item_id=1&train_weeks=20&test_days=14"
+fi
 
 # ---------------------------------------------------------------------------
 # Summary
