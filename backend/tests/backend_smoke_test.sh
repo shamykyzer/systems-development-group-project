@@ -104,6 +104,18 @@ expect_status "DELETE /api/prophet/presets/Default → 400 (protected)" 400 \
     -X DELETE "$BASE_URL/api/prophet/presets/Default"
 
 # ---------------------------------------------------------------------------
+# Algorithm comparison
+# ---------------------------------------------------------------------------
+expect_status "GET /api/v1/forecast/compare — missing params → 400" 400 \
+    "$BASE_URL/api/v1/forecast/compare"
+
+expect_status "GET /api/v1/forecast/compare — missing item_id → 400" 400 \
+    "$BASE_URL/api/v1/forecast/compare?dataset_id=1"
+
+expect_body "Compare endpoint returns JSON with success field" '"success"' \
+    "$BASE_URL/api/v1/forecast/compare?dataset_id=1&item_id=1&train_weeks=20&test_days=14"
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo "-------------------------------------------"
