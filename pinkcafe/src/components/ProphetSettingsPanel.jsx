@@ -4,34 +4,11 @@ import { FaHome, FaCog, FaPlus, FaCopy, FaTrashAlt, FaChartLine, FaChartBar, FaC
 import { Toggle, TooltipIcon, SettingField, ToggleCard } from './shared/SharedComponents';
 
 import { API_BASE_URL } from '../config/constants';
+import { PROPHET_DEFAULT_SETTINGS } from '../config/prophetDefaults';
 import { authFetch } from '../utils/apiUtils';
 
 // Default settings for Prophet forecasting model
-const DEFAULT_SETTINGS = {
-  growth: 'linear',                          // Growth type: 'linear' or 'logistic'
-  changepoint_prior_scale: 0.05,             // Controls trend flexibility (0.001-0.5)
-  seasonality_prior_scale: 10.0,             // Controls seasonality strength (0.1-100)
-  seasonality_mode: 'multiplicative',        // How seasonality affects the trend
-  daily_seasonality: false,                  // Enable/disable daily patterns
-  weekly_seasonality: true,                  // Enable/disable weekly patterns
-  yearly_seasonality: true,                  // Enable/disable yearly patterns
-  forecast_periods: 365,                     // Number of days to forecast (1-730)
-  floor_multiplier: 0.5,                     // Minimum constraint (0-0.95)
-  cap_multiplier: 1.5,                       // Maximum constraint (1.1-5.0)
-  enable_cap: true,                          // Toggle cap constraint (logistic)
-  enable_floor: true,                        // Toggle floor constraint (logistic)
-  custom_seasonality_enabled: false,         // Toggle custom seasonality
-  custom_seasonality_name: '',               // Name of custom seasonality
-  custom_seasonality_period: 30.5,           // Period in days for custom seasonality (7-365)
-  custom_seasonality_fourier_order: 3,       // Fourier order for custom seasonality (1-20)
-  n_changepoints: 25,                        // Number of potential changepoints (5-50)
-  changepoint_range: 0.8,                    // Proportion of history for changepoints (0.6-0.95)
-  interval_width: 0.80,                      // Prediction interval width (0.50-0.99)
-  holidays_prior_scale: 10.0,                // How much holidays affect predictions (0.1-100)
-  include_public_holidays: true,              // Master toggle for holiday effects
-  country: 'United Kingdom',                  // Country for national holidays
-  holidays: []                               // Selected holidays for the model
-};
+const DEFAULT_SETTINGS = PROPHET_DEFAULT_SETTINGS;
 
 const HOLIDAY_OPTIONS = [
   'New Year\'s Day', 'Valentine\'s Day', 'Easter', 'Bank Holiday', 'Mother\'s Day', 'Father\'s Day',
@@ -63,7 +40,7 @@ function ProphetSettingsPanel() {
   
   // State: Model configuration settings with default values
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  
+
   // State: Saved settings to track unsaved changes
   const [savedSettings, setSavedSettings] = useState(DEFAULT_SETTINGS);
   
@@ -512,7 +489,7 @@ function ProphetSettingsPanel() {
               : 'Preset Configuration'}
           </h2>
           {hasUnsavedChanges && (
-            <span className="px-3 py-1 bg-pinkcafe2/20 text-pinkcafe2 text-xs sm:text-sm font-semibold rounded-full border border-pinkcafe2/40">
+            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs sm:text-sm font-semibold rounded-full border border-yellow-300">
               Unsaved Changes
             </span>
           )}
@@ -840,7 +817,7 @@ function ProphetSettingsPanel() {
                 onClick={handleSaveSettings}
                 disabled={loading}
                 className={`flex-1 min-w-0 text-white text-sm sm:text-base font-semibold py-3 px-4 sm:px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  hasUnsavedChanges ? 'bg-pinkcafe2 hover:bg-pinkcafe2/90' : 'bg-pinkcafe2/80 hover:bg-pinkcafe2'
+                  hasUnsavedChanges ? 'bg-pink-600 hover:bg-pink-700' : 'bg-pink-500 hover:bg-pink-600'
                 }`}
               >
                 {loading ? 'Saving...' : (hasUnsavedChanges ? 'Save Changes' : 'Save Preset')}

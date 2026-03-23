@@ -8,6 +8,8 @@ All functions accept an open sqlite3.Connection and return plain dicts
 import json
 import sqlite3
 
+from config import PROPHET_PRESET_DEFAULTS
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -86,6 +88,7 @@ def create_preset(conn: sqlite3.Connection, data: dict) -> dict:
     Returns the newly created preset dict.
     """
     preset_name = _validate_preset_name(data.get("preset_name", ""))
+    payload = {**PROPHET_PRESET_DEFAULTS, **(data or {})}
 
     # Check for duplicate
     existing = conn.execute(
@@ -94,7 +97,7 @@ def create_preset(conn: sqlite3.Connection, data: dict) -> dict:
     if existing:
         raise ValueError(f"A preset named '{preset_name}' already exists")
 
-    holidays_json = json.dumps(data.get("holidays") or [])
+    holidays_json = json.dumps(payload.get("holidays") or [])
 
     conn.execute(
         """
@@ -120,24 +123,24 @@ def create_preset(conn: sqlite3.Connection, data: dict) -> dict:
         """,
         {
             "preset_name":                      preset_name,
-            "growth":                           data.get("growth", "linear"),
-            "changepoint_prior_scale":          float(data.get("changepoint_prior_scale", 0.05)),
-            "seasonality_prior_scale":          float(data.get("seasonality_prior_scale", 10.0)),
-            "seasonality_mode":                 data.get("seasonality_mode", "multiplicative"),
-            "daily_seasonality":                int(bool(data.get("daily_seasonality", False))),
-            "weekly_seasonality":               int(bool(data.get("weekly_seasonality", True))),
-            "yearly_seasonality":               int(bool(data.get("yearly_seasonality", True))),
-            "forecast_periods":                 int(data.get("forecast_periods", 365)),
-            "floor_multiplier":                 float(data.get("floor_multiplier", 0.5)),
-            "cap_multiplier":                   float(data.get("cap_multiplier", 1.5)),
-            "custom_seasonality_enabled":       int(bool(data.get("custom_seasonality_enabled", False))),
-            "custom_seasonality_name":          data.get("custom_seasonality_name", ""),
-            "custom_seasonality_period":        float(data.get("custom_seasonality_period", 30.5)),
-            "custom_seasonality_fourier_order": int(data.get("custom_seasonality_fourier_order", 3)),
-            "n_changepoints":                   int(data.get("n_changepoints", 25)),
-            "changepoint_range":                float(data.get("changepoint_range", 0.8)),
-            "interval_width":                   float(data.get("interval_width", 0.80)),
-            "holidays_prior_scale":             float(data.get("holidays_prior_scale", 10.0)),
+            "growth":                           payload["growth"],
+            "changepoint_prior_scale":          float(payload["changepoint_prior_scale"]),
+            "seasonality_prior_scale":          float(payload["seasonality_prior_scale"]),
+            "seasonality_mode":                 payload["seasonality_mode"],
+            "daily_seasonality":                int(bool(payload["daily_seasonality"])),
+            "weekly_seasonality":               int(bool(payload["weekly_seasonality"])),
+            "yearly_seasonality":               int(bool(payload["yearly_seasonality"])),
+            "forecast_periods":                 int(payload["forecast_periods"]),
+            "floor_multiplier":                 float(payload["floor_multiplier"]),
+            "cap_multiplier":                   float(payload["cap_multiplier"]),
+            "custom_seasonality_enabled":       int(bool(payload["custom_seasonality_enabled"])),
+            "custom_seasonality_name":          payload["custom_seasonality_name"],
+            "custom_seasonality_period":        float(payload["custom_seasonality_period"]),
+            "custom_seasonality_fourier_order": int(payload["custom_seasonality_fourier_order"]),
+            "n_changepoints":                   int(payload["n_changepoints"]),
+            "changepoint_range":                float(payload["changepoint_range"]),
+            "interval_width":                   float(payload["interval_width"]),
+            "holidays_prior_scale":             float(payload["holidays_prior_scale"]),
             "holidays":                         holidays_json,
         },
     )
@@ -152,11 +155,12 @@ def update_preset(conn: sqlite3.Connection, preset_name: str, data: dict) -> dic
     Returns the updated preset dict.
     """
     preset_name = _validate_preset_name(preset_name)
+    payload = {**PROPHET_PRESET_DEFAULTS, **(data or {})}
 
     # Verify existence
     get_preset(conn, preset_name)  # raises ValueError if missing
 
-    holidays_json = json.dumps(data.get("holidays") or [])
+    holidays_json = json.dumps(payload.get("holidays") or [])
 
     conn.execute(
         """
@@ -185,24 +189,24 @@ def update_preset(conn: sqlite3.Connection, preset_name: str, data: dict) -> dic
         """,
         {
             "preset_name":                      preset_name,
-            "growth":                           data.get("growth", "linear"),
-            "changepoint_prior_scale":          float(data.get("changepoint_prior_scale", 0.05)),
-            "seasonality_prior_scale":          float(data.get("seasonality_prior_scale", 10.0)),
-            "seasonality_mode":                 data.get("seasonality_mode", "multiplicative"),
-            "daily_seasonality":                int(bool(data.get("daily_seasonality", False))),
-            "weekly_seasonality":               int(bool(data.get("weekly_seasonality", True))),
-            "yearly_seasonality":               int(bool(data.get("yearly_seasonality", True))),
-            "forecast_periods":                 int(data.get("forecast_periods", 365)),
-            "floor_multiplier":                 float(data.get("floor_multiplier", 0.5)),
-            "cap_multiplier":                   float(data.get("cap_multiplier", 1.5)),
-            "custom_seasonality_enabled":       int(bool(data.get("custom_seasonality_enabled", False))),
-            "custom_seasonality_name":          data.get("custom_seasonality_name", ""),
-            "custom_seasonality_period":        float(data.get("custom_seasonality_period", 30.5)),
-            "custom_seasonality_fourier_order": int(data.get("custom_seasonality_fourier_order", 3)),
-            "n_changepoints":                   int(data.get("n_changepoints", 25)),
-            "changepoint_range":                float(data.get("changepoint_range", 0.8)),
-            "interval_width":                   float(data.get("interval_width", 0.80)),
-            "holidays_prior_scale":             float(data.get("holidays_prior_scale", 10.0)),
+            "growth":                           payload["growth"],
+            "changepoint_prior_scale":          float(payload["changepoint_prior_scale"]),
+            "seasonality_prior_scale":          float(payload["seasonality_prior_scale"]),
+            "seasonality_mode":                 payload["seasonality_mode"],
+            "daily_seasonality":                int(bool(payload["daily_seasonality"])),
+            "weekly_seasonality":               int(bool(payload["weekly_seasonality"])),
+            "yearly_seasonality":               int(bool(payload["yearly_seasonality"])),
+            "forecast_periods":                 int(payload["forecast_periods"]),
+            "floor_multiplier":                 float(payload["floor_multiplier"]),
+            "cap_multiplier":                   float(payload["cap_multiplier"]),
+            "custom_seasonality_enabled":       int(bool(payload["custom_seasonality_enabled"])),
+            "custom_seasonality_name":          payload["custom_seasonality_name"],
+            "custom_seasonality_period":        float(payload["custom_seasonality_period"]),
+            "custom_seasonality_fourier_order": int(payload["custom_seasonality_fourier_order"]),
+            "n_changepoints":                   int(payload["n_changepoints"]),
+            "changepoint_range":                float(payload["changepoint_range"]),
+            "interval_width":                   float(payload["interval_width"]),
+            "holidays_prior_scale":             float(payload["holidays_prior_scale"]),
             "holidays":                         holidays_json,
         },
     )
