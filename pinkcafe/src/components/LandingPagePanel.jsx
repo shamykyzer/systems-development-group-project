@@ -190,7 +190,7 @@ function LandingPagePanel() {
                     // Average across all products
                     const allRes = await Promise.all(
                         products.map(name =>
-                            fetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${items[name]}&train_weeks=20&test_days=14`)
+                            authFetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${items[name]}&train_weeks=20&test_days=14`)
                                 .then(r => r.json())
                         )
                     );
@@ -204,7 +204,7 @@ function LandingPagePanel() {
                 } else {
                     const itemId = items[selectedProduct];
                     if (!itemId) return;
-                    const res = await fetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${itemId}&train_weeks=20&test_days=14`);
+                    const res = await authFetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${itemId}&train_weeks=20&test_days=14`);
                     const data = await res.json();
                     if (!cancelled && res.ok && data.results?.prophet && !data.results.prophet.error) {
                         setProphetMetrics(data.results.prophet);
