@@ -54,7 +54,6 @@ export function transformProphetData(forecast, range) {
 
     if (range === 'upcomingYear') groupBy = 30;
     else if (range === 'upcomingMonth') groupBy = 7;
-    else if (range === '6weeks') groupBy = 7;
     else if (range === '8weeks') groupBy = 7;
     else if (range === '7days') pointsToShow = Math.min(7, forecast.length);
 
@@ -72,19 +71,6 @@ export function transformProphetData(forecast, range) {
         }
     } else if (range === 'upcomingMonth') {
         const daysToShow = Math.min(4 * 7, forecast.length);
-        for (let i = 0; i < daysToShow; i += groupBy) {
-            const slice = forecast.slice(i, i + groupBy);
-            if (slice.length === 0) break;
-            const avgYhat = slice.reduce((sum, f) => sum + f.yhat, 0) / slice.length;
-            const date = new Date(slice[0].date);
-            grouped.push({
-                day: `Week ${Math.floor(i / 7) + 1}`,
-                date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                predicted: Math.round(avgYhat * 10) / 10
-            });
-        }
-    } else if (range === '6weeks') {
-        const daysToShow = Math.min(6 * 7, forecast.length);
         for (let i = 0; i < daysToShow; i += groupBy) {
             const slice = forecast.slice(i, i + groupBy);
             if (slice.length === 0) break;
