@@ -20,6 +20,7 @@ import logging
 from db import connect
 from services import hash_password, verify_password
 from forecasting import ForecastError, run_forecast
+from comparison import run_comparison
 from prophet_settings import (
     list_presets,
     get_preset,
@@ -219,6 +220,49 @@ def register_routes(app: Flask) -> None:
             except ForecastError as e:
                 return _err(str(e))
 
+
+    # --- Algorithm comparison -----------------------------------------------
+
+    @app.get("/api/v1/forecast/compare")
+    @require_auth
+    def compare_algorithms():
+        """
+        Compare Prophet, SARIMA, and Linear Regression via backtesting.
+        Query params:
+          dataset_id   - required
+          item_id      - required
+          train_weeks  - weeks of history to train on (4-52, default 20)
+          test_days    - days held out for testing (3-28, default 14)
+        """
+        dataset_id_raw = request.args.get("dataset_id")
+        item_id_raw    = request.args.get("item_id")
+        train_weeks_raw = request.args.get("train_weeks", "20")
+        test_days_raw   = request.args.get("test_days", "14")
+
+        if not dataset_id_raw:
+            return _err("dataset_id is required")
+        if not item_id_raw:
+            return _err("item_id is required")
+
+        try:
+            dataset_id  = _int("dataset_id", dataset_id_raw)
+            item_id     = _int("item_id", item_id_raw)
+            train_weeks = _int("train_weeks", train_weeks_raw)
+            test_days   = _int("test_days", test_days_raw)
+        except ValueError as e:
+            return _err(str(e))
+
+        with connect(_db()) as conn:
+            try:
+                return jsonify(run_comparison(
+                    conn,
+                    dataset_id=dataset_id,
+                    item_id=item_id,
+                    train_weeks=train_weeks,
+                    test_days=test_days,
+                ))
+            except ForecastError as e:
+                return _err(str(e))
 
     @app.get("/api/upload/datasets")
     @require_auth

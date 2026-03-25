@@ -1,9 +1,38 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { catmullRomPath, CHART_COLORS } from '../../utils/chartUtils';
+
+function LineAnimated({ d, color, delay }) {
+    const ref = useRef(null);
+    const [len, setLen] = useState(0);
+    useEffect(() => {
+        if (ref.current) setLen(ref.current.getTotalLength());
+    }, [d]);
+    return (
+        <path ref={ref} d={d} fill="none" stroke={color} strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round"
+            style={{
+                strokeDasharray: len || 1000,
+                strokeDashoffset: len || 1000,
+                '--path-length': len || 1000,
+                animation: len ? `drawLine 0.5s ease-out ${delay}s forwards` : 'none',
+            }} />
+    );
+}
 
 function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
     const [tooltip, setTooltip] = useState(null);
+    const [animKey, setAnimKey] = useState(0);
     const svgRef = useRef(null);
+
+    // Trigger re-animation when data changes
+    const dataFingerprint = dataByProduct.map(s => s.productName + s.data.length).join(',');
+    const prevFingerprint = useRef('');
+    useEffect(() => {
+        if (dataFingerprint !== prevFingerprint.current) {
+            prevFingerprint.current = dataFingerprint;
+            setAnimKey(k => k + 1);
+        }
+    }, [dataFingerprint]);
     const w = 480, h = 260;
     const pad = { top: 16, right: 24, bottom: 40, left: 40 };
     const iw = w - pad.left - pad.right;
@@ -12,7 +41,7 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
     const allVals = dataByProduct.flatMap(series => series.data.map(d => d[dataKey] ?? 0));
     const rawMin = Math.min(...allVals);
     const rawMax = Math.max(...allVals);
-    const padding = (rawMax - rawMin) * 0.08 || 1;
+    const padding = (rawMax - rawMin) * 0.15 || 1;
     const min = rawMin - padding;
     const max = rawMax + padding;
     const range = max - min || 1;
@@ -72,6 +101,21 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
                         </linearGradient>
                     );
                 })}
+                <style>{`
+                    @keyframes drawLine {
+                        from { stroke-dashoffset: var(--path-length); }
+                        to   { stroke-dashoffset: 0; }
+                    }
+                    @keyframes fadeInArea {
+                        from { opacity: 0; }
+                        to   { opacity: 1; }
+                    }
+                    @keyframes popIn {
+                        0%   { transform: scale(0); opacity: 0; }
+                        60%  { transform: scale(1.3); opacity: 1; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                `}</style>
             </defs>
 
             {yTicks.map((v, i) => (
@@ -96,17 +140,26 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
                 const lastPt = pts[pts.length - 1];
                 const firstPt = pts[0];
                 const areaPath = linePath + `L${lastPt[0]},${pad.top + ih}L${firstPt[0]},${pad.top + ih}Z`;
+                const stagger = seriesIdx * 0.1;
 
                 return (
-                    <g key={seriesIdx}>
-                        <path d={areaPath} fill={`url(#lineGrad-${seriesIdx})`} />
-                        <path d={linePath} fill="none" stroke={color} strokeWidth="2"
-                            strokeLinecap="round" strokeLinejoin="round" />
+                    <g key={`${seriesIdx}-${animKey}`}>
+                        <LineAnimated d={linePath} color={color} delay={stagger} />
+                        <path d={areaPath} fill={`url(#lineGrad-${seriesIdx})`}
+                            style={{
+                                opacity: 0,
+                                animation: `fadeInArea 0.3s ease-out ${stagger + 0.5}s forwards`,
+                            }} />
                         {vals.map((v, i) => (
                             <circle key={i} cx={px(i, series.data.length)} cy={py(v)}
-                                r={tooltip?.idx === i ? 3.5 : 3} fill={color}
-                                stroke="white" strokeWidth="1.5"
-                                style={{ transition: 'r 0.15s ease' }} />
+                                r={tooltip?.idx === i ? 3 : 2.5} fill={color}
+                                stroke="white" strokeWidth="1.2"
+                                style={{
+                                    transformOrigin: `${px(i, series.data.length)}px ${py(v)}px`,
+                                    opacity: 0,
+                                    animation: `popIn 0.25s ease-out ${stagger + 0.8 + i * 0.04}s forwards`,
+                                    transition: 'r 0.15s ease',
+                                }} />
                         ))}
                     </g>
                 );
@@ -143,7 +196,7 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
                                     fill={CHART_COLORS[tv.colorIndex % CHART_COLORS.length]} />
                                 <text x="12" y="0" fontSize="8.5" fill="#6b6360"
                                     fontFamily="system-ui, sans-serif">
-                                    {tv.name}: <tspan fontWeight="600" fill="#423b39">{Math.round(tv.value * 10) / 10}</tspan>
+                                    {tv.name}: <tspan fontWeight="600" fill="#423b39">{(Math.round(tv.value * 10) / 10).toLocaleString()}</tspan>
                                 </text>
                             </g>
                         ))}
