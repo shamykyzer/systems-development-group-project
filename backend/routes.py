@@ -411,7 +411,7 @@ def register_routes(app: Flask) -> None:
         Stores data in database and returns validation/preview info.
         """
         import pandas as pd
-        import os
+        import io
         from werkzeug.utils import secure_filename
         
         if 'file' not in request.files:
@@ -428,16 +428,86 @@ def register_routes(app: Flask) -> None:
         try:
             current_user_id = _current_user_id()
 
-            # Read CSV
-            df = pd.read_csv(file)
-            
+            # Read raw content once so we can reliably detect headers.
+            csv_bytes = file.read()
+            if not csv_bytes:
+                return _err("Uploaded CSV is empty", 400)
+            csv_text = csv_bytes.decode('utf-8-sig', errors='replace')
+
+            # Parse as raw rows first to avoid pandas auto-promoting a data row to headers.
+            raw_df = pd.read_csv(io.StringIO(csv_text), header=None, dtype=str, skip_blank_lines=True)
+            if raw_df.empty:
+                return _err("Uploaded CSV is empty", 400)
+
+            date_header_idx = None
+            for idx in range(len(raw_df)):
+                first_cell = str(raw_df.iloc[idx, 0]).strip().lower()
+                if first_cell == 'date':
+                    date_header_idx = idx
+                    break
+
+            if date_header_idx is not None:
+                header_row = raw_df.iloc[date_header_idx].fillna('').astype(str).str.strip()
+                data_start_idx = date_header_idx + 1
+
+                # Handle two-row headers, e.g.:
+                # Date,Number Sold,
+                # ,Cappuccino,Americano
+                if data_start_idx < len(raw_df):
+                    subheader_row = raw_df.iloc[data_start_idx].fillna('').astype(str).str.strip()
+                    first_subheader_cell = str(subheader_row.iloc[0]).strip().lower()
+                    has_named_subheaders = any(str(v).strip() for v in subheader_row.iloc[1:])
+                    if first_subheader_cell in {'', 'nan'} and has_named_subheaders:
+                        combined_header = []
+                        for col_idx in range(len(header_row)):
+                            if col_idx == 0:
+                                combined_header.append('Date')
+                                continue
+
+                            primary_name = str(header_row.iloc[col_idx]).strip()
+                            secondary_name = str(subheader_row.iloc[col_idx]).strip()
+                            if secondary_name:
+                                combined_header.append(secondary_name)
+                            elif primary_name and primary_name.lower() not in {'number sold', 'sales', 'quantity', 'qty'}:
+                                combined_header.append(primary_name)
+                            else:
+                                combined_header.append(f'Product {col_idx}')
+
+                        header_row = pd.Series(combined_header)
+                        data_start_idx += 1
+
+                df = raw_df.iloc[data_start_idx:].reset_index(drop=True)
+                df.columns = header_row
+            else:
+                # Fallback: headerless CSV. Treat first column as Date and synthesize product names.
+                first_value = str(raw_df.iloc[0, 0]).strip()
+                if not re.match(r"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$", first_value):
+                    return _err("CSV must include a 'Date' header, or start with date values in the first column", 400)
+
+                col_count = raw_df.shape[1]
+                if col_count < 2:
+                    return _err("CSV must have at least one product column", 400)
+
+                df = raw_df.copy()
+                df.columns = ['Date'] + [f'Product {i}' for i in range(1, col_count)]
+
+            # Normalize column names and drop fully empty columns.
+            df.columns = [str(col).strip() for col in df.columns]
+            df = df.loc[:, [col for col in df.columns if col]]
+            df = df.replace(r'^\s*$', pd.NA, regex=True)
+
+            # Drop product columns that are entirely empty after header parsing.
+            empty_product_cols = [col for col in df.columns if col != 'Date' and df[col].isna().all()]
+            if empty_product_cols:
+                df = df.drop(columns=empty_product_cols)
+
             # Validate CSV structure
             if 'Date' not in df.columns:
                 return _err("CSV must have a 'Date' column", 400)
             
             # Parse dates
             try:
-                df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y')
+                df['Date'] = pd.to_datetime(df['Date'].astype(str).str.strip(), format='%d/%m/%Y')
             except Exception as e:
                 return _err(f"Dates must be in dd/mm/yyyy format. Error: {str(e)}", 400)
 
@@ -446,10 +516,14 @@ def register_routes(app: Flask) -> None:
                 return _err("Some rows have invalid or missing dates. Please check your CSV.", 400)
             
             # Get product columns (everything except Date)
-            product_cols = [col for col in df.columns if col != 'Date']
+            product_cols = [col for col in df.columns if col != 'Date' and str(col).strip()]
             
             if not product_cols:
                 return _err("CSV must have at least one product column", 400)
+
+            # Convert product columns to numeric for validation/storage.
+            for col in product_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
             
             # Validation checks
             has_negatives = (df[product_cols] < 0).any().any()
