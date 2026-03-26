@@ -5,7 +5,7 @@ import { CHART_COLORS } from '../../utils/chartUtils';
 // ---------------------------------------------------------------------------
 // ChartLegend — coloured dot + product name for each series in the chart
 // ---------------------------------------------------------------------------
-export function ChartLegend({ data }) {
+export function ChartLegend({ data, showUncertaintyBands = false }) {
     return (
         <div className="flex flex-wrap gap-x-5 gap-y-2 justify-center mt-5 pt-4 border-t border-gray-100">
             {data.map((series, idx) => {
@@ -20,6 +20,9 @@ export function ChartLegend({ data }) {
                     </div>
                 );
             })}
+            {showUncertaintyBands && (
+                <div className="text-[11px] text-pinkcafe2/55 font-medium">Shaded band = confidence interval</div>
+            )}
         </div>
     );
 }
