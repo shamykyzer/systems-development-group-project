@@ -19,6 +19,7 @@ function LandingPagePanel() {
     const [forecastRange, setForecastRange] = useState('7days');
     const [viewMode, setViewMode] = useState('graph');
     const [tableMode, setTableMode] = useState('grouped');
+    const [showUncertaintyBands, setShowUncertaintyBands] = useState(false);
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
     const [selectedProduct, setSelectedProduct] = useState('all');
@@ -345,6 +346,8 @@ function LandingPagePanel() {
             periodLabel: point.day,
             dateLabel: point.date,
             predicted: Number(point.predicted ?? 0),
+            lower: Number(point.lower ?? point.predicted ?? 0),
+            upper: Number(point.upper ?? point.predicted ?? 0),
             sortDate: parseSortDate(`${point.date} ${new Date().getFullYear()}`),
             productColor: productColorMap[series.productName] || CHART_COLORS[0],
         }))
@@ -366,6 +369,8 @@ function LandingPagePanel() {
                     ? String(point.date || 'N/A')
                     : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
                 predicted: Math.round((Number(point.yhat) || 0) * 10) / 10,
+                lower: Math.round((Number(point.yhat_lower) || Number(point.yhat) || 0) * 10) / 10,
+                upper: Math.round((Number(point.yhat_upper) || Number(point.yhat) || 0) * 10) / 10,
                 sortDate: Number.isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime(),
                 productColor: productColorMap[product] || CHART_COLORS[0],
             };
@@ -637,43 +642,61 @@ function LandingPagePanel() {
                                             </button>
                                         </div>
 
-                                        <div
-                                            className={`relative inline-grid grid-cols-2 items-center p-1 col-start-3 justify-self-end w-[146px] transition-opacity duration-150 ${
-                                                viewMode === 'table' ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                                            }`}
-                                            aria-hidden={viewMode !== 'table'}
-                                        >
-                                            <span
-                                                className={`pointer-events-none absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-pinkcafe2 shadow-sm transition-transform duration-300 ease-out ${
-                                                    tableMode === 'grouped' ? 'translate-x-0' : 'translate-x-full'
-                                                }`}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setTableMode('grouped')}
-                                                className={`relative z-10 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                                                    tableMode === 'grouped'
-                                                        ? 'text-white'
-                                                        : 'text-pinkcafe2 hover:text-pinkcafe2/90 hover:-translate-y-px'
-                                                }`}
-                                                aria-pressed={tableMode === 'grouped'}
-                                                tabIndex={viewMode === 'table' ? 0 : -1}
-                                            >
-                                                Grouped
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setTableMode('raw')}
-                                                className={`relative z-10 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
-                                                    tableMode === 'raw'
-                                                        ? 'text-white'
-                                                        : 'text-pinkcafe2 hover:text-pinkcafe2/90 hover:-translate-y-px'
-                                                }`}
-                                                aria-pressed={tableMode === 'raw'}
-                                                tabIndex={viewMode === 'table' ? 0 : -1}
-                                            >
-                                                Raw
-                                            </button>
+                                        <div className="col-start-3 justify-self-stretch flex justify-end">
+                                            {viewMode === 'graph' ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowUncertaintyBands((prev) => !prev)}
+                                                    className={`inline-flex items-center justify-end gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                                                        showUncertaintyBands
+                                                            ? 'text-pinkcafe2'
+                                                            : 'text-pinkcafe2/65 hover:text-pinkcafe2/85'
+                                                    }`}
+                                                    aria-pressed={showUncertaintyBands}
+                                                    title="Toggle confidence interval visualisation"
+                                                >
+                                                    <span className="tracking-wide">CI</span>
+                                                    <span className={`relative inline-flex h-5 w-9 items-center rounded-full border transition-colors ${
+                                                        showUncertaintyBands ? 'border-pinkcafe2/40 bg-pinkcafe2/20' : 'border-pinkcafe2/20 bg-white'
+                                                    }`}>
+                                                        <span className={`h-3.5 w-3.5 rounded-full bg-pinkcafe2 transition-transform duration-200 ${
+                                                            showUncertaintyBands ? 'translate-x-4' : 'translate-x-0.5'
+                                                        }`} />
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <div className="relative inline-grid w-[146px] grid-cols-2 items-center p-1">
+                                                    <span
+                                                        className={`pointer-events-none absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-pinkcafe2 shadow-sm transition-transform duration-300 ease-out ${
+                                                            tableMode === 'grouped' ? 'translate-x-0' : 'translate-x-full'
+                                                        }`}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setTableMode('grouped')}
+                                                        className={`relative z-10 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                                                            tableMode === 'grouped'
+                                                                ? 'text-white'
+                                                                : 'text-pinkcafe2 hover:text-pinkcafe2/90 hover:-translate-y-px'
+                                                        }`}
+                                                        aria-pressed={tableMode === 'grouped'}
+                                                    >
+                                                        Grouped
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setTableMode('raw')}
+                                                        className={`relative z-10 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                                                            tableMode === 'raw'
+                                                                ? 'text-white'
+                                                                : 'text-pinkcafe2 hover:text-pinkcafe2/90 hover:-translate-y-px'
+                                                        }`}
+                                                        aria-pressed={tableMode === 'raw'}
+                                                    >
+                                                        Raw
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -685,9 +708,10 @@ function LandingPagePanel() {
                                                     dataByProduct={filteredChartData}
                                                     dataKey="predicted"
                                                     animationTrigger={`${forecastRange}-${customStart || ''}-${customEnd || ''}`}
+                                                    showUncertaintyBands={showUncertaintyBands}
                                                 />
                                             </div>
-                                            <ChartLegend data={filteredChartData} />
+                                            <ChartLegend data={filteredChartData} showUncertaintyBands={showUncertaintyBands} />
                                         </>
                                     ) : (
                                         <div className="flex-1 min-h-0 max-h-[460px] border border-pinkcafe2/10 rounded-lg overflow-y-auto overflow-x-auto">
@@ -699,6 +723,8 @@ function LandingPagePanel() {
                                                             <th className="bg-gray-100 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-800">Day/Period</th>
                                                             <th className="bg-gray-100 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-800">Date</th>
                                                             <th className="bg-gray-100 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-800">Predicted Units</th>
+                                                            <th className="bg-gray-100 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-800">Lower CI</th>
+                                                            <th className="bg-gray-100 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-800">Upper CI</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-pinkcafe2/10">
@@ -710,6 +736,8 @@ function LandingPagePanel() {
                                                                 <td className="px-4 py-2.5 text-pinkcafe2/85 whitespace-nowrap">{row.periodLabel}</td>
                                                                 <td className="px-4 py-2.5 text-pinkcafe2/85 whitespace-nowrap">{row.dateLabel}</td>
                                                                 <td className="px-4 py-2.5 text-right text-pinkcafe2 font-semibold whitespace-nowrap">{row.predicted.toFixed(1)}</td>
+                                                                <td className="px-4 py-2.5 text-right text-pinkcafe2/80 whitespace-nowrap">{row.lower.toFixed(1)}</td>
+                                                                <td className="px-4 py-2.5 text-right text-pinkcafe2/80 whitespace-nowrap">{row.upper.toFixed(1)}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>

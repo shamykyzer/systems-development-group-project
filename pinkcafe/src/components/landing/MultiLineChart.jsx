@@ -19,7 +19,7 @@ function LineAnimated({ d, color, delay }) {
     );
 }
 
-function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger = '' }) {
+function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger = '', showUncertaintyBands = true }) {
     const [tooltip, setTooltip] = useState(null);
     const [animKey, setAnimKey] = useState(0);
     const svgRef = useRef(null);
@@ -40,7 +40,13 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger
     const iw = w - pad.left - pad.right;
     const ih = h - pad.top - pad.bottom;
 
-    const allVals = dataByProduct.flatMap(series => series.data.map(d => d[dataKey] ?? 0));
+    const allVals = dataByProduct.flatMap(series =>
+        series.data.flatMap(d => {
+            const predicted = d[dataKey] ?? 0;
+            if (!showUncertaintyBands) return [predicted];
+            return [predicted, d.lower ?? predicted, d.upper ?? predicted];
+        })
+    );
     const rawMin = Math.min(...allVals);
     const rawMax = Math.max(...allVals);
     const padding = (rawMax - rawMin) * 0.15 || 1;
@@ -81,9 +87,17 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger
             name: s.productName,
             colorIndex: s.colorIndex ?? si,
             value: s.data[idx]?.[dataKey] ?? 0,
+            lower: s.data[idx]?.lower,
+            upper: s.data[idx]?.upper,
         }));
         setTooltip({ idx, x: px(idx, xLabels.length), label: xLabels[idx], values });
     };
+
+    const tooltipRowHeights = (tooltip?.values || []).map((tv) => {
+        const hasBand = showUncertaintyBands && Number.isFinite(tv.lower) && Number.isFinite(tv.upper);
+        return hasBand ? 24 : 16;
+    });
+    const tooltipHeight = 20 + tooltipRowHeights.reduce((sum, h) => sum + h, 0);
 
     return (
         <svg
@@ -96,11 +110,18 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger
             <defs>
                 {dataByProduct.map((series, idx) => {
                     const ci = series.colorIndex ?? idx;
+                    const color = CHART_COLORS[ci % CHART_COLORS.length];
                     return (
-                        <linearGradient key={idx} id={`lineGrad-${idx}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={CHART_COLORS[ci % CHART_COLORS.length]} stopOpacity="0.12" />
-                            <stop offset="100%" stopColor={CHART_COLORS[ci % CHART_COLORS.length]} stopOpacity="0.01" />
-                        </linearGradient>
+                        <React.Fragment key={idx}>
+                            <linearGradient id={`lineGrad-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={color} stopOpacity="0.12" />
+                                <stop offset="100%" stopColor={color} stopOpacity="0.01" />
+                            </linearGradient>
+                            <linearGradient id={`bandGrad-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+                                <stop offset="100%" stopColor={color} stopOpacity="0.04" />
+                            </linearGradient>
+                        </React.Fragment>
                     );
                 })}
                 <style>{`
@@ -142,16 +163,34 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger
                 const lastPt = pts[pts.length - 1];
                 const firstPt = pts[0];
                 const areaPath = linePath + `L${lastPt[0]},${pad.top + ih}L${firstPt[0]},${pad.top + ih}Z`;
+                const lowerVals = series.data.map(d => d.lower ?? d[dataKey] ?? 0);
+                const upperVals = series.data.map(d => d.upper ?? d[dataKey] ?? 0);
+                const lowerPts = lowerVals.map((v, i) => [px(i, series.data.length), py(v)]);
+                const upperPts = upperVals.map((v, i) => [px(i, series.data.length), py(v)]);
+                const upperPath = catmullRomPath(upperPts);
+                const lowerReversePath = catmullRomPath([...lowerPts].reverse());
+                const bandPath = upperPath && lowerReversePath
+                    ? `${upperPath}${lowerReversePath.replace(/^M/, 'L')}Z`
+                    : '';
                 const stagger = seriesIdx * 0.1;
 
                 return (
                     <g key={`${seriesIdx}-${animKey}`}>
+                        {showUncertaintyBands && bandPath && (
+                            <path d={bandPath} fill={`url(#bandGrad-${seriesIdx})`}
+                                style={{
+                                    opacity: 0,
+                                    animation: `fadeInArea 0.35s ease-out ${stagger + 0.35}s forwards`,
+                                }} />
+                        )}
                         <LineAnimated d={linePath} color={color} delay={stagger} />
-                        <path d={areaPath} fill={`url(#lineGrad-${seriesIdx})`}
-                            style={{
-                                opacity: 0,
-                                animation: `fadeInArea 0.3s ease-out ${stagger + 0.5}s forwards`,
-                            }} />
+                        {!showUncertaintyBands && (
+                            <path d={areaPath} fill={`url(#lineGrad-${seriesIdx})`}
+                                style={{
+                                    opacity: 0,
+                                    animation: `fadeInArea 0.3s ease-out ${stagger + 0.5}s forwards`,
+                                }} />
+                        )}
                         {vals.map((v, i) => (
                             <circle key={i} cx={px(i, series.data.length)} cy={py(v)}
                                 r={tooltip?.idx === i ? 3 : 2.5} fill={color}
@@ -185,23 +224,31 @@ function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger
                     <line x1={tooltip.x} y1={pad.top} x2={tooltip.x} y2={pad.top + ih}
                         stroke="#423b3930" strokeWidth="1" strokeDasharray="3 3" />
                     <g transform={`translate(${Math.min(tooltip.x + 8, w - 110)}, ${pad.top + 4})`}>
-                        <rect x="0" y="0" width="100" height={20 + tooltip.values.length * 16}
+                        <rect x="0" y="0" width="100" height={tooltipHeight}
                             rx="6" fill="white" stroke="#e5e0de" strokeWidth="0.5"
                             filter="drop-shadow(0 2px 4px rgba(0,0,0,0.08))" />
                         <text x="8" y="14" fontSize="9" fill="#423b39" fontWeight="600"
                             fontFamily="system-ui, sans-serif">
                             {tooltip.label?.day} {tooltip.label?.date}
                         </text>
-                        {tooltip.values.map((tv, ti) => (
-                            <g key={ti} transform={`translate(8, ${24 + ti * 16})`}>
+                        {tooltip.values.map((tv, ti) => {
+                            const yOffset = 24 + tooltipRowHeights.slice(0, ti).reduce((sum, h) => sum + h, 0);
+                            return (
+                            <g key={ti} transform={`translate(8, ${yOffset})`}>
                                 <circle cx="4" cy="-3" r="3"
                                     fill={CHART_COLORS[tv.colorIndex % CHART_COLORS.length]} />
                                 <text x="12" y="0" fontSize="8.5" fill="#6b6360"
                                     fontFamily="system-ui, sans-serif">
                                     {tv.name}: <tspan fontWeight="600" fill="#423b39">{(Math.round(tv.value * 10) / 10).toLocaleString()}</tspan>
                                 </text>
+                                {showUncertaintyBands && Number.isFinite(tv.lower) && Number.isFinite(tv.upper) && (
+                                    <text x="12" y="10" fontSize="7.5" fill="#8a807c" fontFamily="system-ui, sans-serif">
+                                        CI: {(Math.round(tv.lower * 10) / 10).toLocaleString()} - {(Math.round(tv.upper * 10) / 10).toLocaleString()}
+                                    </text>
+                                )}
                             </g>
-                        ))}
+                            );
+                        })}
                     </g>
                 </>
             )}
