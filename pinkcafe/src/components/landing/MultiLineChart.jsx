@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { catmullRomPath, CHART_COLORS } from '../../utils/chartUtils';
 
 function LineAnimated({ d, color, delay }) {
@@ -19,13 +19,15 @@ function LineAnimated({ d, color, delay }) {
     );
 }
 
-function MultiLineChart({ dataByProduct, dataKey = 'predicted' }) {
+function MultiLineChart({ dataByProduct, dataKey = 'predicted', animationTrigger = '' }) {
     const [tooltip, setTooltip] = useState(null);
     const [animKey, setAnimKey] = useState(0);
     const svgRef = useRef(null);
 
-    // Trigger re-animation when data changes
-    const dataFingerprint = dataByProduct.map(s => s.productName + s.data.length).join(',');
+    // Trigger re-animation when either chart values or selected period changes
+    const dataFingerprint = `${animationTrigger}|${dataByProduct
+        .map((series) => `${series.productName}:${series.data.map(d => d[dataKey] ?? 0).join(',')}`)
+        .join('|')}`;
     const prevFingerprint = useRef('');
     useEffect(() => {
         if (dataFingerprint !== prevFingerprint.current) {

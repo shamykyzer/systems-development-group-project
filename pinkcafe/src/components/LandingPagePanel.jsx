@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { FaChartLine, FaBullseye, FaShoppingBag, FaTrophy, FaDownload, FaHome } from 'react-icons/fa';
+import { FaChartLine, FaBullseye, FaShoppingBag, FaTrophy, FaDownload, FaHome, FaTable } from 'react-icons/fa';
 import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
 import { authFetch } from '../utils/apiUtils';
-import { filterForecastFromToday, transformProphetData, calcForecastTrend, getTrainingDays, getMaxForecastMonths } from '../utils/chartUtils';
+import { filterForecastFromToday, transformProphetData, calcForecastTrend, getTrainingDays, getMaxForecastMonths, CHART_COLORS } from '../utils/chartUtils';
 import MultiLineChart from './landing/MultiLineChart';
 import { LoadingOverlay, ChartLegend, DatasetSelector } from './landing/Widgets';
 import { InsightsPanel, ModelPanel, ForecastControlPanel } from './landing/Panels';
@@ -17,12 +17,13 @@ function LandingPagePanel() {
     const autoGenerateTriggered = useRef(false);
     const [isLoading, setIsLoading] = useState(false);
     const [forecastRange, setForecastRange] = useState('7days');
+    const [viewMode, setViewMode] = useState('graph');
+    const [tableMode, setTableMode] = useState('grouped');
     const [customStart, setCustomStart] = useState('');
     const [customEnd, setCustomEnd] = useState('');
     const [selectedProduct, setSelectedProduct] = useState('all');
 
     const [forecast7Days, setForecast7Days] = useState([]);
-    const [forecast6Weeks, setForecast6Weeks] = useState([]);
     const [forecast8Weeks, setForecast8Weeks] = useState([]);
     const [forecastMonth, setForecastMonth] = useState([]);
     const [forecastYear, setForecastYear] = useState([]);
@@ -43,11 +44,12 @@ function LandingPagePanel() {
     const FORECAST_RANGE_OPTIONS = [
         { value: '7days', label: 'Next 7 days' },
         { value: 'upcomingMonth', label: 'Next 4 weeks' },
-        { value: '6weeks', label: 'Next 6 weeks' },
         { value: '8weeks', label: 'Next 8 weeks' },
-        { value: 'upcomingYear', label: `Long-term (${maxForecastMonths} month${maxForecastMonths !== 1 ? 's' : ''})` },
+        { value: 'upcomingYear', label: `Next ${maxForecastMonths} month${maxForecastMonths !== 1 ? 's' : ''}` },
         { value: 'custom', label: 'Custom dates' },
     ];
+
+    const activePeriodIndex = Math.max(0, FORECAST_RANGE_OPTIONS.findIndex((o) => o.value === forecastRange));
 
     // ── Load persisted datasets for the current user on mount ─────────────
     useEffect(() => {
@@ -118,7 +120,7 @@ function LandingPagePanel() {
 
         setIsLoading(true);
         setForecastError(null);
-        setForecast7Days([]); setForecast6Weeks([]); setForecast8Weeks([]); setForecastMonth([]); setForecastYear([]);
+        setForecast7Days([]); setForecast8Weeks([]); setForecastMonth([]); setForecastYear([]);
 
         try {
             const datasetId = uploadedData.datasetId;
@@ -127,41 +129,38 @@ function LandingPagePanel() {
             const weeksFromLastData = Math.ceil((today - lastDataDate) / (7 * 24 * 60 * 60 * 1000));
 
             const horizon7Days = Math.min(52, weeksFromLastData + 1);
-            const horizon6Weeks = Math.min(52, weeksFromLastData + 6);
             const horizon8Weeks = Math.min(52, weeksFromLastData + 8);
             const horizonMonth = Math.min(52, weeksFromLastData + 4);
             const targetEndDate = new Date(today);
             targetEndDate.setDate(targetEndDate.getDate() + Math.ceil(maxForecastMonths * 30.44));
             const horizonYear = Math.min(52, Math.max(1, Math.ceil((targetEndDate - lastDataDate) / (7 * 24 * 60 * 60 * 1000))));
 
-            const forecasts7Days = [], forecasts6Weeks = [], forecasts8Weeks = [], forecastsMonth = [], forecastsYear = [];
+            const forecasts7Days = [], forecasts8Weeks = [], forecastsMonth = [], forecastsYear = [];
 
             for (const productName of uploadedData.products) {
                 const itemId = uploadedData.itemIds[productName];
                 const displayName = uploadedData.displayName || productName;
                 try {
-                    const [res7, res6, res8, resM, resY] = await Promise.all([
+                    const [res7, res8, resM, resY] = await Promise.all([
                         authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon7Days}&train_weeks=20&_t=${Date.now()}`),
-                        authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon6Weeks}&train_weeks=20&_t=${Date.now()}`),
                         authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizon8Weeks}&train_weeks=20&_t=${Date.now()}`),
                         authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonMonth}&train_weeks=20&_t=${Date.now()}`),
                         authFetch(`${API_BASE_URL}/api/v1/forecast?dataset_id=${datasetId}&item_id=${itemId}&algorithm=prophet&horizon_weeks=${horizonYear}&train_weeks=20&_t=${Date.now()}`),
                     ]);
-                    const [data7, data6, data8, dataM, dataY] = await Promise.all([res7.json(), res6.json(), res8.json(), resM.json(), resY.json()]);
+                    const [data7, data8, dataM, dataY] = await Promise.all([res7.json(), res8.json(), resM.json(), resY.json()]);
                     if (res7.ok) forecasts7Days.push({ ...filterForecastFromToday(data7), item_name: displayName, product_name: productName });
-                    if (res6.ok) forecasts6Weeks.push({ ...filterForecastFromToday(data6), item_name: displayName, product_name: productName });
                     if (res8.ok) forecasts8Weeks.push({ ...filterForecastFromToday(data8), item_name: displayName, product_name: productName });
                     if (resM.ok) forecastsMonth.push({ ...filterForecastFromToday(dataM), item_name: displayName, product_name: productName });
                     if (resY.ok) forecastsYear.push({ ...filterForecastFromToday(dataY), item_name: displayName, product_name: productName });
                 } catch (error) { console.error(`Error fetching forecast for ${productName}:`, error); }
             }
 
-            setForecast7Days(forecasts7Days); setForecast6Weeks(forecasts6Weeks); setForecast8Weeks(forecasts8Weeks); setForecastMonth(forecastsMonth); setForecastYear(forecastsYear);
+            setForecast7Days(forecasts7Days); setForecast8Weeks(forecasts8Weeks); setForecastMonth(forecastsMonth); setForecastYear(forecastsYear);
             setHasGenerated(true); setLastGenerated(new Date());
         } catch (error) {
             console.error('Forecast error:', error);
             setForecastError(error.message);
-            setForecast7Days([]); setForecast6Weeks([]); setForecast8Weeks([]); setForecastMonth([]); setForecastYear([]); setHasGenerated(false);
+            setForecast7Days([]); setForecast8Weeks([]); setForecastMonth([]); setForecastYear([]); setHasGenerated(false);
         } finally { setIsLoading(false); }
     };
 
@@ -191,7 +190,7 @@ function LandingPagePanel() {
                     // Average across all products
                     const allRes = await Promise.all(
                         products.map(name =>
-                            fetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${items[name]}&train_weeks=20&test_days=14`)
+                            authFetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${items[name]}&train_weeks=20&test_days=14`)
                                 .then(r => r.json())
                         )
                     );
@@ -205,7 +204,7 @@ function LandingPagePanel() {
                 } else {
                     const itemId = items[selectedProduct];
                     if (!itemId) return;
-                    const res = await fetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${itemId}&train_weeks=20&test_days=14`);
+                    const res = await authFetch(`${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${selectedDatasetId}&item_id=${itemId}&train_weeks=20&test_days=14`);
                     const data = await res.json();
                     if (!cancelled && res.ok && data.results?.prophet && !data.results.prophet.error) {
                         setProphetMetrics(data.results.prophet);
@@ -281,7 +280,6 @@ function LandingPagePanel() {
     // ── Derived data ───────────────────────────────────────────────────────
     const getCurrentForecast = () => {
         if (forecastRange === '7days') return forecast7Days;
-        if (forecastRange === '6weeks') return forecast6Weeks;
         if (forecastRange === '8weeks') return forecast8Weeks;
         if (forecastRange === 'upcomingMonth') return forecastMonth;
         if (forecastRange === 'upcomingYear') return forecastYear;
@@ -319,6 +317,67 @@ function LandingPagePanel() {
         { label: 'Prophet MAE', value: `${prophetMetrics.mae}`, change: 'Mean Absolute Error', positive: null, icon: FaBullseye },
         { label: 'Prophet MSE', value: `${prophetMetrics.mse}`, change: 'Mean Squared Error', positive: null, icon: FaChartLine },
     ] : [];
+    
+    const getRawPointsForRange = (forecastPoints) => {
+        if (!Array.isArray(forecastPoints) || forecastPoints.length === 0) return [];
+
+        if (forecastRange === '7days') return forecastPoints.slice(0, 7);
+        if (forecastRange === 'upcomingMonth') return forecastPoints.slice(0, 28);
+        if (forecastRange === '8weeks') return forecastPoints.slice(0, 56);
+        return forecastPoints;
+    };
+
+    const productColorMap = chartDataByProduct.reduce((acc, item, idx) => {
+        const colorIndex = item.colorIndex ?? idx;
+        acc[item.productName] = CHART_COLORS[colorIndex % CHART_COLORS.length];
+        return acc;
+    }, {});
+
+    const parseSortDate = (dateLike) => {
+        const parsed = Date.parse(dateLike);
+        return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+    };
+
+    const groupedTableRows = filteredChartData.flatMap((series) =>
+        (series.data || []).map((point, idx) => ({
+            key: `${series.productName}-grouped-${idx}`,
+            product: series.productName,
+            periodLabel: point.day,
+            dateLabel: point.date,
+            predicted: Number(point.predicted ?? 0),
+            sortDate: parseSortDate(`${point.date} ${new Date().getFullYear()}`),
+            productColor: productColorMap[series.productName] || CHART_COLORS[0],
+        }))
+    );
+
+    const rawTableRows = displayedForecasts.flatMap((forecast, idx) => {
+        const product = forecast.product_name || forecast.item_name || `Product ${idx + 1}`;
+        const points = getRawPointsForRange(forecast.forecast || []);
+
+        return points.map((point, pointIdx) => {
+            const date = new Date(point.date);
+            return {
+                key: `${product}-raw-${pointIdx}`,
+                product,
+                periodLabel: Number.isNaN(date.getTime())
+                    ? 'N/A'
+                    : date.toLocaleDateString('en-GB', { weekday: 'short' }),
+                dateLabel: Number.isNaN(date.getTime())
+                    ? String(point.date || 'N/A')
+                    : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+                predicted: Math.round((Number(point.yhat) || 0) * 10) / 10,
+                sortDate: Number.isNaN(date.getTime()) ? Number.MAX_SAFE_INTEGER : date.getTime(),
+                productColor: productColorMap[product] || CHART_COLORS[0],
+            };
+        });
+    });
+
+    const activeTableRows = (tableMode === 'grouped' ? groupedTableRows : rawTableRows)
+        .slice()
+        .sort((a, b) => {
+            if (a.sortDate !== b.sortDate) return a.sortDate - b.sortDate;
+            return a.product.localeCompare(b.product);
+        });
 
     const graphTitle = currentForecasts?.length > 0
         ? `${uploadedData?.displayName || 'Products'} Forecast`
@@ -425,7 +484,7 @@ function LandingPagePanel() {
                 )}
             </div>
 
-            <div className="flex flex-col lg:flex-row lg:items-stretch gap-5 lg:gap-6 w-full">
+            <div className="flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-6 w-full">
                 {/* Main Chart Card */}
                 <div className="flex-1 min-w-0 flex animate-scale-in animate-delay-150">
                     <div className="rounded-xl overflow-hidden shadow-sm border border-pinkcafe2/10 transition-all duration-300 ease-out hover:shadow-md hover:-translate-y-0.5 flex-1 flex flex-col w-full">
@@ -441,40 +500,47 @@ function LandingPagePanel() {
                                     </span>
                                 )}
                             </div>
-                            <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                                <div className="inline-flex rounded-lg bg-white/10 p-0.5">
+                            <div className="mt-4 flex flex-wrap min-[1250px]:flex-nowrap items-center gap-1.5 min-w-0">
+                                <div className="relative grid grid-cols-5 rounded-lg bg-white/10 p-px min-w-0 basis-full w-full min-[1250px]:basis-auto min-[1250px]:w-auto min-[1250px]:flex-1">
+                                    <span
+                                        className="pointer-events-none absolute left-px top-px bottom-px rounded-md bg-white shadow-sm transition-transform duration-300 ease-out"
+                                        style={{
+                                            width: `calc((100% - 2px) / ${FORECAST_RANGE_OPTIONS.length})`,
+                                            transform: `translateX(${activePeriodIndex * 100}%)`,
+                                        }}
+                                    />
                                     {FORECAST_RANGE_OPTIONS.filter((o) => o.value !== 'custom').map((opt) => (
                                         <button key={opt.value} type="button" onClick={() => setForecastRange(opt.value)} disabled={!hasGenerated}
-                                            className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+                                            className={`relative z-10 w-full min-w-0 min-h-[34px] rounded-md px-2 py-1.5 text-xs leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-center font-medium transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
                                                 forecastRange === opt.value
-                                                    ? 'bg-white text-pinkcafe2 shadow-sm'
-                                                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                                                    ? 'text-pinkcafe2'
+                                                    : 'text-white/80 hover:text-white'
                                             }`}>
                                             {opt.label}
                                         </button>
                                     ))}
                                     <button type="button" onClick={() => setForecastRange('custom')}
-                                        className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+                                        className={`relative z-10 w-full min-w-0 min-h-[34px] rounded-md px-2 py-1.5 text-xs leading-tight whitespace-nowrap overflow-hidden text-ellipsis text-center font-medium transition-colors duration-200 ${
                                             forecastRange === 'custom'
-                                                ? 'bg-white text-pinkcafe2 shadow-sm'
-                                                : 'text-white/80 hover:text-white hover:bg-white/10'
+                                                ? 'text-pinkcafe2'
+                                                : 'text-white/80 hover:text-white'
                                         }`}>
                                         Custom
                                     </button>
                                 </div>
                                 {hasGenerated && availableProducts.length > 0 && (
                                     <>
-                                        <span className="text-white/30 text-xs mx-1">|</span>
+                                        <span className="hidden sm:inline text-white/30 text-xs mx-1">|</span>
                                         <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}
-                                            className="rounded-lg px-3 py-1.5 text-xs font-medium bg-white/10 text-white border border-white/10 focus:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/30 cursor-pointer backdrop-blur-sm">
+                                            className="rounded-lg px-3 py-1.5 text-xs font-medium bg-white/10 text-white border border-white/10 focus:bg-white/20 focus:outline-none focus:ring-1 focus:ring-white/30 cursor-pointer backdrop-blur-sm shrink-0">
                                             <option value="all" className="bg-pinkcafe2 text-white">All Products</option>
                                             {availableProducts.map(name => (
                                                 <option key={name} value={name} className="bg-pinkcafe2 text-white">{name}</option>
                                             ))}
                                         </select>
-                                        <span className="text-white/30 text-xs mx-1">|</span>
+                                        <span className="hidden sm:inline text-white/30 text-xs mx-1">|</span>
                                         <button type="button" onClick={exportCSV}
-                                            className="rounded-lg px-3 py-1.5 text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-1.5">
+                                            className="rounded-lg px-3 py-1.5 text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-1.5 shrink-0">
                                             <FaDownload className="text-[10px]" /> Export CSV
                                         </button>
                                     </>
@@ -536,10 +602,125 @@ function LandingPagePanel() {
                             )}
                             {filteredChartData.length > 0 ? (
                                 <>
-                                    <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-                                        <MultiLineChart dataByProduct={filteredChartData} dataKey="predicted" />
+                                    <div className="mb-0 w-full grid grid-cols-[1fr_auto_1fr] items-center gap-1">
+                                        <div className="relative inline-grid grid-cols-2 items-center border-b border-pinkcafe2/15 px-2 col-start-2 justify-self-center">
+                                            <span
+                                                className={`pointer-events-none absolute -bottom-px left-1 h-[2px] w-[calc(50%-4px)] rounded-full bg-pinkcafe2 transition-transform duration-300 ease-out ${
+                                                    viewMode === 'graph' ? 'translate-x-0' : 'translate-x-full'
+                                                }`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setViewMode('graph')}
+                                                className={`relative inline-flex items-center justify-center gap-2 px-3 pb-2.5 text-sm font-semibold tracking-wide transition-all duration-200 ${
+                                                    viewMode === 'graph'
+                                                        ? 'text-pinkcafe2'
+                                                        : 'text-pinkcafe2/55 hover:text-pinkcafe2/85'
+                                                }`}
+                                                aria-pressed={viewMode === 'graph'}
+                                            >
+                                                <FaChartLine className="text-[13px]" />
+                                                Graph
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setViewMode('table')}
+                                                className={`relative inline-flex items-center justify-center gap-2 px-3 pb-2.5 text-sm font-semibold tracking-wide transition-all duration-200 ${
+                                                    viewMode === 'table'
+                                                        ? 'text-pinkcafe2'
+                                                        : 'text-pinkcafe2/55 hover:text-pinkcafe2/85'
+                                                }`}
+                                                aria-pressed={viewMode === 'table'}
+                                            >
+                                                <FaTable className="text-[13px]" />
+                                                Table
+                                            </button>
+                                        </div>
+
+                                        <div
+                                            className={`relative inline-grid grid-cols-2 items-center p-1 col-start-3 justify-self-end w-[146px] transition-opacity duration-150 ${
+                                                viewMode === 'table' ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                                            }`}
+                                            aria-hidden={viewMode !== 'table'}
+                                        >
+                                            <span
+                                                className={`pointer-events-none absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-pinkcafe2 shadow-sm transition-transform duration-300 ease-out ${
+                                                    tableMode === 'grouped' ? 'translate-x-0' : 'translate-x-full'
+                                                }`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setTableMode('grouped')}
+                                                className={`relative z-10 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                                                    tableMode === 'grouped'
+                                                        ? 'text-white'
+                                                        : 'text-pinkcafe2 hover:text-pinkcafe2/90 hover:-translate-y-px'
+                                                }`}
+                                                aria-pressed={tableMode === 'grouped'}
+                                                tabIndex={viewMode === 'table' ? 0 : -1}
+                                            >
+                                                Grouped
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setTableMode('raw')}
+                                                className={`relative z-10 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                                                    tableMode === 'raw'
+                                                        ? 'text-white'
+                                                        : 'text-pinkcafe2 hover:text-pinkcafe2/90 hover:-translate-y-px'
+                                                }`}
+                                                aria-pressed={tableMode === 'raw'}
+                                                tabIndex={viewMode === 'table' ? 0 : -1}
+                                            >
+                                                Raw
+                                            </button>
+                                        </div>
                                     </div>
-                                    <ChartLegend data={filteredChartData} />
+
+                                    {viewMode === 'graph' ? (
+                                        <>
+                                            <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+                                                <MultiLineChart
+                                                    key={`${forecastRange}-${customStart || ''}-${customEnd || ''}`}
+                                                    dataByProduct={filteredChartData}
+                                                    dataKey="predicted"
+                                                    animationTrigger={`${forecastRange}-${customStart || ''}-${customEnd || ''}`}
+                                                />
+                                            </div>
+                                            <ChartLegend data={filteredChartData} />
+                                        </>
+                                    ) : (
+                                        <div className="flex-1 min-h-0 max-h-[460px] border border-pinkcafe2/10 rounded-lg overflow-y-auto overflow-x-auto">
+                                            {activeTableRows.length > 0 ? (
+                                                <table className="w-full min-w-[640px] text-sm">
+                                                    <thead className="sticky top-0 z-10 bg-white">
+                                                        <tr>
+                                                            <th className="bg-gray-100 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-800">Product</th>
+                                                            <th className="bg-gray-100 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-800">Day/Period</th>
+                                                            <th className="bg-gray-100 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-800">Date</th>
+                                                            <th className="bg-gray-100 px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-gray-800">Predicted Units</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-pinkcafe2/10">
+                                                        {activeTableRows.map((row, idx) => (
+                                                            <tr key={row.key} className={idx % 2 === 0 ? 'bg-white' : 'bg-pinkcafe2/3'}>
+                                                                <td className="px-4 py-2.5 font-medium whitespace-nowrap" style={{ color: row.productColor }}>
+                                                                    {row.product}
+                                                                </td>
+                                                                <td className="px-4 py-2.5 text-pinkcafe2/85 whitespace-nowrap">{row.periodLabel}</td>
+                                                                <td className="px-4 py-2.5 text-pinkcafe2/85 whitespace-nowrap">{row.dateLabel}</td>
+                                                                <td className="px-4 py-2.5 text-right text-pinkcafe2 font-semibold whitespace-nowrap">{row.predicted.toFixed(1)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full text-pinkcafe2/40 text-sm">
+                                                    No table data available
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-pinkcafe2/30 text-sm">

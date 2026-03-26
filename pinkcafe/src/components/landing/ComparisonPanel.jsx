@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { FaBalanceScale, FaSyncAlt } from 'react-icons/fa';
 import { API_BASE_URL } from '../../config/constants';
+import { authFetch } from '../../utils/apiUtils';
 
 function ComparisonPanel({ datasetId, uploadedData, selectedProduct, onResults, loading, setLoading }) {
     const items = uploadedData?.products || [];
@@ -11,7 +12,7 @@ function ComparisonPanel({ datasetId, uploadedData, selectedProduct, onResults, 
     }, [selectedProduct]);
 
     const fetchComparison = async (itemId) => {
-        const res = await fetch(
+        const res = await authFetch(
             `${API_BASE_URL}/api/v1/forecast/compare?dataset_id=${datasetId}&item_id=${itemId}&train_weeks=20&test_days=14`
         );
         const data = await res.json();
