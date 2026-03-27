@@ -49,12 +49,30 @@ export function filterForecastFromToday(forecastData) {
 export function transformProphetData(forecast, range) {
     if (!forecast || !forecast.length) return [];
 
+    const round1 = (value) => Math.round((Number(value) || 0) * 10) / 10;
+    const avgBounds = (slice) => {
+        const totals = slice.reduce((acc, item) => {
+            const predicted = Number(item.yhat) || 0;
+            const lower = Number(item.yhat_lower);
+            const upper = Number(item.yhat_upper);
+            acc.predicted += predicted;
+            acc.lower += Number.isFinite(lower) ? lower : predicted;
+            acc.upper += Number.isFinite(upper) ? upper : predicted;
+            return acc;
+        }, { predicted: 0, lower: 0, upper: 0 });
+
+        return {
+            predicted: round1(totals.predicted / slice.length),
+            lower: round1(totals.lower / slice.length),
+            upper: round1(totals.upper / slice.length),
+        };
+    };
+
     let pointsToShow = forecast.length;
     let groupBy = 1;
 
     if (range === 'upcomingYear') groupBy = 30;
     else if (range === 'upcomingMonth') groupBy = 7;
-    else if (range === '6weeks') groupBy = 7;
     else if (range === '8weeks') groupBy = 7;
     else if (range === '7days') pointsToShow = Math.min(7, forecast.length);
 
@@ -64,10 +82,15 @@ export function transformProphetData(forecast, range) {
         for (let i = 0; i < Math.min(7, forecast.length); i++) {
             const dataPoint = forecast[i];
             const date = new Date(dataPoint.date);
+            const predicted = Number(dataPoint.yhat) || 0;
+            const lower = Number(dataPoint.yhat_lower);
+            const upper = Number(dataPoint.yhat_upper);
             grouped.push({
                 day: date.toLocaleDateString('en-GB', { weekday: 'short' }),
                 date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                predicted: Math.round(dataPoint.yhat * 10) / 10
+                predicted: round1(predicted),
+                lower: round1(Number.isFinite(lower) ? lower : predicted),
+                upper: round1(Number.isFinite(upper) ? upper : predicted),
             });
         }
     } else if (range === 'upcomingMonth') {
@@ -75,25 +98,14 @@ export function transformProphetData(forecast, range) {
         for (let i = 0; i < daysToShow; i += groupBy) {
             const slice = forecast.slice(i, i + groupBy);
             if (slice.length === 0) break;
-            const avgYhat = slice.reduce((sum, f) => sum + f.yhat, 0) / slice.length;
+            const bounds = avgBounds(slice);
             const date = new Date(slice[0].date);
             grouped.push({
                 day: `Week ${Math.floor(i / 7) + 1}`,
                 date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                predicted: Math.round(avgYhat * 10) / 10
-            });
-        }
-    } else if (range === '6weeks') {
-        const daysToShow = Math.min(6 * 7, forecast.length);
-        for (let i = 0; i < daysToShow; i += groupBy) {
-            const slice = forecast.slice(i, i + groupBy);
-            if (slice.length === 0) break;
-            const avgYhat = slice.reduce((sum, f) => sum + f.yhat, 0) / slice.length;
-            const date = new Date(slice[0].date);
-            grouped.push({
-                day: `Week ${Math.floor(i / 7) + 1}`,
-                date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                predicted: Math.round(avgYhat * 10) / 10
+                predicted: bounds.predicted,
+                lower: bounds.lower,
+                upper: bounds.upper,
             });
         }
     } else if (range === '8weeks') {
@@ -101,12 +113,14 @@ export function transformProphetData(forecast, range) {
         for (let i = 0; i < daysToShow; i += groupBy) {
             const slice = forecast.slice(i, i + groupBy);
             if (slice.length === 0) break;
-            const avgYhat = slice.reduce((sum, f) => sum + f.yhat, 0) / slice.length;
+            const bounds = avgBounds(slice);
             const date = new Date(slice[0].date);
             grouped.push({
                 day: `Week ${Math.floor(i / 7) + 1}`,
                 date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                predicted: Math.round(avgYhat * 10) / 10
+                predicted: bounds.predicted,
+                lower: bounds.lower,
+                upper: bounds.upper,
             });
         }
     } else if (range === 'upcomingYear') {
@@ -114,16 +128,27 @@ export function transformProphetData(forecast, range) {
         forecast.forEach(f => {
             const date = new Date(f.date);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
-            if (!monthlyData[monthKey]) monthlyData[monthKey] = { values: [], firstDate: date };
-            monthlyData[monthKey].values.push(f.yhat);
+            if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = { predictedValues: [], lowerValues: [], upperValues: [], firstDate: date };
+            }
+            const predicted = Number(f.yhat) || 0;
+            const lower = Number(f.yhat_lower);
+            const upper = Number(f.yhat_upper);
+            monthlyData[monthKey].predictedValues.push(predicted);
+            monthlyData[monthKey].lowerValues.push(Number.isFinite(lower) ? lower : predicted);
+            monthlyData[monthKey].upperValues.push(Number.isFinite(upper) ? upper : predicted);
         });
         Object.keys(monthlyData).sort().forEach(monthKey => {
             const data = monthlyData[monthKey];
-            const avgYhat = data.values.reduce((sum, v) => sum + v, 0) / data.values.length;
+            const avgYhat = data.predictedValues.reduce((sum, v) => sum + v, 0) / data.predictedValues.length;
+            const avgLower = data.lowerValues.reduce((sum, v) => sum + v, 0) / data.lowerValues.length;
+            const avgUpper = data.upperValues.reduce((sum, v) => sum + v, 0) / data.upperValues.length;
             grouped.push({
                 day: data.firstDate.toLocaleDateString('en-GB', { month: 'short' }),
                 date: data.firstDate.toLocaleDateString('en-GB', { year: 'numeric' }),
-                predicted: Math.round(avgYhat * 10) / 10
+                predicted: round1(avgYhat),
+                lower: round1(avgLower),
+                upper: round1(avgUpper),
             });
         });
     } else if (range === 'custom') {
@@ -133,16 +158,27 @@ export function transformProphetData(forecast, range) {
             forecast.forEach(f => {
                 const date = new Date(f.date);
                 const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
-                if (!monthlyData[monthKey]) monthlyData[monthKey] = { values: [], firstDate: date };
-                monthlyData[monthKey].values.push(f.yhat);
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { predictedValues: [], lowerValues: [], upperValues: [], firstDate: date };
+                }
+                const predicted = Number(f.yhat) || 0;
+                const lower = Number(f.yhat_lower);
+                const upper = Number(f.yhat_upper);
+                monthlyData[monthKey].predictedValues.push(predicted);
+                monthlyData[monthKey].lowerValues.push(Number.isFinite(lower) ? lower : predicted);
+                monthlyData[monthKey].upperValues.push(Number.isFinite(upper) ? upper : predicted);
             });
             Object.keys(monthlyData).sort().forEach(monthKey => {
                 const data = monthlyData[monthKey];
-                const avgYhat = data.values.reduce((sum, v) => sum + v, 0) / data.values.length;
+                const avgYhat = data.predictedValues.reduce((sum, v) => sum + v, 0) / data.predictedValues.length;
+                const avgLower = data.lowerValues.reduce((sum, v) => sum + v, 0) / data.lowerValues.length;
+                const avgUpper = data.upperValues.reduce((sum, v) => sum + v, 0) / data.upperValues.length;
                 grouped.push({
                     day: data.firstDate.toLocaleDateString('en-GB', { month: 'short' }),
                     date: data.firstDate.toLocaleDateString('en-GB', { year: 'numeric' }),
-                    predicted: Math.round(avgYhat * 10) / 10
+                    predicted: round1(avgYhat),
+                    lower: round1(avgLower),
+                    upper: round1(avgUpper),
                 });
             });
             return grouped;
@@ -150,19 +186,23 @@ export function transformProphetData(forecast, range) {
         if (totalDays > 14) groupBy = 7;
         for (let i = 0; i < pointsToShow; i += groupBy) {
             const slice = forecast.slice(i, i + groupBy);
-            const avgYhat = slice.reduce((sum, f) => sum + f.yhat, 0) / slice.length;
+            const bounds = avgBounds(slice);
             const date = new Date(slice[0].date);
             if (groupBy === 7) {
                 grouped.push({
                     day: `Week ${Math.floor(i / 7) + 1}`,
                     date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                    predicted: Math.round(avgYhat * 10) / 10
+                    predicted: bounds.predicted,
+                    lower: bounds.lower,
+                    upper: bounds.upper,
                 });
             } else {
                 grouped.push({
                     day: date.toLocaleDateString('en-GB', { weekday: 'short' }),
                     date: date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
-                    predicted: Math.round(avgYhat * 10) / 10
+                    predicted: bounds.predicted,
+                    lower: bounds.lower,
+                    upper: bounds.upper,
                 });
             }
         }

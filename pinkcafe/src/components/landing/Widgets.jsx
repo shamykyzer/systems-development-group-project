@@ -1,11 +1,11 @@
 import React from 'react';
-import { FaChartLine, FaFolderOpen, FaCheckDouble, FaPoundSign, FaShoppingBag } from 'react-icons/fa';
+import { FaChartLine, FaFolderOpen, FaBullseye, FaShoppingBag } from 'react-icons/fa';
 import { CHART_COLORS } from '../../utils/chartUtils';
 
 // ---------------------------------------------------------------------------
 // ChartLegend — coloured dot + product name for each series in the chart
 // ---------------------------------------------------------------------------
-export function ChartLegend({ data }) {
+export function ChartLegend({ data, showUncertaintyBands = false }) {
     return (
         <div className="flex flex-wrap gap-x-5 gap-y-2 justify-center mt-5 pt-4 border-t border-gray-100">
             {data.map((series, idx) => {
@@ -20,6 +20,9 @@ export function ChartLegend({ data }) {
                     </div>
                 );
             })}
+            {showUncertaintyBands && (
+                <div className="text-[11px] text-pinkcafe2/55 font-medium">Shaded band = confidence interval</div>
+            )}
         </div>
     );
 }
@@ -94,60 +97,58 @@ export function DatasetSelector({ allDatasets, selectedDatasetId, onDatasetChang
 // QuickStatsBar — 3-column row of stat cards; shows placeholders when no data
 // ---------------------------------------------------------------------------
 const PLACEHOLDER_STATS = [
-    { icon: FaCheckDouble, label: 'Training Data' },
-    { icon: FaPoundSign, label: 'Products' },
-    { icon: FaShoppingBag, label: 'Predictions' }
+    { icon: FaShoppingBag, label: 'Total Forecast' },
+    { icon: FaBullseye, label: 'Prophet MAE' },
+    { icon: FaChartLine, label: 'Prophet MSE' },
 ];
 
 export function QuickStatsBar({ stats }) {
     if (stats.length > 0) {
         return (
-            <div className="grid grid-cols-3 gap-4 mb-6">
-                {stats.map((stat, i) => {
-                    const Icon = stat.icon;
-                    const delayClass = i === 0 ? 'animate-delay-75' : i === 1 ? 'animate-delay-150' : 'animate-delay-225';
-                    return (
-                        <div key={i} className={`bg-white rounded-xl shadow-sm border border-pinkcafe2/10 px-4 py-4 flex items-center gap-3.5 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 animate-fade-in-up ${delayClass}`}>
-                            <div className="w-10 h-10 rounded-xl bg-pinkcafe2/10 flex items-center justify-center shrink-0">
-                                <Icon className="text-pinkcafe2 text-sm" />
+            <div className="bg-white rounded-xl shadow-sm border border-pinkcafe2/10 mb-6 animate-fade-in-up">
+                <div className="grid grid-cols-3 divide-x divide-pinkcafe2/10">
+                    {stats.map((stat, i) => {
+                        const Icon = stat.icon;
+                        return (
+                            <div key={i} className="px-5 py-4 flex items-center gap-3.5">
+                                <div className="w-10 h-10 rounded-xl bg-pinkcafe2/10 flex items-center justify-center shrink-0">
+                                    <Icon className="text-pinkcafe2 text-sm" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[11px] text-pinkcafe2/50 font-semibold uppercase tracking-wider">{stat.label}</p>
+                                    <p className="text-xl font-bold text-pinkcafe2 leading-tight">{stat.value}</p>
+                                </div>
+                                {stat.change && (
+                                    <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full shrink-0 bg-pinkcafe2/8 text-pinkcafe2/60">
+                                        {stat.change}
+                                    </span>
+                                )}
                             </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-[11px] text-pinkcafe2/50 font-semibold uppercase tracking-wider">{stat.label}</p>
-                                <p className="text-xl font-bold text-pinkcafe2 leading-tight">{stat.value}</p>
-                            </div>
-                            {stat.change && (
-                                <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full shrink-0 ${
-                                    stat.positive === true  ? 'bg-emerald-100 text-emerald-700' :
-                                    stat.positive === false ? 'bg-rose-100 text-rose-700' :
-                                                              'bg-pinkcafe2/8 text-pinkcafe2/60'
-                                }`}>
-                                    {stat.change}
-                                </span>
-                            )}
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-3 gap-4 mb-6">
-            {PLACEHOLDER_STATS.map((placeholder, i) => {
-                const Icon = placeholder.icon;
-                const delayClass = i === 0 ? 'animate-delay-75' : i === 1 ? 'animate-delay-150' : 'animate-delay-225';
-                return (
-                    <div key={i} className={`bg-white/60 rounded-xl border border-pinkcafe2/8 px-4 py-4 flex items-center gap-3.5 opacity-50 animate-fade-in-up ${delayClass}`}>
-                        <div className="w-10 h-10 rounded-xl bg-pinkcafe2/8 flex items-center justify-center shrink-0">
-                            <Icon className="text-pinkcafe2/40 text-sm" />
+        <div className="bg-white/60 rounded-xl border border-pinkcafe2/8 mb-6 opacity-50 animate-fade-in-up">
+            <div className="grid grid-cols-3 divide-x divide-pinkcafe2/8">
+                {PLACEHOLDER_STATS.map((placeholder, i) => {
+                    const Icon = placeholder.icon;
+                    return (
+                        <div key={i} className="px-5 py-4 flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-pinkcafe2/8 flex items-center justify-center shrink-0">
+                                <Icon className="text-pinkcafe2/40 text-sm" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] text-pinkcafe2/40 font-semibold uppercase tracking-wider">{placeholder.label}</p>
+                                <p className="text-xl font-bold text-pinkcafe2/30 leading-tight">—</p>
+                            </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[11px] text-pinkcafe2/40 font-semibold uppercase tracking-wider">{placeholder.label}</p>
-                            <p className="text-xl font-bold text-pinkcafe2/30 leading-tight">—</p>
-                        </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </div>
     );
 }

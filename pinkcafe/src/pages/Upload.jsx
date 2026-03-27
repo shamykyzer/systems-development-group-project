@@ -20,26 +20,6 @@ function Upload() {
     setError(null);
   };
 
-  // Helper: Merge two header rows if detected (robust for category/product header format)
-  const mergeCsvHeaders = async (file) => {
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(Boolean);
-    if (lines.length < 2) return file; // Not enough lines to merge
-
-    const firstRow = lines[0].split(',');
-    const secondRow = lines[1].split(',');
-
-    // If the second row has any non-empty value after the first column, treat as product header
-    const hasProductNames = secondRow.slice(1).some(cell => cell.trim() !== '');
-    if (hasProductNames) {
-      const merged = [firstRow[0].trim(), ...secondRow.slice(1).map(cell => cell.trim())];
-      const newLines = [merged.join(',')].concat(lines.slice(2));
-      const newText = newLines.join('\n');
-      return new File([newText], file.name, { type: file.type });
-    }
-    return file;
-  };
-
   const handleProcessFile = async () => {
     if (!selectedFile) return;
 
@@ -47,11 +27,8 @@ function Upload() {
     setError(null);
 
     try {
-      // Preprocess: merge two header rows if needed
-      const processedFile = await mergeCsvHeaders(selectedFile);
-
       const formData = new FormData();
-      formData.append('file', processedFile);
+      formData.append('file', selectedFile);
 
       const response = await authFetch(`${API_BASE_URL}/api/upload/csv`, {
         method: 'POST',
@@ -195,6 +172,7 @@ function Upload() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && isDataValid && handleGenerateForecast()}
                 placeholder={`e.g., ${uploadedData.products[0]} Sales`}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pinkcafe2 focus:border-transparent"
               />

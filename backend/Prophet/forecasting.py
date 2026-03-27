@@ -38,22 +38,16 @@ def load_csv_with_dates(csv_path: str, date_column: str = 'Date') -> pd.DataFram
     return df
 
 
-def run_forecast(conn, dataset_id, item_id, algorithm, train_weeks, horizon_weeks=4):
+def load_history(conn, dataset_id, item_id, train_weeks):
     """
-    Entry point called by routes.py to generate a forecast.
-    
-    Returns a dict ready to be JSON-serialized with forecast data.
+    Load and filter historical sales data from the database.
+
+    Returns a DataFrame with columns 'ds' (datetime) and 'y' (float),
+    filtered to the last train_weeks weeks of data.
     """
-    if algorithm != "prophet":
-        raise ForecastError(f"Algorithm '{algorithm}' not supported (use 'prophet')")
-    
     if not (4 <= train_weeks <= 52):
         raise ForecastError("train_weeks must be between 4 and 52")
-    
-    if not (1 <= horizon_weeks <= 52):
-        raise ForecastError("horizon_weeks must be between 1 and 52")
-    
-    # Fetch historical sales data from database
+
     query = """
         SELECT date, quantity
         FROM sales
@@ -61,22 +55,37 @@ def run_forecast(conn, dataset_id, item_id, algorithm, train_weeks, horizon_week
         ORDER BY date
     """
     rows = conn.execute(query, (dataset_id, item_id)).fetchall()
-    
+
     if not rows:
         raise ForecastError(f"No sales data found for dataset_id={dataset_id}, item_id={item_id}")
-    
-    # Convert to DataFrame in Prophet format (ds = date, y = value)
+
     history = pd.DataFrame([
         {"ds": pd.to_datetime(row["date"]), "y": float(row["quantity"])}
         for row in rows
     ])
-    
-    # Filter to last N weeks for training
+
     cutoff_date = history["ds"].max() - pd.Timedelta(weeks=train_weeks)
     history = history[history["ds"] >= cutoff_date].copy()
-    
+
     if len(history) < 7:
         raise ForecastError(f"Insufficient data: only {len(history)} days available for training")
+
+    return history
+
+
+def run_forecast(conn, dataset_id, item_id, algorithm, train_weeks, horizon_weeks=4):
+    """
+    Entry point called by routes.py to generate a forecast.
+
+    Returns a dict ready to be JSON-serialized with forecast data.
+    """
+    if algorithm != "prophet":
+        raise ForecastError(f"Algorithm '{algorithm}' not supported (use 'prophet')")
+
+    if not (1 <= horizon_weeks <= 52):
+        raise ForecastError("horizon_weeks must be between 1 and 52")
+
+    history = load_history(conn, dataset_id, item_id, train_weeks)
     
     # Run Prophet forecast
     horizon_days = horizon_weeks * 7
