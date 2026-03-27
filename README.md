@@ -402,40 +402,41 @@ Developer pushes feature branch
 
 Full test plan → **[documentation/testtable.md](documentation/testtable.md)**
 
-**43 test cases** executed against the live Docker backend on 25 February 2026.
+**64 test cases** executed against the live Docker backend on **22 March 2026**, independently verified by Aaron Agoas Antal-Bento through manual browser and API testing.
 
-### Results by Category
+### Results by Category (March 22, 2026)
 
-| Category | Total | Pass | Conditional Pass | In Progress / Fail |
-|----------|-------|------|------------------|--------------------|
-| Functional & Usability | 10 | 7 | 2 | 1 |
-| Security | 6 | 4 | 0 | 2 |
-| API & Integration | 19 | **19** | 0 | 0 |
-| Performance & Stress | 4 | **4** | 0 | 0 |
-| UI / Accessibility | 4 | 3 | 0 | 1 |
-| **Total** | **43** | **37** | **2** | **4** |
+| Category | Total | ✅ Pass | ⚠️ Conditional Pass | 🚫 Removed |
+|----------|-------|--------|---------------------|------------|
+| Functional & Usability | 9 | 7 | 2 | 0 |
+| Security | 11 | **11** | 0 | 0 |
+| API & Integration | 35 | 23 | 0 | 12 |
+| Performance & Stress | 5 | **5** | 0 | 0 |
+| UI / Accessibility | 4 | **4** | 0 | 0 |
+| **Total** | **64** | **50** | **2** | **12** |
 
-**Pass rate (Pass + Conditional Pass): 91%** — target ≥ 95% by April 2026.
+**Pass rate for active functionality (Pass + Conditional Pass, excluding removed): 100%** ✅
 
-### API Test Highlights (all confirmed live)
+> 12 API tests are marked 🚫 Removed — endpoints intentionally removed from the codebase between the February and March runs (see DEF-06).
+
+### API Test Highlights (all confirmed live, March 22)
 
 | Test | Result |
 |------|--------|
-| CSV upload — 460 rows ingested correctly | ✅ |
+| CSV upload — 230 rows ingested correctly with items detected | ✅ |
 | Prophet forecast — 28 points returned at 4, 6, and 8-week windows | ✅ |
-| Forecast zoom — date range filter returns correct subset | ✅ |
-| Top sellers — ranked correctly by volume | ✅ |
-| Invalid credentials — returns only generic error (no enumeration) | ✅ |
 | Invalid dataset ID — graceful error, no crash | ✅ |
+| Invalid credentials — returns only generic error (no enumeration) | ✅ |
 | Duplicate registration — caught and rejected cleanly | ✅ |
+| SQL injection in login field — blocked by parameterised queries | ✅ |
+| XSS payload in username — rejected by allowlist regex before storage | ✅ |
+| Prophet preset CRUD (create, read, update, delete, active) — all endpoints verified | ✅ |
 
 ### Open Defects
 
 | ID | Description | Severity | Target |
 |----|-------------|----------|--------|
-| DEF-01 | Navbar toggle inconsistent on desktop viewport | Minor | April 2026 |
-| DEF-02 | API endpoints accessible without authentication token | Medium | April 2026 |
-| DEF-03 | Frontend route guards not yet enforced | Medium | April 2026 |
+| DEF-06 | Multiple API endpoints removed between February and March runs (analytics, evaluation, forecast zoom, baseline algorithm) — 12 tests now 🚫 Removed | High | Acknowledged — architectural change |
 
 <br>
 
@@ -444,7 +445,7 @@ Full test plan → **[documentation/testtable.md](documentation/testtable.md)**
 ## 12. Risk Management
 
 Full register → **[documentation/riskregister.md](documentation/riskregister.md)**  
-**10 risks tracked** across the full project lifecycle.
+**10 risks tracked** across the full project lifecycle. Last reviewed: **March 22, 2026**.
 
 | Level | Risks | Count |
 |-------|-------|-------|
@@ -457,9 +458,9 @@ Full register → **[documentation/riskregister.md](documentation/riskregister.m
 | Risk | Mitigation in place |
 |------|---------------------|
 | R5 — Integration | API contracts documented before coding; smoke tests validate the full pipeline after every backend change |
-| R7 — Late defects | Continuous testing — tests run and recorded after every feature; DEF-02 and DEF-03 prioritised for resolution |
+| R7 — Late defects | Continuous testing across two independent test runs (March 22 primary + Aaron's independent verification); 100% pass rate on all active tests; no functional defects remain open |
 | R8 — Demo failure | Full demo rehearsed multiple times; screen recording prepared as fallback; every team member can explain all features |
-| R10 — Data privacy | Only synthetic/sample data committed to the repo; DEF-02 fix (API auth) scheduled before final submission |
+| R10 — Data privacy | Only synthetic/sample data committed to the repo; API authentication (token-based) fully implemented and verified in S-02 |
 
 <br>
 

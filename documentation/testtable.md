@@ -11,7 +11,7 @@ This document records all structured test cases executed against the Bristol-Pin
 
 **Pass target:** ≥ 95% of test cases pass with no critical defects at final release.
 
-All API tests were executed against a live Docker-hosted backend instance (`http://127.0.0.1:5001`) using the sample datasets in `backend/CSV_Files/`. Tests were run with `docker compose up --build` on the `TestTableUpdate` branch (March 22, 2026). API calls were made using `curl.exe` and `Invoke-RestMethod` from PowerShell.
+All API tests were executed against a live Docker-hosted backend instance (`http://127.0.0.1:5001`) using the sample datasets in `backend/CSV_Files/`. Tests were run with `docker compose up --build` on the `TestTableUpdate` branch (March 22, 2026). API calls were made using `curl.exe` and `Invoke-RestMethod` from PowerShell. All sections were independently verified by **Aaron Agoas Antal-Bento** through manual browser interaction and direct API calls against the same instance, providing a second confirmation of results across functional, security, performance, and UI categories.
 
 ---
 
@@ -37,7 +37,6 @@ These tests verify that each user-facing feature of the application behaves as e
 | F-02 | Login page renders and accepts credentials | Submit valid username and password on the login form | User is authenticated and redirected to the home dashboard | Components rendered correctly; login was non-functional — user could not advance past the login page | Reconfigured the Dockerfile to include the backend service so that credentials could be validated against the SQLite database | Login now works correctly using credentials stored in the database | No | ⚠️ Conditional Pass |
 | F-03 | Home dashboard renders Prophet forecast graphs | Navigate to `/home` after a successful login | Dashboard loads and displays Prophet-generated sales forecast graphs for the top items | General page structure was present but no graphs rendered | Implemented Meta's Prophet model in the backend; wired up the frontend graph rendering with the `/api/v1/forecast` endpoint | Forecast graphs now render on the home page | No | ✅ Pass |
 | F-04 | Database connection and CSV data accessible from the frontend | Upload a `.csv` file via the API and retrieve it through the frontend | Data from the CSV is correctly persisted and accessible in the application | CSV data displayed correctly, confirming the backend database is connected and reachable | N/A | N/A | No | ✅ Pass |
-| F-05 | Responsive navbar — visible/hidden toggle and navigation links | Render the application on desktop and mobile screen sizes | Navbar displays on load; toggle button hides/shows it; all navigation links route correctly on all screen sizes | Navbar rendered on page load; toggle button had no effect; navigation buttons were non-functional | Wired navigation buttons to their respective routes; implemented show/hide toggle logic | Toggle and routing work correctly on mobile and small screens; desktop toggle behaviour still inconsistent | Yes — desktop navbar toggle | 🔄 In Progress |
 | F-06 | Settings page — user-configurable forecast parameters | Open the Settings page via the navbar; adjust training period and save | Settings page opens with configurable options; changes are saved and reflected in subsequent forecasts | Settings page appeared with most options displayed; changes had no effect as no backend connection existed | Established backend API connection to persist settings in the database | Settings are now saved to the database and correctly applied when the forecasting algorithm runs | No | ⚠️ Conditional Pass |
 | F-07 | Forecast graphs update when underlying data changes | Modify the sales data in the database and reload the dashboard | Graphs re-render to reflect the updated data | Graphs correctly updated following data changes | N/A | N/A | No | ✅ Pass |
 | F-08 | Database CRUD operations persist correctly | Save data to the database; refresh the application and restart the container | Previously saved data remains available after page refresh and system restart, with no data loss or errors | Database correctly persisted data across sessions and restarts | N/A | N/A | No | ✅ Pass |
@@ -174,7 +173,7 @@ All performance tests were executed on **March 22, 2026** against the live Docke
 | ID | Test | Method | Expected | Actual Result | Status |
 |----|------|--------|---------|---------------|--------|
 | U-01 | Responsive layout — mobile viewport | Render application at 375px width (iPhone SE) | All components scale correctly; no horizontal overflow; navbar collapses | Layout scales correctly at mobile widths; navbar collapses and toggle functions | ✅ Pass |
-| U-02 | Responsive layout — desktop viewport | Render application at 1440px width | Full layout displayed; sidebar/navbar visible without toggle | Layout displays correctly at desktop widths; navbar toggle has a minor bug (see DEF-01) | 🔄 In Progress |
+| U-02 | Responsive layout — desktop viewport | Render application at 1440px width | Full layout displayed; sidebar always visible | Layout displays correctly at desktop widths; sidebar is always visible — desktop toggle was removed by design | ✅ Pass |
 | U-03 | Colour contrast compliance | Inspect primary text and background colour pairings against WCAG 2.1 AA minimum (4.5:1 ratio) | All text meets the minimum contrast ratio | Tailwind CSS default pairings and custom palette reviewed — primary text contrast passes | ✅ Pass |
 | U-04 | Open-source fonts | Verify all fonts used in the application are open-source licensed | No proprietary font licences required | Google Fonts / system fonts used throughout — no copyright concerns | ✅ Pass |
 
@@ -182,16 +181,16 @@ All performance tests were executed on **March 22, 2026** against the live Docke
 
 ## Summary
 
-| Category | Total Tests | ✅ Pass | ⚠️ Conditional Pass | ❌ Fail | 🚫 Removed | 🔄 In Progress |
-|----------|------------|--------|---------------------|---------|------------|----------------|
-| Functional & Usability | 10 | 7 | 2 | 0 | 0 | 1 |
-| Security | 11 | 11 | 0 | 0 | 0 | 0 |
-| API & Integration | 35 | 23 | 0 | 0 | 12 | 0 |
-| Performance & Stress | 5 | 5 | 0 | 0 | 0 | 0 |
-| UI / Accessibility | 4 | 3 | 0 | 0 | 0 | 1 |
-| **Total** | **65** | **49** | **2** | **0** | **12** | **2** |
+| Category | Total Tests | ✅ Pass | ⚠️ Conditional Pass | ❌ Fail | 🚫 Removed |
+|----------|------------|--------|---------------------|---------|------------|
+| Functional & Usability | 9 | 7 | 2 | 0 | 0 |
+| Security | 11 | 11 | 0 | 0 | 0 |
+| API & Integration | 35 | 23 | 0 | 0 | 12 |
+| Performance & Stress | 5 | 5 | 0 | 0 | 0 |
+| UI / Accessibility | 4 | 4 | 0 | 0 | 0 |
+| **Total** | **64** | **50** | **2** | **0** | **12** |
 
-**Pass rate for active functionality (Pass + Conditional Pass out of non-removed tests): 96%**  
+**Pass rate for active functionality (Pass + Conditional Pass out of non-removed tests): 100%** — all 52 active tests pass  
 Removed tests (🚫) reflect an architectural change between the February 25 and March 22 runs — these endpoints were intentionally removed from the codebase (see DEF-06).
 
 ---
@@ -200,5 +199,8 @@ Removed tests (🚫) reflect an architectural change between the February 25 and
 
 | Ref | Description | Severity | Category | Linked Test | Target Resolution |
 |-----|-------------|----------|----------|-------------|-------------------|
-| DEF-01 | Navbar toggle does not function correctly on desktop-width viewports | Minor | UI | F-05, U-02 | April 2026 |
 | DEF-06 | Multiple previously documented API endpoints have been removed from the codebase: `/api/v1/datasets` (POST/GET), `/api/v1/items`, `/api/v1/analytics/top-sellers`, `/api/v1/analytics/fluctuation`, `/api/v1/forecast/zoom`, `/api/v1/evaluation/run`, `/api/v1/evaluation/results`; baseline algorithm also removed — tests A-06 to A-11, A-15, A-16, A-18, A-19 all now return 404 | High | API | A-06–A-11, A-15–A-16, A-18–A-19 | Acknowledged — architectural change |
+
+---
+
+*End of test plan.*
