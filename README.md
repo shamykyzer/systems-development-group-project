@@ -108,7 +108,16 @@ We built a **full-stack web application** that turns historical sales CSVs into 
 
 ### Use Case Diagram
 
-Two actors interact with the system — the **Café Manager** (day-to-day user) and the **Data Analyst** (data management) — with core use cases including importing CSVs, generating predictions, and viewing historical charts.
+Two actors interact with the system — **Cafe Staff** (day-to-day operations) and **System Admin** — with use cases organised across six groups:
+
+| Group | Use Cases |
+|-------|-----------|
+| **Authentication** | Register Account, Login, Sign Out |
+| **Data Management** | Upload CSV Sales Data, Validate CSV Format, Select Dataset, Delete Dataset, View Data Statistics |
+| **Forecasting** | Generate Forecast, View Forecast Chart, Filter by Product, Custom Date Range Forecast, Switch Time Range (7d / 4w / Long-term), Export Forecast as CSV |
+| **Algorithm Comparison** | Compare Algorithms (Prophet vs SARIMA vs Linear Regression), View MAE/MSE Metrics, Identify Best Algorithm |
+| **Prophet Settings** | Create / Edit / Delete / Duplicate Preset, Set Active Preset, Configure Seasonality, Configure Changepoints, Configure Holidays |
+| **Dashboard Insights** | View Prophet Accuracy (MAE/MSE), View Forecast Insights (Trends, Peak Day, Demand Range), View Model Info |
 
 ![Use Case Diagram](documentation/UseCaseDiagram.png)
 
@@ -116,13 +125,17 @@ Two actors interact with the system — the **Café Manager** (day-to-day user) 
 
 ### Class Diagram
 
-The class diagram maps directly to the SQLite schema — eight tables covering users, datasets, sales records, forecast runs, and evaluation metrics, all linked via foreign keys with cascade deletes.
+The design is split across two diagrams — the backend application class structure and the database schema.
 
-**Part 1 — Core entities: Users, Datasets, SalesRecords, ForecastRuns**
+**Part 1 — Backend application classes**
+
+Shows the Flask backend as six collaborating classes: `App` (factory, configures SECRET_KEY / CORS / DATABASE_PATH), `Database` (init and connection helpers), `Routes` (all API endpoints — auth, CSV upload, forecast, Prophet preset CRUD), `Services` (bcrypt password hashing and verification), `ProphetSettings` (preset management), and `Forecasting` (CSV loading, forecast execution, Prophet internals). The frontend `Upload Page` component is also shown with its composition relationship to `Routes`.
 
 ![Class Diagram Part 1](documentation/ClassDiagram1.png)
 
-**Part 2 — Evaluation, Metrics, and supporting relationships**
+**Part 2 — Database schema**
+
+Shows the six SQLite tables: `users` (id, username, email, password_hash, created_at), `datasets` (id, name, uploaded_at, source_filename, notes), `sales` (id, dataset_id FK, date, item_id FK, quantity), `items` (id, name, category), `active_preset` (id, preset_name), and `prophet_presets` — the most detailed table, storing every tunable Prophet parameter including growth, changepoint/seasonality scales, seasonality mode, daily/weekly/yearly toggles, forecast periods, floor/cap multipliers, custom seasonality settings, and holiday configuration.
 
 ![Class Diagram Part 2](documentation/ClassDiagram2.png)
 
@@ -130,17 +143,17 @@ The class diagram maps directly to the SQLite schema — eight tables covering u
 
 ### Sequence Diagrams
 
-**Sequence 1 — Generate Prediction for Selected Date / Range**
+**Sequence 1 — Load CSV & Display Sales Graph**
 
-Shows the message flow between the User, DashboardController, MLAlgorithm, and GraphRenderer — from requesting a prediction through to the chart being rendered.
+Traces the full pipeline from a CSV upload to the sales graph being returned to the user. Actors: User, Dashboard Controller, CSV Reader, Data Processor, Graph Renderer. Flow: `LoadCSV(path)` → `LoadSalesData()` → `ReturnSalesRecord()` → `GroupByDate(SalesRecord)` → `GroupedRecords()` → `RenderSalesGraph(GroupedRecords)` → `ReturnGraphToUser()`.
 
-![Sequence Diagram — Generate Prediction](documentation/SequenceDiagram1.png)
+![Sequence Diagram — Load CSV](documentation/SequenceDiagram1.png)
 
-**Sequence 2 — Load CSV & Display Sales Graph**
+**Sequence 2 — Generate Prediction for Selected Date / Range**
 
-Traces the full pipeline from a CSV upload through parsing and date-grouping to the sales graph being returned to the user.
+Shows the message flow from a prediction request through model training, inference, and chart rendering. Actors: User, DashboardController, MLAlgorithm, GraphRenderer. Flow: `showPrediction(date)` → `train(trainingData)` → `return(trainedData)` → `predict(date)` → `return(prediction)` → `renderGraph(prediction)` → `return(predictionGraph)`.
 
-![Sequence Diagram — Load CSV](documentation/SequenceDiagram2.png)
+![Sequence Diagram — Generate Prediction](documentation/SequenceDiagram2.png)
 
 <br>
 
@@ -189,7 +202,14 @@ The backend uses a **modular Flask blueprint architecture** — each concern (au
 
 ## 8. UI Design — Figma
 
-Figma was used early in the project to explore and agree on the site's colour scheme and overall feel — giving the team a shared visual direction before any frontend code was written.
+Figma was used to design the full application before any frontend code was written — giving the team a shared visual specification for layout, colour, and component structure across all four pages.
+
+| Page | What it shows |
+|------|---------------|
+| **Login** | Pink Cafe branding, email/password form with forgot-password link, sign-up prompt, café background image |
+| **Dashboard** | Sales Forecasting header with Today's Sales (£2,340), Monthly Forecast (£14,200), and accuracy widgets; Coffee Sales Forecast panel with a forecast chart and demand prediction card; top-sellers sidebar |
+| **Upload** | Clean upload panel with drag-and-drop CSV area and a pink gradient sidebar |
+| **Settings** | Prophet Preset Settings page with Preset Management (select / New / Duplicate / Delete) and a full Preset Configuration form exposing all tunable Prophet parameters |
 
 ![Figma UI Designs](documentation/FigmaDesigns.png)
 
@@ -251,56 +271,85 @@ Prophet consistently outperformed the rolling average baseline on the same train
 
 ### Gantt Chart
 
-The project ran from October 2025 to April 2026 across three parallel tracks: **Admin**, **Back End**, and **Front End**.
+The project ran from October 2025 to April 2026 across five tracks: **Planning & Admin**, **Front End**, **Back End**, **CI/CD & Infra**, and tracked **Milestones**. Team members are colour-coded: Aaron (pink), Nick (teal), Oliver C (blue), Oliver M (purple), Shamyy (green).
 
 <details>
-<summary><strong>📊 View Gantt Chart — click to expand</strong></summary>
+<summary><strong>📊 View Gantt Chart — click to expand (large image, open for full detail)</strong></summary>
 <br>
 
-> The chart is wide and detailed — two ways to read it properly:
->
-> | Format | How to access |
-> |--------|---------------|
-> | 🔍 **Interactive** — zoom, pan, hover for labels | **[Open interactive Gantt →](documentation/gantt_chart.html)** |
-> | 🖼️ **Full-size PNG** — right-click › Open in new tab | **[Open full-size image →](documentation/gantt_chart.png)** |
+> This chart is tall and detailed — right-click the image and open in a new tab, then zoom to read individual task labels.
 
-<br>
-
-<a href="documentation/gantt_chart.png" title="Click to open full-size — then zoom natively in your browser">
+<a href="documentation/gantt_chart.png" title="Right-click › Open image in new tab — then zoom to read task labels">
   <img src="documentation/gantt_chart.png" alt="Project Gantt Chart — click to open full-size" width="100%">
 </a>
 
 </details>
 
-**Admin track** *(project-wide overhead and documentation)*
+**Planning & Admin track** *(project-wide overhead, documentation, and design)*
 
-| Task | Assigned To | Window |
-|------|-------------|--------|
-| Finish Front End Design Phase | Aaron, Nick, Shamyy | Oct – Nov 2025 |
-| Project Plan | Oliver C, Oliver M | Dec 2025 – Jan 2026 |
-| Risk Register | Oliver M, Aaron, Oliver C | Jan – Feb 2026 |
-| Test Plan | Aaron, Nick, Oliver M | Feb 2026 |
-| Report | Aaron, Nick, Oliver C, Oliver M | Mar – Apr 2026 |
+| Task | Window |
+|------|--------|
+| GitHub repository and Trello board setup | Oct 2025 |
+| Project plan and SMART objectives defined | Oct – Nov 2025 |
+| Figma wireframes (v1 and v2 redesign) | Oct – Nov 2025 |
+| Formal Use Case and Class diagram drafts | Nov 2025 |
+| Risk register (created, reviewed, finalised) | Jan – Feb 2026 |
+| Test plan — Functional, Security, and API sections | Feb 2026 |
+| Report — all sections (intro, aims, architecture, design, contributions) | Mar – Apr 2026 |
+| Gantt chart retrospective update and finalisation | Apr 2026 |
+| Presentation slides prepared | Apr 2026 |
 
-**Back End track** *(Flask API, database, AI model)*
+**Front End track** *(React UI, Tailwind CSS, page and component builds)*
 
-| Task | Assigned To | Window |
-|------|-------------|--------|
-| Login Form Functionality | Nick | Jan – Feb 2026 |
-| Basic Database Implementation | Shamyy, Nick, Aaron | Jan – Feb 2026 |
-| Implement Prophet MVP | Aaron, Oliver C, Nick, Shamyy | Jan – Mar 2026 |
+| Task | Window |
+|------|--------|
+| React + Tailwind CSS project initialised | Nov 2025 |
+| Landing page, NavBar, and BusinessPromoPanel components | Nov – Dec 2025 |
+| Login page styling and form component | Dec 2025 – Jan 2026 |
+| Upload page (CSV drag-and-drop UI) | Jan – Feb 2026 |
+| ProphetSettingsPanel and Prophet preset CRUD UI | Feb – Mar 2026 |
+| Dashboard quick-stats, forecast chart, and widgets | Feb – Mar 2026 |
+| ProtectedRoute, auth token handling, constants refactor | Mar 2026 |
+| MultiLineChart migrated to Recharts; forecast period selector | Mar 2026 |
 
-**Front End track** *(React UI, Tailwind, page builds)*
+**Back End track** *(Flask API, SQLite database, Prophet AI engine)*
 
-| Task | Assigned To | Window |
-|------|-------------|--------|
-| Landing Page | Oliver M, Oliver C | Dec 2025 |
-| Login Form | Nick, Oliver M, Oliver C | Dec 2025 – Feb 2026 |
-| Add Favicon and Page Title | Oliver M | Jan – Feb 2026 |
-| Create Upload Page for uploading CSV | Oliver M | Feb 2026 |
-| Create a Settings Page for tweaking Prophet | Aaron | Feb 2026 |
+| Task | Window |
+|------|--------|
+| SQLite database schema design | Jan 2026 |
+| Flask app factory and blueprint structure | Jan 2026 |
+| Auth routes (register, login) and bcrypt hashing | Jan – Feb 2026 |
+| CSV upload and ingest endpoint | Feb 2026 |
+| CSV analytics endpoints (top sellers, statistics) | Feb 2026 |
+| Prophet forecasting backend endpoints | Feb – Mar 2026 |
+| Prophet preset settings API (CRUD + active preset) | Mar 2026 |
+| Dataset ownership and data isolation | Mar 2026 |
+| CORS policy locked to localhost:3000 | Mar 2026 |
+| Backend smoke test script | Mar 2026 |
 
-The chart shows that **admin documentation ran as a continuous overhead across the whole project** while development tasks were time-boxed to specific sprints. The Prophet MVP has the longest back-end bar (Jan–Mar) reflecting its complexity. The Gantt was tracked live in a project management tool and updated as tasks shifted.
+**CI/CD & Infra track** *(Docker, GitHub Actions, documentation)*
+
+| Task | Window |
+|------|--------|
+| `.gitignore` and `.env` configuration | Oct 2025 |
+| README documentation | Oct 2025 – Apr 2026 (ongoing) |
+| Dockerfile and Docker Image CI workflow | Jan – Feb 2026 |
+| Multi-stage Dockerfile (frontend + backend) | Feb 2026 |
+| Docker Compose with environment ports configured | Feb 2026 |
+| GitHub Actions: Python lint, format, and smoke tests | Mar 2026 |
+
+**Milestones**
+
+| Milestone | Target Date |
+|-----------|-------------|
+| Project Kickoff | Oct 2025 |
+| Front End MVP | Jan 2026 |
+| Backend Live on Docker | Feb 2026 |
+| Prophet Integration Complete | Mar 2026 |
+| Security Review Complete | Mar – Apr 2026 |
+| Final Submission | Apr 2026 |
+
+The chart shows **Planning & Admin as a continuous overhead spanning the full project**, while feature tracks were time-boxed to sprints. The Front End has the greatest task volume, reflecting the breadth of components built. The CI/CD & Infra track ran in parallel throughout, supporting every other track.
 
 ---
 
@@ -429,6 +478,13 @@ docker compose up --build
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:5001/api |
 | Backend status | http://localhost:5001 |
+
+### Demo Login
+
+| Field | Value |
+|-------|-------|
+| **Email** | `admin@pinkcafe.com` |
+| **Password** | `pinkcafe2025` |
 
 <br>
 
