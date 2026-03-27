@@ -39,6 +39,7 @@ function LandingPagePanel() {
     const [allDatasets, setAllDatasets] = useState([]);
     const [selectedDatasetId, setSelectedDatasetId] = useState(null);
     const [uploadedData, setUploadedData] = useState(null);
+    const [datasetsLoaded, setDatasetsLoaded] = useState(false);
 
     const maxForecastMonths = getMaxForecastMonths(uploadedData?.dateRange?.end);
 
@@ -61,6 +62,7 @@ function LandingPagePanel() {
 
             const normalized = Array.isArray(datasets) ? datasets : [];
             setAllDatasets(normalized);
+            setDatasetsLoaded(true);
 
             if (normalized.length === 0) {
                 setSelectedDatasetId(null);
@@ -489,6 +491,16 @@ function LandingPagePanel() {
                 )}
             </div>
 
+            {datasetsLoaded && allDatasets.length === 0 ? (
+                <div className="flex flex-col items-center justify-center bg-white rounded-xl shadow-sm border border-pinkcafe2/10 p-16 text-center animate-fade-in-up">
+                    <FaChartLine className="text-pinkcafe2/20 text-6xl mb-4" />
+                    <h2 className="text-xl font-bold text-pinkcafe2 mb-2">No datasets yet</h2>
+                    <p className="text-pinkcafe2/50 text-sm mb-6 max-w-xs">Upload a sales CSV to start generating forecasts and viewing insights.</p>
+                    <Link to="/upload" className="inline-flex items-center gap-2 bg-pinkcafe2 text-white font-semibold py-2.5 px-6 rounded-lg hover:opacity-90 transition duration-200 text-sm">
+                        Upload a CSV
+                    </Link>
+                </div>
+            ) : (
             <div className="flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-6 w-full">
                 {/* Main Chart Card */}
                 <div className="flex-1 min-w-0 flex animate-scale-in animate-delay-150">
@@ -787,6 +799,7 @@ function LandingPagePanel() {
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 }

@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 
+const FILE_SIZE_WARN_BYTES = 5 * 1024 * 1024; // 5 MB
+
 function ForecastCsvUploader({ onFileSelect }) {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [sizeWarning, setSizeWarning] = useState(null);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -9,9 +13,11 @@ function ForecastCsvUploader({ onFileSelect }) {
       // CSV Validation
       if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
         setSelectedFile(file);
+        setErrorMessage(null);
+        setSizeWarning(file.size > FILE_SIZE_WARN_BYTES ? 'This file is large (> 5 MB) and may take longer to process.' : null);
         onFileSelect(file); // Pass file to parent
       } else {
-        alert('Please select a CSV file');
+        setErrorMessage('Please select a valid CSV file.');
         event.target.value = null;
       }
     }
@@ -19,6 +25,8 @@ function ForecastCsvUploader({ onFileSelect }) {
 
   const handleRemove = () => {
     setSelectedFile(null);
+    setErrorMessage(null);
+    setSizeWarning(null);
     onFileSelect(null); // Tell parent file was removed
     // Reset the file input
     const fileInput = document.getElementById('csv-file-input');
@@ -63,6 +71,9 @@ function ForecastCsvUploader({ onFileSelect }) {
               Select CSV File
             </button>
             <p className="text-gray-500 text-sm mt-2">or drag and drop</p>
+            {errorMessage && (
+              <p className="mt-3 text-sm text-red-600 font-medium">{errorMessage}</p>
+            )}
           </div>
         ) : (
           /* Selected file display */
@@ -96,6 +107,11 @@ function ForecastCsvUploader({ onFileSelect }) {
                 Remove
               </button>
             </div>
+            {sizeWarning && (
+              <p className="mt-3 text-sm text-amber-600 font-medium flex items-center gap-1.5">
+                <span>⚠</span> {sizeWarning}
+              </p>
+            )}
           </div>
         )}
       </div>
