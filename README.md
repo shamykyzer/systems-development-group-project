@@ -118,7 +118,13 @@ Two actors interact with the system — the **Café Manager** (day-to-day user) 
 
 The class diagram maps directly to the SQLite schema — eight tables covering users, datasets, sales records, forecast runs, and evaluation metrics, all linked via foreign keys with cascade deletes.
 
-![Class Diagram](documentation/ClassDiagram.png)
+**Part 1 — Core entities: Users, Datasets, SalesRecords, ForecastRuns**
+
+![Class Diagram Part 1](documentation/ClassDiagram1.png)
+
+**Part 2 — Evaluation, Metrics, and supporting relationships**
+
+![Class Diagram Part 2](documentation/ClassDiagram2.png)
 
 <br>
 
@@ -247,7 +253,24 @@ Prophet consistently outperformed the rolling average baseline on the same train
 
 The project ran from October 2025 to April 2026 across three parallel tracks: **Admin**, **Back End**, and **Front End**.
 
-![Project Gantt Chart](documentation/Gantt.png)
+<details>
+<summary><strong>📊 View Gantt Chart — click to expand</strong></summary>
+<br>
+
+> The chart is wide and detailed — two ways to read it properly:
+>
+> | Format | How to access |
+> |--------|---------------|
+> | 🔍 **Interactive** — zoom, pan, hover for labels | **[Open interactive Gantt →](documentation/gantt_chart.html)** |
+> | 🖼️ **Full-size PNG** — right-click › Open in new tab | **[Open full-size image →](documentation/gantt_chart.png)** |
+
+<br>
+
+<a href="documentation/gantt_chart.png" title="Click to open full-size — then zoom natively in your browser">
+  <img src="documentation/gantt_chart.png" alt="Project Gantt Chart — click to open full-size" width="100%">
+</a>
+
+</details>
 
 **Admin track** *(project-wide overhead and documentation)*
 
