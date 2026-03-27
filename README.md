@@ -79,26 +79,29 @@ We built a **full-stack web application** that turns historical sales CSVs into 
 | ID | Priority | The system shall… |
 |----|----------|-------------------|
 | FR-01 | **Must** | Authenticate users via a secure login page before granting access to any data |
-| FR-02 | **Must** | Accept CSV sales data uploads and ingest them into a normalised relational schema |
-| FR-03 | **Must** | Generate per-item 28-day sales forecasts using Meta's Prophet time-series model |
-| FR-04 | **Must** | Display historical sales data and forward predictions as interactive charts |
-| FR-05 | **Should** | Allow users to configure the training window (4–8 weeks) and compare forecast outputs across windows |
-| FR-06 | **Should** | Automatically identify and surface the top 3 best-selling food and coffee items |
-| FR-07 | **Could** | Persist user forecast preferences across sessions via a settings page |
-| FR-08 | **Could** | Expose a versioned REST API for auth, data management, analytics, forecasting, and evaluation |
+| FR-02 | **Must** | Provide a frontend interface that allows users to interact with and view sales data |
+| FR-03 | **Must** | Accept CSV sales data uploads and ingest them into a normalised relational schema |
+| FR-04 | **Must** | Generate per-item 28-day sales forecasts using Meta's Prophet time-series model |
+| FR-05 | **Must** | Display predicted and historical sales data as interactive charts with selectable products and timeframes |
+| FR-06 | **Must** | Allow users to configure the training window (4–8 weeks) to produce different forecast outputs |
+| FR-07 | **Should** | Provide a settings page where users can adjust model parameters and persist forecast preferences across sessions |
+| FR-08 | **Should** | Automatically identify and surface the top 3 best-selling food and coffee items |
+| FR-09 | **Could** | Expose a versioned REST API for auth, data management, analytics, forecasting, and evaluation |
 
 ### Non-Functional Requirements
 > *How well the system performs — each criterion is measurable and testable*
 
 | ID | Quality Attribute | The system shall… |
 |----|------------------|-------------------|
-| NFR-01 | **Accessibility** | Comply with WCAG 2.1 AA — minimum 4.5:1 colour contrast ratio, scalable fonts, full keyboard navigation |
-| NFR-02 | **Usability** | Render without layout breakage at 375 px, 768 px, and 1280 px viewport widths |
-| NFR-03 | **Performance** | Return a completed forecast response within 15 seconds for datasets of up to 500 rows |
-| NFR-04 | **Security** | Store all passwords as bcrypt hashes (cost ≥ 12); return only generic error messages on auth failure to prevent credential enumeration |
-| NFR-05 | **Reliability** | Achieve a ≥ 95% test case pass rate with zero critical-severity defects open at final release |
-| NFR-06 | **Maintainability** | All non-trivial functions carry inline comments; every pull request requires ≥ 2 peer approvals before merge |
-| NFR-07 | **Portability** | The full stack must start successfully with a single `docker compose up --build` command on any machine with Docker installed |
+| NFR-01 | **Responsiveness** | Render correctly across mobile (375 px), tablet (768 px), and desktop (1280 px+) viewport widths without layout breakage |
+| NFR-02 | **Accessibility** | Maintain a consistent design — colour scheme, typography, and layout — with a minimum 4.5:1 WCAG 2.1 AA contrast ratio and scalable fonts |
+| NFR-03 | **Usability** | Render all graphs with clear labels, titles, and legends, free of visual errors |
+| NFR-04 | **Presentation** | Present all output data in a structured, readable format |
+| NFR-05 | **Performance** | Return a completed forecast response within 3 seconds for datasets of up to 500 rows |
+| NFR-06 | **Security** | Store all passwords as bcrypt hashes (cost ≥ 12); restrict access to protected pages; return only generic error messages on auth failure to prevent credential enumeration |
+| NFR-07 | **Reliability** | Achieve a ≥ 95% test case pass rate with zero critical-severity defects open at final release |
+| NFR-08 | **Maintainability** | All non-trivial functions carry inline comments; every pull request requires ≥ 2 peer approvals before merge |
+| NFR-09 | **Portability** | The full stack must start successfully with a single `docker compose up --build` command on any machine with Docker installed |
 
 <br>
 
