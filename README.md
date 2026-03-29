@@ -366,7 +366,7 @@ Task ownership was driven by each member's existing skill set, ensuring every pa
 | **Oliver C** | Frontend development, Prophet implementation | Comfortable across both frontend and analytical tasks, Oliver C moved from supporting page builds into leading the Prophet ML implementation — the most technically demanding part of the project. |
 | **Nick** | Backend & database, login system | Prior experience with Python server-side logic and relational databases made him the right fit for the login system and core database implementation, where those skills had immediate impact. |
 | **Aaron** | Full-stack, ML integration, settings | A broad technical profile spanning frontend, backend, and data meant Aaron was best placed to drive the Prophet MVP integration and build the settings page, where both Python and statistics knowledge were needed. |
-| **Shamyy** | Backend, database design, ML | A strong mathematical and statistical background made Shamyy well-suited to time-series modelling, contributing to the Prophet implementation, database design, and the initial frontend design phase. |
+| Shamyy | Full-stack, UI design, DevOps, algorithm evaluation | Prior internship experience with production Flask backends, Docker, and CI/CD at Learning Pool, and PyTorch-based ML work at TREvolution, made him the natural fit for backend architecture, DevOps infrastructure, and algorithm evaluation. He continuously iterated on the Figma wireframes and learned React and Tailwind CSS to lead the frontend UI redesign, where those skills had direct impact on the dashboard overhaul. |
 
 ### Version Control & CI/CD Pipeline
 
