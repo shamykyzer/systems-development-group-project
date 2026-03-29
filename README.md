@@ -5,7 +5,7 @@
 
 **Systems Development Group Project** | University of the West of England | 2025–2026
 
-| Nickolas Greiner | Aaron Agoas Antal-Bento | Oliver Mercer | Oliver Churchley | Ahmed Desoky AlShamy |
+| Nickolas Greiner | Aaron Agoas Antal-Bento | Oliver Mercer | Oliver Churchley | Ahmed AlShamy |
 |:---:|:---:|:---:|:---:|:---:|
 | 24018357 | 23013693 | 24026901 | 23020494 | 24045361 |
 
