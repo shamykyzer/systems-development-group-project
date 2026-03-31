@@ -7,7 +7,7 @@ PROPHET_PRESET_DEFAULTS = {
     "seasonality_mode": "additive",
     "daily_seasonality": False,
     "weekly_seasonality": True,
-    "yearly_seasonality": False,
+    "yearly_seasonality": True,
     "forecast_periods": 365,
     "floor_multiplier": 0.5,
     "cap_multiplier": 1.5,

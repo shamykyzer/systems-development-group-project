@@ -5,7 +5,7 @@ export const PROPHET_DEFAULT_SETTINGS = Object.freeze({
   seasonality_mode: 'additive',
   daily_seasonality: false,
   weekly_seasonality: true,
-  yearly_seasonality: false,
+  yearly_seasonality: true,
   forecast_periods: 365,
   floor_multiplier: 0.5,
   cap_multiplier: 1.5,
