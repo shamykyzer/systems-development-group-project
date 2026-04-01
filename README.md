@@ -472,7 +472,7 @@ Full register → **[documentation/riskregister.md](documentation/riskregister.m
 ## 13. Running the System
 
 ```bash
-git clone https://github.com/shamykyzer/systems-development-group-project.git
+git clone https://github.com/shamykyzer/sales-prediction-platform.git
 cd systems-development-group-project
 docker compose up --build
 ```
